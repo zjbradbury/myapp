@@ -8,7 +8,7 @@ $email = $_POST['email'];
 $color = $_POST['color'];
 
 $passwordHashed = password_hash( $password, PASSWORD_DEFAULT );
-$conn = mysqli_connect( "localhost", "zack", "BradburyLeilani1", "myapp" );
+$conn = mysqli_connect( "mariadb", "zack", "BradburyLeilani1", "myapp" );
 
 if ( mysqli_connect_errno() ) {
     echo "Failed to connect to database: <br>".mysqli_connect_error();
