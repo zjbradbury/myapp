@@ -1,3 +1,6 @@
+<?php  
+    include 'nav.php';
+?> 
 <!DOCTYPE html>
 <html lang="">
 
@@ -6,11 +9,6 @@
     <title>Login</title>
 
 </head>
-
-<?php  
-    include 'nav.php';
-?> 
-
 
 <body>
 <br>

@@ -1,3 +1,9 @@
+    <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+?>
+
 <html>
 
 <head>
@@ -8,7 +14,6 @@
 <body>
 
 <?php
-session_start();
 $userName = $_SESSION["username"];
 $bio = $_SESSION["bio"];
 $color = $_SESSION["color"];
