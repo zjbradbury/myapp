@@ -14,7 +14,7 @@ $bio = $_SESSION["bio"];
 $color = $_SESSION["color"];
 
 
-$conn = mysqli_connect("localhost", "root", "", "bookface");
+$conn = mysqli_connect("localhost", "zack", "BradburyLeilani1", "users");
 if(mysqli_connect_errno()) {
   echo "Failed to connect to database: <br>".mysqli_connect_error();
 } else {

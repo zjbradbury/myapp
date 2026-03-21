@@ -13,7 +13,7 @@
     <center>
         <div id="main-holder"><br>
         <?php 
-        $conn=mysqli_connect("localhost", "root", "", "weSellPasta");
+        $conn=mysqli_connect("localhost", "zack", "BradburyLeilani1", "myapp");
 
     if (mysqli_connect_errno()) {
         echo "Failed to connect to database: <br>".mysqli_connect_error();

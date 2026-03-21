@@ -8,7 +8,7 @@ $email = $_POST['email'];
 $color = $_POST['color'];
 
 $passwordHashed = password_hash( $password, PASSWORD_DEFAULT );
-$conn = mysqli_connect( "localhost", "root", "", "bookface" );
+$conn = mysqli_connect( "localhost", "zack", "BradburyLeilani1", "myapp" );
 
 if ( mysqli_connect_errno() ) {
     echo "Failed to connect to database: <br>".mysqli_connect_error();
@@ -23,7 +23,7 @@ if ( $row ) {
     echo " Already a user called: ".$userName."<br>";
 } else {
     echo "hello ".$userName."<br>";
-    $query = "INSERT INTO `users` (`id`, `username`, `password`,`color`, `pic`, `bio`, `email`) VALUES (NULL, '".$userName."', '".$passwordHashed."','$color', 'images/default.png', '', '".$email."');";
+    $query = "INSERT INTO `users` (`id`, `username`, `password`,`color`, `email`) VALUES (NULL, '".$userName."', '".$passwordHashed."','$color', '".$email."');";
     mysqli_query( $conn, $query );
     echo "<br>".$query;
     echo "<br>$userName has been created!";
