@@ -1,3 +1,6 @@
+        <?php
+session_start();
+?>
 <html>
     <ul>
         <li><a href="index.php">Home</a></li>
@@ -11,7 +14,6 @@
         <li><a href="../UpdateDisplay.php">Admin</a></li>-->
 
         <?php
-session_start();
 
 if (!isset($_SESSION["loggedin"])) {
     echo '<li style="float:right"><a href="loginPage.php">Login</a></li>';
