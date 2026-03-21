@@ -13,7 +13,7 @@
     <center>
         <div id="main-holder"><br>
         <?php 
-        $conn=mysqli_connect("mariadb", "zack", "BradburyLeilani1", "myapp");
+        $conn=mysqli_connect("mariadb", "zack", "BradburyLeilani1", "users");
 
     if (mysqli_connect_errno()) {
         echo "Failed to connect to database: <br>".mysqli_connect_error();
@@ -21,7 +21,7 @@
 
     else {}
 
-    $query="SELECT * FROM `posts`";
+    $query="SELECT * FROM `users`";
     $result=mysqli_query($conn, $query);
     // $row = mysqli_fetch_array( $result );
 
@@ -30,11 +30,11 @@
     while($row=mysqli_fetch_array($result)) {
         echo'<div class="grid-item">';
 
-        echo '<img width="100vw" src="' . $row['pic'] . '""> <br>';
+        // echo '<img width="100vw" src="' . $row['pic'] . '""> <br>';
         echo '<h1>' .$row['username']. '</h1>';
         // echo $row['bio'] . '<br><br>';
         
-        echo "<a href='otherUser.php?userSelect=".$row['username']."' id='viewProfile'>View Profile</a>" . '<br>';
+        // echo "<a href='otherUser.php?userSelect=".$row['username']."' id='viewProfile'>View Profile</a>" . '<br>';
         echo '</div>';
     }
     echo' </div>';

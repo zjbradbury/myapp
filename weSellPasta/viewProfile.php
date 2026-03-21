@@ -17,7 +17,7 @@ if ($_SESSION["loggedin"]=="yes") {
 <body><br>
     <center>
         <?php 
-        $conn=mysqli_connect("localhost", "root", "", "bookface");
+        $conn=mysqli_connect("mariadb", "zack", "BradburyLeilani1", "users");
 
     if (mysqli_connect_errno()) {
         echo "Failed to connect to database: <br>".mysqli_connect_error();
@@ -34,11 +34,11 @@ if ($_SESSION["loggedin"]=="yes") {
         echo '<div id="main-holder"><br>';
         echo '<h1>'. $userName .' Profile Page</h1>';
         
-        echo '<img width="10%" src="' . $row['pic'] . '">';
+        // echo '<img width="10%" src="' . $row['pic'] . '">';
 
         echo '<h1>' . $row['username'] . '</h1>';
 
-        echo $row['bio'] . '<br>';
+        // echo $row['bio'] . '<br>';
         
         echo '<br><br></div>';
         
