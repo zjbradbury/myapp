@@ -5,7 +5,7 @@
 
 <head>
     <title>Profile Page </title>
-    <link rel="stylesheet" href="/weSellPasta/style.css">
+    <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
