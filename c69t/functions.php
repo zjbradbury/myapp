@@ -1,5 +1,7 @@
 <?php
 
+date_default_timezone_set('Australia/Adelaide');
+
 function clean_value($value) {
     return trim(str_replace(["\r", "\n"], " ", (string)$value));
 }
