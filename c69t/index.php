@@ -20,7 +20,7 @@ function format_date_ddmmyyyy($value) {
     return date("d/m/Y", $ts);
 }
 
-function write_parser_file($type, $fields, $targetDir) {
+function write_parser_file($sectionName, $fields, $targetDir) {
     if (!is_dir($targetDir)) {
         if (!mkdir($targetDir, 0775, true) && !is_dir($targetDir)) {
             return [false, "Failed to create target folder."];
@@ -29,11 +29,11 @@ function write_parser_file($type, $fields, $targetDir) {
 
     $stamp = date("Ymd_His");
     $unique = substr(str_replace(".", "", (string)microtime(true)), -6);
-    $fileName = $type . "_" . $stamp . "_" . $unique . ".txt";
+    $fileName = $sectionName . "_" . $stamp . "_" . $unique . ".txt";
     $filePath = rtrim($targetDir, "/") . "/" . $fileName;
 
     $lines = [];
-    $lines[] = "[" . $type . "]";
+    $lines[] = "[" . $sectionName . "]";
 
     foreach ($fields as $key => $value) {
         $lines[] = $key . "=" . clean_value($value);
@@ -52,77 +52,96 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $dataDir = __DIR__ . "/data";
     $entryType = trim($_POST["entry_type"] ?? "");
 
-    if ($entryType === "SolidWaste") {
+    if ($entryType === "NOZZLE") {
         $date = format_date_ddmmyyyy($_POST["date"] ?? "");
         $time = trim($_POST["time"] ?? "");
+        $nozzle = trim($_POST["nozzle"] ?? "");
+        $flow = trim($_POST["flow"] ?? "");
+        $pressure = trim($_POST["pressure"] ?? "");
+        $minDeg = trim($_POST["min_deg"] ?? "");
+        $maxDeg = trim($_POST["max_deg"] ?? "");
+        $rpm = trim($_POST["rpm"] ?? "");
         $comments = trim($_POST["comments"] ?? "manual_web_entry");
-        $solidWasteLevelKg = trim($_POST["solid_waste_level_kg"] ?? "");
 
-        if ($date === "" || $time === "" || $solidWasteLevelKg === "") {
-            $message = "Please complete all Solid Waste required fields.";
+        if ($date === "" || $time === "" || $nozzle === "" || $flow === "" || $pressure === "" || $minDeg === "" || $maxDeg === "" || $rpm === "") {
+            $message = "Please complete all Nozzle fields.";
         } else {
             $fields = [
                 "Date" => $date,
                 "Time" => $time,
-                "SolidWasteLevelKG" => $solidWasteLevelKg,
+                "Nozzle" => $nozzle,
+                "Flow" => $flow,
+                "Pressure" => $pressure,
+                "Min Deg" => $minDeg,
+                "Max Deg" => $maxDeg,
+                "RPM" => $rpm,
                 "Comments" => $comments
             ];
 
-            [$ok, $result] = write_parser_file("SolidWaste", $fields, $dataDir);
-            $message = $ok
-                ? "Solid Waste file created: " . htmlspecialchars($result, ENT_QUOTES, "UTF-8")
-                : $result;
-        }
-
-    } elseif ($entryType === "Nozzle") {
-        $date = format_date_ddmmyyyy($_POST["date"] ?? "");
-        $time = trim($_POST["time"] ?? "");
-        $comments = trim($_POST["comments"] ?? "manual_web_entry");
-        $nozzleNo = trim($_POST["nozzle_no"] ?? "");
-        $nozzleVerticalDeg = trim($_POST["nozzle_vertical_deg"] ?? "");
-
-        if ($date === "" || $time === "" || $nozzleNo === "" || $nozzleVerticalDeg === "") {
-            $message = "Please complete all Nozzle required fields.";
-        } else {
-            $fields = [
-                "Date" => $date,
-                "Time" => $time,
-                "NozzleNo" => $nozzleNo,
-                "NozzleVerticalDeg" => $nozzleVerticalDeg,
-                "Comments" => $comments
-            ];
-
-            [$ok, $result] = write_parser_file("Nozzle", $fields, $dataDir);
+            [$ok, $result] = write_parser_file("NOZZLE", $fields, $dataDir);
             $message = $ok
                 ? "Nozzle file created: " . htmlspecialchars($result, ENT_QUOTES, "UTF-8")
                 : $result;
         }
 
-    } elseif ($entryType === "Tricanter") {
+    } elseif ($entryType === "TRICANTER") {
         $date = format_date_ddmmyyyy($_POST["date"] ?? "");
         $time = trim($_POST["time"] ?? "");
+        $bowlSpeed = trim($_POST["bowl_speed"] ?? "");
+        $screwSpeed = trim($_POST["screw_speed"] ?? "");
+        $bowlRpm = trim($_POST["bowl_rpm"] ?? "");
+        $screwRpm = trim($_POST["screw_rpm"] ?? "");
+        $impeller = trim($_POST["impeller"] ?? "");
+        $feedRate = trim($_POST["feed_rate"] ?? "");
+        $torque = trim($_POST["torque"] ?? "");
+        $temp = trim($_POST["temp"] ?? "");
+        $pressure = trim($_POST["pressure"] ?? "");
         $comments = trim($_POST["comments"] ?? "manual_web_entry");
 
-        if ($date === "" || $time === "") {
-            $message = "Please complete Date and Time for Tricanter.";
+        if ($date === "" || $time === "" || $bowlSpeed === "" || $screwSpeed === "" || $bowlRpm === "" || $screwRpm === "" || $feedRate === "" || $torque === "" || $temp === "" || $pressure === "") {
+            $message = "Please complete all required Tricanter fields.";
         } else {
             $fields = [
                 "Date" => $date,
                 "Time" => $time,
-                "BowlSpeedPercent" => trim($_POST["bowl_speed_percent"] ?? ""),
-                "ScrewSpeedPercent" => trim($_POST["screw_speed_percent"] ?? ""),
-                "BowlRPM" => trim($_POST["bowl_rpm"] ?? ""),
-                "ScrewRPM" => trim($_POST["screw_rpm"] ?? ""),
-                "ProcessFlowM3hr" => trim($_POST["process_flow_m3hr"] ?? ""),
-                "TorquePercent" => trim($_POST["torque_percent"] ?? ""),
-                "ProcessTemp" => trim($_POST["process_temp"] ?? ""),
-                "ProcessPressureBar" => trim($_POST["process_pressure_bar"] ?? ""),
+                "Bowl Speed" => $bowlSpeed,
+                "Screw Speed" => $screwSpeed,
+                "Bowl RPM" => $bowlRpm,
+                "Screw RPM" => $screwRpm,
+                "Impeller" => $impeller,
+                "Feed Rate" => $feedRate,
+                "Torque" => $torque,
+                "Temp" => $temp,
+                "Pressure" => $pressure,
                 "Comments" => $comments
             ];
 
-            [$ok, $result] = write_parser_file("Tricanter", $fields, $dataDir);
+            [$ok, $result] = write_parser_file("TRICANTER", $fields, $dataDir);
             $message = $ok
                 ? "Tricanter file created: " . htmlspecialchars($result, ENT_QUOTES, "UTF-8")
+                : $result;
+        }
+
+    } elseif ($entryType === "SOLID_WASTE") {
+        $date = format_date_ddmmyyyy($_POST["date"] ?? "");
+        $time = trim($_POST["time"] ?? "");
+        $amount = trim($_POST["amount"] ?? "");
+        $comments = trim($_POST["comments"] ?? "manual_web_entry");
+
+        if ($date === "" || $time === "" || $amount === "") {
+            $message = "Please complete all Solid Waste fields.";
+        } else {
+            $fields = [
+                "Date" => $date,
+                "Time" => $time,
+                "Start Level" => $amount,
+                "Stop Level" => "0",
+                "Comments" => $comments
+            ];
+
+            [$ok, $result] = write_parser_file("SOLID_WASTE", $fields, $dataDir);
+            $message = $ok
+                ? "Solid Waste file created: " . htmlspecialchars($result, ENT_QUOTES, "UTF-8")
                 : $result;
         }
 
@@ -147,7 +166,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         .wrap {
-            max-width: 1300px;
+            max-width: 1400px;
             margin: 0 auto;
         }
 
@@ -165,7 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
             gap: 20px;
         }
 
@@ -221,6 +240,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             margin-top: 20px;
             color: #bbbbbb;
             font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .small {
+            color: #aaaaaa;
+            font-size: 12px;
+            margin-top: 6px;
         }
     </style>
 </head>
@@ -234,30 +260,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <div class="grid">
         <div class="card">
-            <h2>Solid Waste</h2>
+            <h2>NOZZLE</h2>
             <form method="post">
-                <input type="hidden" name="entry_type" value="SolidWaste">
-
-                <label for="sw_date">Date</label>
-                <input type="date" id="sw_date" name="date" required>
-
-                <label for="sw_time">Time</label>
-                <input type="time" id="sw_time" name="time" required>
-
-                <label for="sw_level">Solid Waste Level KG</label>
-                <input type="number" step="any" id="sw_level" name="solid_waste_level_kg" required>
-
-                <label for="sw_comments">Comments</label>
-                <textarea id="sw_comments" name="comments">manual_web_entry</textarea>
-
-                <button type="submit">Save Solid Waste Entry</button>
-            </form>
-        </div>
-
-        <div class="card">
-            <h2>Nozzle</h2>
-            <form method="post">
-                <input type="hidden" name="entry_type" value="Nozzle">
+                <input type="hidden" name="entry_type" value="NOZZLE">
 
                 <label for="nz_date">Date</label>
                 <input type="date" id="nz_date" name="date" required>
@@ -265,11 +270,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label for="nz_time">Time</label>
                 <input type="time" id="nz_time" name="time" required>
 
-                <label for="nz_no">Nozzle Number</label>
-                <input type="number" id="nz_no" name="nozzle_no" required>
+                <label for="nz_nozzle">Nozzle</label>
+                <input type="number" step="any" id="nz_nozzle" name="nozzle" required>
 
-                <label for="nz_deg">Nozzle Vertical Deg</label>
-                <input type="number" step="any" id="nz_deg" name="nozzle_vertical_deg" required>
+                <label for="nz_flow">Flow</label>
+                <input type="number" step="any" id="nz_flow" name="flow" required>
+
+                <label for="nz_pressure">Pressure</label>
+                <input type="number" step="any" id="nz_pressure" name="pressure" required>
+
+                <label for="nz_min_deg">Min Deg</label>
+                <input type="number" step="any" id="nz_min_deg" name="min_deg" required>
+
+                <label for="nz_max_deg">Max Deg</label>
+                <input type="number" step="any" id="nz_max_deg" name="max_deg" required>
+
+                <label for="nz_rpm">RPM</label>
+                <input type="number" step="any" id="nz_rpm" name="rpm" required>
 
                 <label for="nz_comments">Comments</label>
                 <textarea id="nz_comments" name="comments">manual_web_entry</textarea>
@@ -279,9 +296,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
         <div class="card">
-            <h2>Tricanter</h2>
+            <h2>TRICANTER</h2>
             <form method="post">
-                <input type="hidden" name="entry_type" value="Tricanter">
+                <input type="hidden" name="entry_type" value="TRICANTER">
 
                 <label for="tr_date">Date</label>
                 <input type="date" id="tr_date" name="date" required>
@@ -289,29 +306,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label for="tr_time">Time</label>
                 <input type="time" id="tr_time" name="time" required>
 
-                <label for="tr_bowl_speed">Bowl Speed Percent</label>
-                <input type="number" step="any" id="tr_bowl_speed" name="bowl_speed_percent">
+                <label for="tr_bowl_speed">Bowl Speed</label>
+                <input type="number" step="any" id="tr_bowl_speed" name="bowl_speed" required>
 
-                <label for="tr_screw_speed">Screw Speed Percent</label>
-                <input type="number" step="any" id="tr_screw_speed" name="screw_speed_percent">
+                <label for="tr_screw_speed">Screw Speed</label>
+                <input type="number" step="any" id="tr_screw_speed" name="screw_speed" required>
 
                 <label for="tr_bowl_rpm">Bowl RPM</label>
-                <input type="number" step="any" id="tr_bowl_rpm" name="bowl_rpm">
+                <input type="number" step="any" id="tr_bowl_rpm" name="bowl_rpm" required>
 
                 <label for="tr_screw_rpm">Screw RPM</label>
-                <input type="number" step="any" id="tr_screw_rpm" name="screw_rpm">
+                <input type="number" step="any" id="tr_screw_rpm" name="screw_rpm" required>
 
-                <label for="tr_flow">Process Flow M3hr</label>
-                <input type="number" step="any" id="tr_flow" name="process_flow_m3hr">
+                <label for="tr_impeller">Impeller</label>
+                <input type="text" id="tr_impeller" name="impeller">
 
-                <label for="tr_torque">Torque Percent</label>
-                <input type="number" step="any" id="tr_torque" name="torque_percent">
+                <label for="tr_feed_rate">Feed Rate</label>
+                <input type="number" step="any" id="tr_feed_rate" name="feed_rate" required>
 
-                <label for="tr_temp">Process Temp</label>
-                <input type="number" step="any" id="tr_temp" name="process_temp">
+                <label for="tr_torque">Torque</label>
+                <input type="number" step="any" id="tr_torque" name="torque" required>
 
-                <label for="tr_pressure">Process Pressure Bar</label>
-                <input type="number" step="any" id="tr_pressure" name="process_pressure_bar">
+                <label for="tr_temp">Temp</label>
+                <input type="number" step="any" id="tr_temp" name="temp" required>
+
+                <label for="tr_pressure">Pressure</label>
+                <input type="number" step="any" id="tr_pressure" name="pressure" required>
 
                 <label for="tr_comments">Comments</label>
                 <textarea id="tr_comments" name="comments">manual_web_entry</textarea>
@@ -319,14 +339,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <button type="submit">Save Tricanter Entry</button>
             </form>
         </div>
+
+        <div class="card">
+            <h2>SOLID WASTE</h2>
+            <form method="post">
+                <input type="hidden" name="entry_type" value="SOLID_WASTE">
+
+                <label for="sw_date">Date</label>
+                <input type="date" id="sw_date" name="date" required>
+
+                <label for="sw_time">Time</label>
+                <input type="time" id="sw_time" name="time" required>
+
+                <label for="sw_amount">Amount</label>
+                <input type="number" step="any" id="sw_amount" name="amount" required>
+
+                <div class="small">This writes Start Level = Amount entered, and Stop Level = 0</div>
+
+                <label for="sw_comments">Comments</label>
+                <textarea id="sw_comments" name="comments">manual_web_entry</textarea>
+
+                <button type="submit">Save Solid Waste Entry</button>
+            </form>
+        </div>
     </div>
 
     <div class="note">
-        Files are written in this format:<br>
-        [Tricanter]<br>
-        Date=02/04/2026<br>
-        Time=14:35<br>
-        Comments=manual_web_entry
+        Files are written to:<br>
+        <strong><?php echo htmlspecialchars(__DIR__ . "/data", ENT_QUOTES, "UTF-8"); ?></strong>
     </div>
 </div>
 </body>
