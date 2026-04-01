@@ -48,12 +48,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tricanter Entry</title>
+
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="wrap-narrow">
         <div class="topbar">
@@ -61,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
         <?php if ($message !== ""): ?>
-            <div class="message"><?php echo h($message); ?></div>
+        <div class="message"><?php echo h($message); ?></div>
         <?php endif; ?>
 
         <div class="card">
@@ -111,9 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
 
     <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll("form").forEach(function (form) {
-            form.addEventListener("submit", function () {
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll("form").forEach(function(form) {
+            form.addEventListener("submit", function() {
                 const btn = form.querySelector('button[type="submit"]');
                 if (btn) {
                     btn.disabled = true;
@@ -124,4 +128,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     });
     </script>
 </body>
+
 </html>

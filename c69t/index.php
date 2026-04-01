@@ -3,12 +3,16 @@ require_once __DIR__ . "/functions.php";
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Data Entry</title>
+
+    <link rel="icon" type="image/png" href="favicon.png">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="wrap">
         <div class="header">
@@ -37,10 +41,12 @@ require_once __DIR__ . "/functions.php";
 
             <div class="card">
                 <h2>Gas Test</h2>
-                <p>Enter gas test results including device, operator, location, readings, product details, and actions.</p>
+                <p>Enter gas test results including device, operator, location, readings, product details, and actions.
+                </p>
                 <a href="gas_test.php">Open Gas Test Entry</a>
             </div>
         </div>
     </div>
 </body>
+
 </html>
