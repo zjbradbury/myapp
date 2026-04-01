@@ -49,7 +49,7 @@ function write_parser_file($sectionName, $fields, $targetDir) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $dataDir = __DIR__ . "/data";
+    $dataDir = __DIR__ . "/c68t/data";
     $entryType = trim($_POST["entry_type"] ?? "");
 
     if ($entryType === "NOZZLE") {
@@ -354,8 +354,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label for="sw_amount">Amount</label>
                 <input type="number" step="any" id="sw_amount" name="amount" required>
 
-                <div class="small">This writes Start Level = Amount entered, and Stop Level = 0</div>
-
                 <label for="sw_comments">Comments</label>
                 <textarea id="sw_comments" name="comments">manual_web_entry</textarea>
 
@@ -366,7 +364,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <div class="note">
         Files are written to:<br>
-        <strong><?php echo htmlspecialchars(__DIR__ . "/data", ENT_QUOTES, "UTF-8"); ?></strong>
+        <strong><?php echo htmlspecialchars(__DIR__ . "/c69t/data", ENT_QUOTES, "UTF-8"); ?></strong>
     </div>
 </div>
 </body>
