@@ -31,7 +31,7 @@ require_once __DIR__ . "/functions.php";
 
             <div class="card">
                 <h2>Solid Waste</h2>
-                <p>nter one amount of solid waste dumped.</p>
+                <p>Enter one amount of solid waste dumped.</p>
                 <a href="solid_waste.php">Open Solid Waste Entry</a>
             </div>
 
