@@ -49,7 +49,7 @@ function write_parser_file($sectionName, $fields, $targetDir) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $dataDir = __DIR__ . "/data";
+    $dataDir = __DIR__ . "/hmi_logs";
     $entryType = trim($_POST["entry_type"] ?? "");
 
     if ($entryType === "NOZZLE") {
