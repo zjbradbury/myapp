@@ -1,0 +1,166 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0f1115;
+    color: #ffffff;
+}
+
+.wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 18px 14px 28px;
+}
+
+.wrap-narrow {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 18px 14px 28px;
+}
+
+.header,
+.topbar,
+.card,
+.message {
+    background: #171a21;
+    border: 1px solid #2b313d;
+    border-radius: 16px;
+}
+
+.header {
+    padding: 22px;
+    margin-bottom: 20px;
+}
+
+.topbar {
+    padding: 16px;
+    margin-bottom: 16px;
+}
+
+.card {
+    padding: 20px;
+}
+
+.message {
+    padding: 14px;
+    margin-bottom: 16px;
+}
+
+h1 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 30px;
+}
+
+h2 {
+    margin-top: 0;
+}
+
+p {
+    margin: 0;
+    color: #b8c0cc;
+    line-height: 1.5;
+}
+
+.form-sub,
+.hint {
+    color: #b8c0cc;
+    line-height: 1.5;
+}
+
+.form-sub {
+    margin-top: -4px;
+    margin-bottom: 18px;
+}
+
+.hint {
+    margin-top: 8px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 18px;
+}
+
+.card p {
+    margin-bottom: 18px;
+}
+
+a.button-link,
+.topbar a,
+.card a,
+button {
+    display: inline-block;
+    text-decoration: none;
+    background: #2a3749;
+    color: #ffffff;
+    border: 1px solid #41526d;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+a.button-link:hover,
+.topbar a:hover,
+.card a:hover,
+button:hover {
+    background: #33445b;
+}
+
+label {
+    display: block;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+input,
+textarea,
+button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid #394253;
+    background: #0f131a;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+button {
+    margin-top: 20px;
+}
+
+.note {
+    margin-top: 18px;
+    color: #9ea8b6;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .wrap,
+    .wrap-narrow {
+        padding: 14px 12px 24px;
+    }
+
+    h1 {
+        font-size: 24px;
+    }
+
+    .card a,
+    .topbar a,
+    a.button-link {
+        display: block;
+        text-align: center;
+    }
+}

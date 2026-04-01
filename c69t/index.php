@@ -7,92 +7,7 @@ require_once __DIR__ . "/functions.php";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Data Entry</title>
-    <style>
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f1115;
-            color: #ffffff;
-        }
-
-        .wrap {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 20px 16px 30px;
-        }
-
-        .header {
-            background: #171a21;
-            border: 1px solid #2b313d;
-            border-radius: 18px;
-            padding: 22px;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            margin: 0 0 10px;
-            font-size: 30px;
-        }
-
-        p {
-            margin: 0;
-            color: #b8c0cc;
-            line-height: 1.5;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 18px;
-        }
-
-        .card {
-            background: #171a21;
-            border: 1px solid #2b313d;
-            border-radius: 18px;
-            padding: 20px;
-        }
-
-        .card h2 {
-            margin-top: 0;
-        }
-
-        .card p {
-            margin-bottom: 18px;
-        }
-
-        .card a {
-            display: inline-block;
-            text-decoration: none;
-            background: #2a3749;
-            color: #ffffff;
-            border: 1px solid #41526d;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-
-        .card a:hover {
-            background: #33445b;
-        }
-
-        @media (max-width: 640px) {
-            .wrap {
-                padding: 14px 12px 24px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .card a {
-                display: block;
-                text-align: center;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="wrap">
@@ -116,8 +31,14 @@ require_once __DIR__ . "/functions.php";
 
             <div class="card">
                 <h2>Solid Waste</h2>
-                <p>Enter one amount. Start Level = amount entered, Stop Level = 0.</p>
+                <p>nter one amount of solid waste dumped.</p>
                 <a href="solid_waste.php">Open Solid Waste Entry</a>
+            </div>
+
+            <div class="card">
+                <h2>Gas Test</h2>
+                <p>Enter gas test results including device, operator, location, readings, product details, and actions.</p>
+                <a href="gas_test.php">Open Gas Test Entry</a>
             </div>
         </div>
     </div>

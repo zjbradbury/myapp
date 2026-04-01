@@ -54,11 +54,13 @@ function write_parser_file($sectionName, $fields, $targetDir) {
 }
 
 function default_form_date() {
-    return date("Y-m-d");
+    $dt = new DateTime('now', new DateTimeZone('Australia/Adelaide'));
+    return $dt->format('Y-m-d');
 }
 
 function default_form_time() {
-    return date("H:i");
+    $dt = new DateTime('now', new DateTimeZone('Australia/Adelaide'));
+    return $dt->format('H:i');
 }
 
 function h($value) {

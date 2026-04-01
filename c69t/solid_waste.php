@@ -37,100 +37,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solid Waste Entry</title>
-    <style>
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f1115;
-            color: #ffffff;
-        }
-
-        .wrap {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 18px 14px 28px;
-        }
-
-        .topbar, .card, .message {
-            background: #171a21;
-            border: 1px solid #2b313d;
-            border-radius: 16px;
-        }
-
-        .topbar {
-            padding: 16px;
-            margin-bottom: 16px;
-        }
-
-        .topbar a {
-            text-decoration: none;
-            color: #ffffff;
-            background: #2a3749;
-            border: 1px solid #41526d;
-            padding: 10px 14px;
-            border-radius: 12px;
-            display: inline-block;
-            font-weight: bold;
-        }
-
-        .message {
-            padding: 14px;
-            margin-bottom: 16px;
-        }
-
-        .card {
-            padding: 20px;
-        }
-
-        h1 {
-            margin-top: 0;
-        }
-
-        .hint {
-            margin-top: 8px;
-            color: #b8c0cc;
-            line-height: 1.5;
-        }
-
-        label {
-            display: block;
-            margin-top: 14px;
-            margin-bottom: 6px;
-            font-weight: bold;
-        }
-
-        input, textarea, button {
-            width: 100%;
-            padding: 14px;
-            border-radius: 12px;
-            border: 1px solid #394253;
-            background: #0f131a;
-            color: #ffffff;
-            font-size: 16px;
-        }
-
-        textarea {
-            min-height: 110px;
-            resize: vertical;
-        }
-
-        button {
-            margin-top: 20px;
-            background: #2a3749;
-            border: 1px solid #41526d;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #33445b;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="wrap">
+    <div class="wrap-narrow">
         <div class="topbar">
             <a href="index.php">← Back to Home</a>
         </div>
@@ -141,6 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="card">
             <h1>Solid Waste Entry</h1>
+            <p class="form-sub">Creates a file in your exact SOLID_WASTE parser format.</p>
 
             <form method="post" action="">
                 <label for="date">Date</label>
@@ -152,9 +63,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label for="amount">Amount</label>
                 <input type="number" step="any" id="amount" name="amount" required>
 
-                <div class="hint">
+                <!-- <div class="hint">
                     This writes Start Level = amount entered and Stop Level = 0.
-                </div>
+                </div> -->
 
                 <label for="comments">Comments</label>
                 <textarea id="comments" name="comments">manual_web_entry</textarea>
