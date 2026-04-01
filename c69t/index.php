@@ -49,7 +49,7 @@ function write_parser_file($sectionName, $fields, $targetDir) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $dataDir = __DIR__ . "/c68t/data";
+    $dataDir = __DIR__ . "/data";
     $entryType = trim($_POST["entry_type"] ?? "");
 
     if ($entryType === "NOZZLE") {
@@ -360,11 +360,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <button type="submit">Save Solid Waste Entry</button>
             </form>
         </div>
-    </div>
-
-    <div class="note">
-        Files are written to:<br>
-        <strong><?php echo htmlspecialchars(__DIR__ . "/c69t/data", ENT_QUOTES, "UTF-8"); ?></strong>
     </div>
 </div>
 </body>
