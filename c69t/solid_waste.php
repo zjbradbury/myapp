@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="card">
             <h1>Solid Waste Entry</h1>
-            <p class="form-sub">Creates a file in your exact SOLID_WASTE parser format.</p>
+            <!-- <p class="form-sub">Creates a file in your exact SOLID_WASTE parser format.</p> -->
 
             <form method="post" action="">
                 <label for="date">Date</label>

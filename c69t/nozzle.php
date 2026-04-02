@@ -64,7 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="card">
             <h1>Nozzle Entry</h1>
-            <p class="form-sub">Creates a file in your exact NOZZLE parser format.</p>
+            <!-- <p class="form-sub">Creates a file in your exact NOZZLE parser format.</p> -->
 
             <form method="post" action="">
                 <label for="date">Date</label>

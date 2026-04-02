@@ -78,7 +78,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="card">
             <h1>Gas Test Entry</h1>
-            <p class="form-sub">Creates a file in this format: [gas_test]</p>
+            <!-- <p class="form-sub">Creates a file in this format: [gas_test]</p> -->
 
             <form method="post" action="">
                 <label for="date">Date</label>

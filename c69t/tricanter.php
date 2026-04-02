@@ -70,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="card">
             <h1>Tricanter Entry</h1>
-            <p class="form-sub">Creates a file in your exact TRICANTER parser format.</p>
+            <!-- <p class="form-sub">Creates a file in your exact TRICANTER parser format.</p> -->
 
             <form method="post" action="">
                 <label for="date">Date</label>
