@@ -48,7 +48,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nozzle Entry</title>
 
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
 </head>
 
