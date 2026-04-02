@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $water = trim($_POST["water"] ?? "");
     $wax = trim($_POST["wax"] ?? "");
     $operator = trim($_POST["operator"] ?? "");
-    $comments = trim($_POST["comments"] ?? "manual_web_entry");
+    $comments = trim($_POST["comments"] ?? "");
 
     if (
         $date === "" ||
@@ -121,7 +121,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <label for="wax">Wax</label>
                 <input type="text" id="wax" name="wax">
 
-                <label for="operator">Person Conducting Test</label>
+                <label for="operator">Operator</label>
                 <input list="operator_list" id="operator" name="operator" required>
 
                 <datalist id="operator_list">
@@ -148,7 +148,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </datalist>
 
                 <label for="comments">Comments</label>
-                <textarea id="comments" name="comments"></textarea>
+                <textarea id="comments" name="comments" value="manual_web_entry"></textarea>
 
                 <button type="submit">Save Sample Entry</button>
             </form>
