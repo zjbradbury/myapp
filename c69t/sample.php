@@ -148,7 +148,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 </datalist>
 
                 <label for="comments">Comments</label>
-                <textarea id="comments" name="comments" value="manual_web_entry"></textarea>
+                <textarea id="comments" name="comments"></textarea>
 
                 <button type="submit">Save Sample Entry</button>
             </form>
