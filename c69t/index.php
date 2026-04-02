@@ -45,6 +45,14 @@ require_once __DIR__ . "/functions.php";
                 </p>
                 <a href="gas_test.php">Open Gas Test Entry</a>
             </div>
+
+            <div class="card">
+                <h2>Sample</h2>
+                <p>Enter sample results including operator, location, readings.
+                </p>
+                <a href="sample.php">Open Sample Entry</a>
+            </div>
+
         </div>
     </div>
 </body>
