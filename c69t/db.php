@@ -1,5 +1,5 @@
         <?php 
-        $conn=mysqli_connect("mariadb", "zack", "Butcher69", "c69tTable");
+        $conn=mysqli_connect("mariadb", "zack", "Butcher69", "myapp");
 
     if (mysqli_connect_errno()) {
         echo "Failed to connect to database: <br>".mysqli_connect_error();
