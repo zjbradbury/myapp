@@ -1,5 +1,5 @@
         <?php 
-        $conn=mysqli_connect("mariadb", "zack", "BradburyLeilani1", "table");
+        $conn=mysqli_connect("mariadb", "zack", "password", "table");
 
     if (mysqli_connect_errno()) {
         echo "Failed to connect to database: <br>".mysqli_connect_error();
