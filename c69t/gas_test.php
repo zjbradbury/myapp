@@ -61,8 +61,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gas Test Entry</title>
-
-    <link rel="shortcut icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
 </head>
 
