@@ -89,7 +89,6 @@ function parseM3U($content) {
 }
 
 function parseXmltvTime($timeString) {
-    // XMLTV format example: 20260404180000 +0000
     $timeString = trim($timeString);
     if ($timeString === '') {
         return null;
@@ -266,16 +265,18 @@ foreach ($channels as $index => $channel) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TV Player</title>
-<link rel="icon" type="image/x-icon" href="/images/favicon-tv.ico">
-
+    <link rel="icon" type="image/x-icon" href="/images/favicon-tv.ico">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * {
             box-sizing: border-box;
         }
 
-        body {
+        html, body {
             margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
             font-family: Arial, sans-serif;
             background: #0f1117;
             color: #fff;
@@ -283,20 +284,25 @@ foreach ($channels as $index => $channel) {
 
         .app {
             display: flex;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
         }
 
         .sidebar {
             width: 360px;
+            height: 100vh;
             background: #181c24;
             border-right: 1px solid #2a2f3a;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
         }
 
         .sidebar-header {
             padding: 16px;
             border-bottom: 1px solid #2a2f3a;
+            flex-shrink: 0;
         }
 
         .sidebar-header h1 {
@@ -316,9 +322,11 @@ foreach ($channels as $index => $channel) {
         }
 
         .channel-list {
-            overflow-y: auto;
-            padding: 10px;
             flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px;
         }
 
         .group-title {
@@ -387,10 +395,13 @@ foreach ($channels as $index => $channel) {
 
         .main {
             flex: 1;
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            padding: 20px;
             gap: 16px;
+            min-width: 0;
         }
 
         .player-header h2 {
@@ -408,6 +419,7 @@ foreach ($channels as $index => $channel) {
             border: 1px solid #2a2f3a;
             border-radius: 16px;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         video {
@@ -428,6 +440,7 @@ foreach ($channels as $index => $channel) {
             border: 1px solid #2a2f3a;
             border-radius: 14px;
             padding: 16px;
+            min-width: 0;
         }
 
         .guide-label {
@@ -473,12 +486,20 @@ foreach ($channels as $index => $channel) {
         }
 
         @media (max-width: 980px) {
+            html, body {
+                height: auto;
+                overflow: auto;
+            }
+
             .app {
                 flex-direction: column;
+                height: auto;
+                overflow: visible;
             }
 
             .sidebar {
                 width: 100%;
+                height: auto;
                 max-height: 360px;
             }
 
@@ -488,10 +509,17 @@ foreach ($channels as $index => $channel) {
 
             .channel-list {
                 display: none;
+                min-height: auto;
+                max-height: 300px;
             }
 
             .channel-list.show {
                 display: block;
+            }
+
+            .main {
+                height: auto;
+                overflow: visible;
             }
 
             .guide-grid {
