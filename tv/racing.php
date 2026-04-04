@@ -9,6 +9,11 @@ $channels = [
         "name" => "Sky 2",
       "url" => "https://skylivetab-new.akamaized.net/hls/live/2038781/sky2/index.m3u8",
         "logo" => ""
+    ],
+   [
+        "name" => "Racing.com",
+      "url" => "https://racingvic-i.akamaized.net/hls/live/598695/racingvic/index1500.m3u8",
+        "logo" => ""
     ]
 ];
 ?>
