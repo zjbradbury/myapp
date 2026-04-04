@@ -8,8 +8,8 @@ error_reporting(E_ALL);
 |--------------------------------------------------------------------------
 | Use either local file paths or remote URLs.
 */
-$m3uSource = __DIR__ . '/playlist.m3u';   // or 'https://example.com/playlist.m3u'
-$epgSource = __DIR__ . '/epg.xml';        // or 'https://example.com/epg.xml'
+$m3uSource = 'https://i.mjh.nz/au/Adelaide/raw-tv.m3u8'
+$epgSource = 'https://i.mjh.nz/au/Adelaide/epg.xml'
 
 /*
 |--------------------------------------------------------------------------
