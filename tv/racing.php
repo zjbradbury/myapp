@@ -9,7 +9,8 @@ $channels = [
         "name" => "Sky 2",
       "url" => "https://skylivetab-new.akamaized.net/hls/live/2038781/sky2/index.m3u8",
         "logo" => ""
-    ];
+    ]
+];
 ?>
 <!DOCTYPE html>
 <html lang="en">
