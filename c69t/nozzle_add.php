@@ -1,7 +1,6 @@
 <?php
 require_once "config.php";
 requireRole(["admin", "operator"]);
-require_once "nav.php";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt = $pdo->prepare("
@@ -34,6 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<?php require_once "nav.php"; ?>
 <div class="container">
     <h2>Add Nozzle Record</h2>
     <form method="post">
