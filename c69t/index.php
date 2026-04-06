@@ -138,7 +138,6 @@ if ($quickRange !== '') {
     }
 }
 
-/* Default to current 12 hour shift block if no range selected */
 if ($rangeStart === '' && $rangeEnd === '' && $quickRange === '') {
     [$rangeStart, $rangeEnd] = get_current_shift_range();
     $usedDefaultShift = true;
@@ -200,7 +199,6 @@ try {
 
     $whereSql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
 
-    /* Filtered data for charts/tables/KPIs */
     $stmt = $pdo->prepare($baseNozzleSql . $whereSql . " ORDER BY id DESC");
     $stmt->execute($params);
     $nozzle = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -209,14 +207,12 @@ try {
     $stmt->execute($params);
     $tricanter = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    /* Latest overall logs for system status */
     $stmt = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1");
     $latestNozzleOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
     $stmt = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1");
     $latestTricanterOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-    /* Latest in currently selected range for KPIs */
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
 
@@ -280,20 +276,21 @@ h1 {
 
 .topbar {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 2.6fr;
+    grid-template-columns: 1.35fr 0.8fr 2.2fr;
     gap: 12px;
     margin-bottom: 15px;
+    align-items: start;
 }
 
 .info-card {
     background: #122c44;
-    padding: 12px;
+    padding: 10px 12px;
     border-radius: 10px;
     min-width: 0;
 }
 
 .info-title {
-    font-size: 12px;
+    font-size: 11px;
     color: #9ec3df;
     text-transform: uppercase;
     letter-spacing: .8px;
@@ -301,8 +298,9 @@ h1 {
 }
 
 .info-value {
-    font-size: 24px;
+    font-size: 22px;
     font-weight: bold;
+    line-height: 1.1;
 }
 
 .info-sub {
@@ -319,24 +317,35 @@ h1 {
     color: #ffd36d;
 }
 
-.system-log-lines {
-    margin-top: 8px;
-    display: grid;
-    gap: 6px;
+.status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 2px;
 }
 
-.system-log-line {
-    background: #163a59;
-    border-radius: 6px;
-    padding: 8px;
-    font-size: 12px;
-    color: #dcecff;
+.last-entry-inline {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+    min-width: 0;
 }
 
-.system-log-line strong {
+.last-entry-heading {
+    font-size: 10px;
     color: #9ec3df;
-    display: inline-block;
-    min-width: 78px;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+}
+
+.last-entry-value {
+    font-size: 11px;
+    color: #dcecff;
+    line-height: 1.25;
+    white-space: nowrap;
 }
 
 .grid {
@@ -435,9 +444,20 @@ th {
     100% { background: inherit; color: inherit; }
 }
 
-.filter-form {
+.range-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+}
+
+.filter-form {
+    display: contents;
+}
+
+.range-inputs {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 8px;
 }
 
@@ -459,20 +479,25 @@ th {
     font-size: 12px;
 }
 
+.range-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
 .filter-actions {
-    grid-column: 1 / -1;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 2px;
+    justify-content: flex-end;
 }
 
 .quick-actions {
-    grid-column: 1 / -1;
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
-    margin-top: 2px;
+    justify-content: flex-end;
 }
 
 .btn {
@@ -518,10 +543,30 @@ th {
     .grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 900px) {
+    .range-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .range-buttons,
+    .filter-actions,
+    .quick-actions {
+        align-items: stretch;
+        justify-content: flex-start;
+    }
+}
+
 @media (max-width: 700px) {
-    .topbar, .kpis, .filter-form { grid-template-columns: 1fr; }
+    .topbar, .kpis { grid-template-columns: 1fr; }
     .info-value { font-size: 20px; }
-    .filter-actions, .quick-actions { flex-direction: column; }
+    .status-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .last-entry-inline {
+        align-items: flex-start;
+        text-align: left;
+    }
 }
 </style>
 </head>
@@ -532,19 +577,16 @@ th {
 <div class="topbar">
     <div class="info-card">
         <div class="info-title">System Status</div>
-        <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>"><?= h($systemStatus) ?></div>
-        <div class="info-sub">Auto refresh every 30 seconds</div>
+        <div class="status-row">
+            <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>"><?= h($systemStatus) ?></div>
 
-        <div class="system-log-lines">
-            <div class="system-log-line">
-                <strong>Nozzle Log</strong>
-                <?= h($lastNozzleStamp) ?>
-            </div>
-            <div class="system-log-line">
-                <strong>Tricanter Log</strong>
-                <?= h($lastTricanterStamp) ?>
+            <div class="last-entry-inline">
+                <div class="last-entry-heading">Last Entry</div>
+                <div class="last-entry-value">Nozzle: <?= h($lastNozzleStamp) ?></div>
+                <div class="last-entry-value">Tricanter: <?= h($lastTricanterStamp) ?></div>
             </div>
         </div>
+        <div class="info-sub">Auto refresh every 30 seconds</div>
     </div>
 
     <div class="info-card">
@@ -557,37 +599,42 @@ th {
         <div class="info-title">Date / Time Range</div>
 
         <form method="get" class="filter-form">
-            <div>
-                <label for="start">From</label>
-                <input
-                    type="datetime-local"
-                    id="start"
-                    name="start"
-                    value="<?= h(to_datetime_local_value($rangeStart)) ?>"
-                >
-            </div>
+            <div class="range-layout">
+                <div class="range-inputs">
+                    <div>
+                        <label for="start">From</label>
+                        <input
+                            type="datetime-local"
+                            id="start"
+                            name="start"
+                            value="<?= h(to_datetime_local_value($rangeStart)) ?>"
+                        >
+                    </div>
 
-            <div>
-                <label for="end">To</label>
-                <input
-                    type="datetime-local"
-                    id="end"
-                    name="end"
-                    value="<?= h(to_datetime_local_value($rangeEnd)) ?>"
-                >
-            </div>
+                    <div>
+                        <label for="end">To</label>
+                        <input
+                            type="datetime-local"
+                            id="end"
+                            name="end"
+                            value="<?= h(to_datetime_local_value($rangeEnd)) ?>"
+                        >
+                    </div>
+                </div>
 
-            <div class="filter-actions">
-                <button type="submit" class="btn">Apply Range</button>
-                <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
-            </div>
+                <div class="range-buttons">
+                    <div class="filter-actions">
+                        <button type="submit" class="btn">Apply Range</button>
+                        <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
+                    </div>
 
-            <div class="quick-actions">
-                <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
-                <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
-                <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
-                <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
-                <button type="submit" name="quick" value="clear" class="btn btn-quick">Clear</button>
+                    <div class="quick-actions">
+                        <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
+                        <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
+                        <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
+                        <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
+                    </div>
+                </div>
             </div>
         </form>
 
