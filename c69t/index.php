@@ -181,6 +181,7 @@ try {
 
     $baseNozzleSql = "SELECT * FROM nozzle_logs";
     $baseTricanterSql = "SELECT * FROM tricanter_logs";
+    $baseSolidWasteSql = "SELECT * FROM solid_waste_logs";
 
     $where = [];
     $params = [];
@@ -207,14 +208,22 @@ try {
     $stmt->execute($params);
     $tricanter = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    $stmt = $pdo->prepare($baseSolidWasteSql . $whereSql . " ORDER BY id DESC");
+    $stmt->execute($params);
+    $solidWaste = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
     $stmt = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1");
     $latestNozzleOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
     $stmt = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1");
     $latestTricanterOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
+    $stmt = $pdo->query("SELECT * FROM solid_waste_logs ORDER BY id DESC LIMIT 1");
+    $latestSolidWasteOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
+    $latestSolidWaste = $solidWaste[0] ?? [];
 
 } catch (Throwable $e) {
     die("DB Error: " . h($e->getMessage()));
@@ -238,12 +247,13 @@ $tricanterTempSeries = numeric_series($tricanter, 'temp');
 $tricanterPressureSeries = numeric_series($tricanter, 'pressure');
 $tricanterLabels = label_series($tricanter);
 
-$systemStatus = (!empty($latestNozzleOverall) || !empty($latestTricanterOverall)) ? 'ONLINE' : 'NO DATA';
+$systemStatus = (!empty($latestNozzleOverall) || !empty($latestTricanterOverall) || !empty($latestSolidWasteOverall)) ? 'ONLINE' : 'NO DATA';
 
 $lastNozzleStamp = trim(($latestNozzleOverall['log_date'] ?? '-') . ' ' . ($latestNozzleOverall['log_time'] ?? ''));
 $lastTricanterStamp = trim(($latestTricanterOverall['log_date'] ?? '-') . ' ' . ($latestTricanterOverall['log_time'] ?? ''));
+$lastSolidWasteStamp = trim(($latestSolidWasteOverall['log_date'] ?? '-') . ' ' . ($latestSolidWasteOverall['log_time'] ?? ''));
 
-$recordsLoaded = count($nozzle) + count($tricanter);
+$recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste);
 $rangeSummary = 'Current shift block';
 
 if ($rangeStart !== '' || $rangeEnd !== '') {
@@ -350,7 +360,7 @@ h1 {
 
 .grid {
     display: grid;
-    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    grid-template-columns: repeat(3, minmax(0,1fr));
     gap: 15px;
 }
 
@@ -548,9 +558,24 @@ th {
     font-size: 12px;
 }
 
+.solid-comments {
+    font-size: 11px;
+    color: #dcecff;
+    line-height: 1.3;
+    background: #10273c;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+    min-height: 42px;
+    word-break: break-word;
+}
+
+@media (max-width: 1600px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width: 1400px) {
     .topbar { grid-template-columns: 1fr 1fr; }
-    .grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 900px) {
@@ -568,7 +593,7 @@ th {
 }
 
 @media (max-width: 700px) {
-    .topbar, .kpis {
+    .topbar, .kpis, .grid {
         grid-template-columns: 1fr;
     }
 
@@ -610,6 +635,7 @@ th {
                 <div class="last-entry-heading">Last Entry</div>
                 <div class="last-entry-value">Nozzle: <?= h($lastNozzleStamp) ?></div>
                 <div class="last-entry-value">Tricanter: <?= h($lastTricanterStamp) ?></div>
+                <div class="last-entry-value">Solid Waste: <?= h($lastSolidWasteStamp) ?></div>
             </div>
         </div>
         <div class="info-sub">Auto refresh every 30 seconds</div>
@@ -770,6 +796,42 @@ th {
     </div>
 </div>
 
+<div class="panel">
+    <h2>Solid Waste</h2>
+
+    <div class="kpis">
+        <div class="kpi"><small>Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>Source</small><b><?= h($latestSolidWaste['source_file'] ?? '-') ?></b></div>
+        <div class="kpi"><small>Last Time</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b></div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">Latest Comments</div>
+        <div class="solid-comments"><?= h($latestSolidWaste['comments'] ?? '-') ?></div>
+    </div>
+
+    <div class="table">
+        <table>
+            <tr>
+                <th>ID</th><th>Date</th><th>Time</th><th>Amount</th><th>Comments</th>
+            </tr>
+            <?php if (!$solidWaste): ?>
+                <tr><td colspan="5">No solid waste data in selected range.</td></tr>
+            <?php else: ?>
+                <?php foreach ($solidWaste as $r): ?>
+                <tr class="solid-row" data-id="<?= (int)$r['id'] ?>">
+                    <td><?= h($r['id']) ?></td>
+                    <td><?= h($r['log_date']) ?></td>
+                    <td><?= h($r['log_time']) ?></td>
+                    <td><?= fmt($r['amount'] ?? null, 2) ?></td>
+                    <td><?= h($r['comments'] ?? '') ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </table>
+    </div>
+</div>
+
 </div>
 
 <script>
@@ -788,6 +850,7 @@ function flashRows(selector, storageKey) {
 
 flashRows('.nozzle-row', 'nLast');
 flashRows('.tri-row', 'tLast');
+flashRows('.solid-row', 'sLast');
 
 function makeCombinedChart(canvasId, labels, datasets) {
     const canvas = document.getElementById(canvasId);
