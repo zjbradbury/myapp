@@ -1,6 +1,7 @@
 <?php
 require_once "config.php";
 requireLogin();
+require_once "nav.php";
 ?>
 <!DOCTYPE html>
 <html>
