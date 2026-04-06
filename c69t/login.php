@@ -2,7 +2,7 @@
 require_once "config.php";
 
 if (isLoggedIn()) {
-    header("Location: dashboard.php");
+    header("Location: index.php");
     exit;
 }
 
@@ -24,7 +24,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION["username"] = $user["username"];
             $_SESSION["role"] = $user["role"];
 
-            header("Location: dashboard.php");
+            header("Location: index.php");
             exit;
         } else {
             $message = "Invalid username or password.";
