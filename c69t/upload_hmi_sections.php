@@ -16,6 +16,57 @@ function fail($msg, $code = 400) {
     exit;
 }
 
+function parse_log_date($value) {
+    $value = trim((string)$value);
+    if ($value === '') {
+        return null;
+    }
+
+    $formats = [
+        'd/m/Y',
+        'j/n/Y',
+        'Y-m-d',
+        'd-m-Y',
+        'j-n-Y'
+    ];
+
+    foreach ($formats as $format) {
+        $dt = DateTime::createFromFormat($format, $value);
+        if ($dt instanceof DateTime) {
+            return $dt->format('Y-m-d');
+        }
+    }
+
+    return null;
+}
+
+function parse_log_time($value) {
+    $value = trim((string)$value);
+    if ($value === '') {
+        return null;
+    }
+
+    $formats = [
+        'H:i:s',
+        'H:i',
+        'G:i:s',
+        'G:i',
+        'g:i A',
+        'g:i:s A',
+        'h:i A',
+        'h:i:s A'
+    ];
+
+    foreach ($formats as $format) {
+        $dt = DateTime::createFromFormat($format, $value);
+        if ($dt instanceof DateTime) {
+            return $dt->format('H:i:s');
+        }
+    }
+
+    return null;
+}
+
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         fail("Invalid request method", 405);
@@ -79,12 +130,14 @@ try {
         ]
     ];
 
+    $inserted = 0;
+
     foreach ($records as $record) {
         if (!isset($record['table']) || !isset($record['data']) || !is_array($record['data'])) {
             continue;
         }
 
-        $section = strtoupper(trim($record['table']));
+        $section = strtoupper(trim((string)$record['table']));
         if (!isset($sectionMap[$section])) {
             continue;
         }
@@ -97,17 +150,34 @@ try {
         ];
 
         foreach ($record['data'] as $key => $value) {
-            if (isset($allowedColumns[$key])) {
-                $insertData[$allowedColumns[$key]] = ($value === '') ? null : $value;
+            if (!isset($allowedColumns[$key])) {
+                continue;
             }
+
+            $column = $allowedColumns[$key];
+            $value = is_string($value) ? trim($value) : $value;
+
+            if ($value === '') {
+                $value = null;
+            }
+
+            if ($column === 'log_date' && $value !== null) {
+                $value = parse_log_date($value);
+            }
+
+            if ($column === 'log_time' && $value !== null) {
+                $value = parse_log_time($value);
+            }
+
+            $insertData[$column] = $value;
         }
 
         $columns = array_keys($insertData);
-        $quotedColumns = array_map(function($col) {
+        $quotedColumns = array_map(function ($col) {
             return "`" . $col . "`";
         }, $columns);
 
-        $placeholders = array_map(function($col) {
+        $placeholders = array_map(function ($col) {
             return ":" . $col;
         }, $columns);
 
@@ -122,13 +192,14 @@ try {
         }
 
         $stmt->execute($params);
+        $inserted++;
     }
 
     echo json_encode([
         "status" => "success",
-        "message" => "Records uploaded"
+        "message" => "Records uploaded",
+        "inserted" => $inserted
     ]);
-}
-catch (Throwable $e) {
+} catch (Throwable $e) {
     fail($e->getMessage(), 500);
 }
