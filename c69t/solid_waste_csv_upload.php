@@ -12,9 +12,9 @@ if (!$canUpload) {
 $message = "";
 $error = "";
 
-function h($value) {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
+// function h($value) {
+//     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+// }
 
 function normalizeHeader($header) {
     $header = trim((string)$header);
