@@ -75,6 +75,30 @@ if (!function_exists('to_datetime_local_value')) {
     }
 }
 
+if (!function_exists('get_current_shift_range')) {
+    function get_current_shift_range(?int $timestamp = null): array {
+        $timestamp = $timestamp ?? time();
+
+        $hour = (int)date('G', $timestamp);
+        $today = date('Y-m-d', $timestamp);
+        $yesterday = date('Y-m-d', strtotime('-1 day', $timestamp));
+        $tomorrow = date('Y-m-d', strtotime('+1 day', $timestamp));
+
+        if ($hour >= 6 && $hour < 18) {
+            $start = $today . ' 06:00';
+            $end   = $today . ' 18:00';
+        } elseif ($hour >= 18) {
+            $start = $today . ' 18:00';
+            $end   = $tomorrow . ' 06:00';
+        } else {
+            $start = $yesterday . ' 18:00';
+            $end   = $today . ' 06:00';
+        }
+
+        return [$start, $end];
+    }
+}
+
 /* =========================
    RANGE FILTER
    ========================= */
@@ -82,17 +106,18 @@ $rangeStart = trim($_GET['start'] ?? '');
 $rangeEnd   = trim($_GET['end'] ?? '');
 $quickRange = trim($_GET['quick'] ?? '');
 
+$usedDefaultShift = false;
+
 if ($quickRange !== '') {
     $now = time();
 
     switch ($quickRange) {
-        case 'today':
-            $rangeStart = date('Y-m-d 00:00', $now);
-            $rangeEnd   = date('Y-m-d H:i', $now);
+        case 'current_shift':
+            [$rangeStart, $rangeEnd] = get_current_shift_range($now);
             break;
 
-        case '12h':
-            $rangeStart = date('Y-m-d H:i', strtotime('-12 hours', $now));
+        case 'today':
+            $rangeStart = date('Y-m-d 00:00', $now);
             $rangeEnd   = date('Y-m-d H:i', $now);
             break;
 
@@ -111,6 +136,12 @@ if ($quickRange !== '') {
             $rangeEnd = '';
             break;
     }
+}
+
+/* Default to current 12 hour shift block if no range selected */
+if ($rangeStart === '' && $rangeEnd === '' && $quickRange === '') {
+    [$rangeStart, $rangeEnd] = get_current_shift_range();
+    $usedDefaultShift = true;
 }
 
 $startSql = null;
@@ -169,16 +200,23 @@ try {
 
     $whereSql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
 
-    $rowLimit = $rangeActive ? 500 : 30;
-
-    $stmt = $pdo->prepare($baseNozzleSql . $whereSql . " ORDER BY id DESC LIMIT " . (int)$rowLimit);
+    /* Filtered data for charts/tables/KPIs */
+    $stmt = $pdo->prepare($baseNozzleSql . $whereSql . " ORDER BY id DESC");
     $stmt->execute($params);
     $nozzle = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $stmt = $pdo->prepare($baseTricanterSql . $whereSql . " ORDER BY id DESC LIMIT " . (int)$rowLimit);
+    $stmt = $pdo->prepare($baseTricanterSql . $whereSql . " ORDER BY id DESC");
     $stmt->execute($params);
     $tricanter = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    /* Latest overall logs for system status */
+    $stmt = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1");
+    $latestNozzleOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    $stmt = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1");
+    $latestTricanterOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    /* Latest in currently selected range for KPIs */
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
 
@@ -204,12 +242,13 @@ $tricanterTempSeries = numeric_series($tricanter, 'temp');
 $tricanterPressureSeries = numeric_series($tricanter, 'pressure');
 $tricanterLabels = label_series($tricanter);
 
-$systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' : 'NO DATA';
-$lastNozzleStamp = trim(($latestNozzle['log_date'] ?? '-') . ' ' . ($latestNozzle['log_time'] ?? ''));
-$lastTricanterStamp = trim(($latestTricanter['log_date'] ?? '-') . ' ' . ($latestTricanter['log_time'] ?? ''));
+$systemStatus = (!empty($latestNozzleOverall) || !empty($latestTricanterOverall)) ? 'ONLINE' : 'NO DATA';
+
+$lastNozzleStamp = trim(($latestNozzleOverall['log_date'] ?? '-') . ' ' . ($latestNozzleOverall['log_time'] ?? ''));
+$lastTricanterStamp = trim(($latestTricanterOverall['log_date'] ?? '-') . ' ' . ($latestTricanterOverall['log_time'] ?? ''));
 
 $recordsLoaded = count($nozzle) + count($tricanter);
-$rangeSummary = 'Latest ' . ($rangeActive ? 'filtered data' : '30 nozzle + 30 tricanter max');
+$rangeSummary = 'Current shift block';
 
 if ($rangeStart !== '' || $rangeEnd !== '') {
     $fromText = $rangeStart !== '' ? date('d/m/Y H:i', strtotime($rangeStart)) : 'Beginning';
@@ -241,7 +280,7 @@ h1 {
 
 .topbar {
     display: grid;
-    grid-template-columns: 1.2fr 1fr 1fr 1fr 2.2fr;
+    grid-template-columns: 1.2fr 1fr 2.6fr;
     gap: 12px;
     margin-bottom: 15px;
 }
@@ -278,6 +317,26 @@ h1 {
 
 .status-offline {
     color: #ffd36d;
+}
+
+.system-log-lines {
+    margin-top: 8px;
+    display: grid;
+    gap: 6px;
+}
+
+.system-log-line {
+    background: #163a59;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+    color: #dcecff;
+}
+
+.system-log-line strong {
+    color: #9ec3df;
+    display: inline-block;
+    min-width: 78px;
 }
 
 .grid {
@@ -475,18 +534,17 @@ th {
         <div class="info-title">System Status</div>
         <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>"><?= h($systemStatus) ?></div>
         <div class="info-sub">Auto refresh every 30 seconds</div>
-    </div>
 
-    <div class="info-card">
-        <div class="info-title">Latest Nozzle Log</div>
-        <div class="info-value"><?= h($latestNozzle['id'] ?? '-') ?></div>
-        <div class="info-sub"><?= h($lastNozzleStamp) ?></div>
-    </div>
-
-    <div class="info-card">
-        <div class="info-title">Latest Tricanter Log</div>
-        <div class="info-value"><?= h($latestTricanter['id'] ?? '-') ?></div>
-        <div class="info-sub"><?= h($lastTricanterStamp) ?></div>
+        <div class="system-log-lines">
+            <div class="system-log-line">
+                <strong>Nozzle Log</strong>
+                <?= h($lastNozzleStamp) ?>
+            </div>
+            <div class="system-log-line">
+                <strong>Tricanter Log</strong>
+                <?= h($lastTricanterStamp) ?>
+            </div>
+        </div>
     </div>
 
     <div class="info-card">
@@ -525,8 +583,8 @@ th {
             </div>
 
             <div class="quick-actions">
+                <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
                 <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
-                <button type="submit" name="quick" value="12h" class="btn btn-quick">Last 12 Hours</button>
                 <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
                 <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
                 <button type="submit" name="quick" value="clear" class="btn btn-quick">Clear</button>
@@ -535,10 +593,12 @@ th {
 
         <?php if ($rangeError !== ''): ?>
             <div class="range-error"><?= h($rangeError) ?></div>
+        <?php elseif ($rangeActive && $usedDefaultShift): ?>
+            <div class="range-active">Showing current 12 hour shift block</div>
         <?php elseif ($rangeActive): ?>
             <div class="range-active">Filtering graphs and tables to selected range</div>
         <?php else: ?>
-            <div class="range-active">Showing latest records</div>
+            <div class="range-active">Showing all available records</div>
         <?php endif; ?>
     </div>
 </div>
