@@ -13,15 +13,6 @@ function fmt($value, $decimals = 0) {
     if (!is_numeric($value)) return h($value);
     return number_format((float)$value, $decimals, '.', '');
 }
-    return $num;
-}
-
-function toFloatOrNull($value) {
-    if ($value === null || $value === '') {
-        return null;
-    }
-    return is_numeric($value) ? (float)$value : null;
-}
 
 try {
     $pdo = new PDO(
@@ -31,657 +22,171 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $latestNozzle = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
-    $latestTricanter = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+    $latestNozzle = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $latestTricanter = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 
-    $recentNozzle = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
-    $recentTricanter = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
-
-    $trendNozzleRows = $pdo->query("SELECT id, log_date, log_time, nozzle, flow, pressure, min_deg, max_deg, rpm FROM nozzle_logs ORDER BY id DESC LIMIT 30")->fetchAll(PDO::FETCH_ASSOC);
-    $trendTricanterRows = $pdo->query("SELECT id, log_date, log_time, bowl_speed, screw_speed, bowl_rpm, screw_rpm, feed_rate, torque, temp, pressure FROM tricanter_logs ORDER BY id DESC LIMIT 30")->fetchAll(PDO::FETCH_ASSOC);
+    $nozzle = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
+    $tricanter = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 20")->fetchAll(PDO::FETCH_ASSOC);
 
 } catch (Throwable $e) {
-    die("Database error: " . h($e->getMessage()));
+    die("DB Error: " . h($e->getMessage()));
 }
+?>
 
-$trendNozzleRows = array_reverse($trendNozzleRows);
-$trendTricanterRows = array_reverse($trendTricanterRows);
-
-$nozzleLabels = [];
-$nozzleFlow = [];
-$nozzlePressure = [];
-$nozzleRpm = [];
-$nozzleMinDeg = [];
-$nozzleMaxDeg = [];
-
-foreach ($trendNozzleRows as $row) {
-    $label = trim(($row['log_date'] ?? '') . ' ' . ($row['log_time'] ?? ''));
-    $nozzleLabels[] = $label !== '' ? $label : ('ID ' . ($row['id'] ?? ''));
-    $nozzleFlow[] = toFloatOrNull($row['flow'] ?? null);
-    $nozzlePressure[] = toFloatOrNull($row['pressure'] ?? null);
-    $nozzleRpm[] = toFloatOrNull($row['rpm'] ?? null);
-    $nozzleMinDeg[] = toFloatOrNull($row['min_deg'] ?? null);
-    $nozzleMaxDeg[] = toFloatOrNull($row['max_deg'] ?? null);
-}
-
-$tricanterLabels = [];
-$tricanterFeedRate = [];
-$tricanterTorque = [];
-$tricanterTemp = [];
-$tricanterPressure = [];
-$tricanterBowlRpm = [];
-$tricanterScrewRpm = [];
-
-foreach ($trendTricanterRows as $row) {
-    $label = trim(($row['log_date'] ?? '') . ' ' . ($row['log_time'] ?? ''));
-    $tricanterLabels[] = $label !== '' ? $label : ('ID ' . ($row['id'] ?? ''));
-    $tricanterFeedRate[] = toFloatOrNull($row['feed_rate'] ?? null);
-    $tricanterTorque[] = toFloatOrNull($row['torque'] ?? null);
-    $tricanterTemp[] = toFloatOrNull($row['temp'] ?? null);
-    $tricanterPressure[] = toFloatOrNull($row['pressure'] ?? null);
-    $tricanterBowlRpm[] = toFloatOrNull($row['bowl_rpm'] ?? null);
-    $tricanterScrewRpm[] = toFloatOrNull($row['screw_rpm'] ?? null);
-}
-
-$systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' : 'NO DATA';
-?><!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kleensafe SCADA Dashboard</title>
-    <meta http-equiv="refresh" content="30">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        :root {
-            --bg: #071521;
-            --panel: #0d2336;
-            --panel-2: #13324c;
-            --line: #1e5078;
-            --text: #e8f3ff;
-            --muted: #93b6d3;
-            --accent: #00d3ff;
-            --good: #1ad66c;
-            --warn: #ffd24d;
-            --bad: #ff5f6d;
-        }* { box-sizing: border-box; }
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="30">
 
-    body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        background: linear-gradient(180deg, #06101a 0%, #081b2a 100%);
-        color: var(--text);
-    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    .wrap {
-        max-width: 1800px;
-        margin: 0 auto;
-        padding: 18px;
-    }
+<style>
+body {background:#0b1e2d;color:#fff;font-family:Arial;margin:0;padding:15px;}
+h1{text-align:center;margin-bottom:15px;}
 
-    .topbar {
-        display: grid;
-        grid-template-columns: 1.3fr 1fr 1fr 1fr;
-        gap: 14px;
-        margin-bottom: 18px;
-    }
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;}
+.panel{background:#122c44;padding:10px;border-radius:10px;}
 
-    .panel {
-        background: linear-gradient(180deg, var(--panel) 0%, #0a1d2d 100%);
-        border: 1px solid var(--line);
-        border-radius: 14px;
-        padding: 14px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
-    }
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;}
+.kpi{background:#163a59;padding:8px;border-radius:6px;text-align:center;}
+.kpi small{color:#aaa;display:block;}
+.kpi b{font-size:18px;}
 
-    .brand h1 {
-        margin: 0;
-        font-size: 30px;
-        letter-spacing: 1px;
-    }
+.chart{height:200px;}
 
-    .subtle {
-        color: var(--muted);
-        font-size: 13px;
-    }
+.table{max-height:300px;overflow:auto;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:6px;font-size:11px;border-bottom:1px solid #1f4a6e;}
+th{background:#1f4a6e;position:sticky;top:0;}
 
-    .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: rgba(26, 214, 108, 0.12);
-        border: 1px solid rgba(26, 214, 108, 0.35);
-        color: #b8ffd2;
-        font-weight: 700;
-        margin-top: 10px;
-    }
+.flash{animation:flash 2s 3;}
+@keyframes flash{
+0%{background:yellow;color:black;}
+100%{background:inherit;color:inherit;}
+}
 
-    .status-pill.warn {
-        background: rgba(255, 210, 77, 0.12);
-        border-color: rgba(255, 210, 77, 0.35);
-        color: #ffe9a1;
-    }
-
-    .dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: currentColor;
-        box-shadow: 0 0 10px currentColor;
-    }
-
-    .metric-label {
-        color: var(--muted);
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-bottom: 8px;
-    }
-
-    .metric-value {
-        font-size: 30px;
-        font-weight: 700;
-    }
-
-    .metric-unit {
-        font-size: 14px;
-        color: var(--muted);
-        margin-left: 6px;
-    }
-
-    .main-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 18px;
-        align-items: start;
-    }
-
-    .section-title {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-    }
-
-    .section-title h2 {
-        margin: 0;
-        font-size: 22px;
-    }
-
-    .live-tag {
-        color: #9df3ff;
-        font-size: 12px;
-        border: 1px solid rgba(0, 211, 255, 0.3);
-        padding: 5px 8px;
-        border-radius: 999px;
-        background: rgba(0, 211, 255, 0.08);
-    }
-
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 12px;
-        margin-bottom: 14px;
-    }
-
-    .kpi {
-        background: rgba(19, 50, 76, 0.72);
-        border: 1px solid rgba(30, 80, 120, 0.7);
-        border-radius: 12px;
-        padding: 12px;
-    }
-
-    .chart-grid {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 12px;
-        margin-bottom: 14px;
-    }
-
-    .chart-panel {
-        background: rgba(19, 50, 76, 0.62);
-        border: 1px solid rgba(30, 80, 120, 0.7);
-        border-radius: 12px;
-        padding: 12px;
-        height: 260px;
-        min-height: 260px;
-        overflow: hidden;
-    }
-
-    .chart-panel h3 {
-        margin: 0 0 10px 0;
-        font-size: 15px;
-        color: #c9eaff;
-    }
-
-    .table-wrap {
-        max-height: 360px;
-        overflow: auto;
-        border-radius: 10px;
-        border: 1px solid rgba(30, 80, 120, 0.7);
-        width: 100%;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: auto;
-    }
-
-    th, td {
-        padding: 9px 10px;
-        border-bottom: 1px solid rgba(30, 80, 120, 0.55);
-        font-size: 12px;
-        text-align: left;
-        white-space: nowrap;
-    }
-
-    th {
-        position: sticky;
-        top: 0;
-        background: #14334d;
-        color: #d8eeff;
-        z-index: 1;
-    }
-
-    tr:nth-child(even) {
-        background: rgba(14, 35, 54, 0.88);
-    }
-
-    tr.flash {
-        animation: flash-row 2.2s ease-in-out 0s 4;
-    }
-
-    @keyframes flash-row {
-        0% { background: rgba(255, 210, 77, 0.85); color: #000; }
-        50% { background: rgba(0, 211, 255, 0.18); color: var(--text); }
-        100% { background: inherit; color: inherit; }
-    }
-
-    .footer-note {
-        margin-top: 18px;
-        color: var(--muted);
-        font-size: 12px;
-        text-align: center;
-    }
-
-    @media (max-width: 1200px) {
-        .topbar { grid-template-columns: 1fr 1fr; }
-        .main-grid { grid-template-columns: 1fr; }
-        .table-wrap { max-height: 320px; }
-    }
-
-    @media (max-width: 760px) {
-        .topbar, .kpi-grid { grid-template-columns: 1fr; }
-        .brand h1 { font-size: 24px; }
-        .metric-value { font-size: 24px; }
-        .wrap { padding: 12px; }
-        .chart-panel {
-            height: 220px;
-            min-height: 220px;
-        }
-        th, td {
-            font-size: 11px;
-            padding: 7px 8px;
-        }
-        .table-wrap {
-            max-height: 280px;
-        }
-    }
+@media(max-width:900px){
+.grid{grid-template-columns:1fr;}
+}
 </style>
-
 </head>
+
 <body>
-<div class="wrap">
-    <div class="topbar">
-        <div class="panel brand">
-            <h1>KLEENSAFE SCADA</h1>
-            <div class="subtle">Live process dashboard for nozzle and tricanter logs</div>
-            <div class="status-pill <?= $systemStatus === 'ONLINE' ? '' : 'warn' ?>">
-                <span class="dot"></span>
-                <span>System <?= h($systemStatus) ?></span>
-            </div>
-        </div><div class="panel">
-        <div class="metric-label">Latest Nozzle Log</div>
-        <div class="metric-value"><?= h($latestNozzle['id'] ?? '-') ?></div>
-        <div class="subtle"><?= h(($latestNozzle['log_date'] ?? '-') . ' ' . ($latestNozzle['log_time'] ?? '')) ?></div>
-    </div>
 
-    <div class="panel">
-        <div class="metric-label">Latest Tricanter Log</div>
-        <div class="metric-value"><?= h($latestTricanter['id'] ?? '-') ?></div>
-        <div class="subtle"><?= h(($latestTricanter['log_date'] ?? '-') . ' ' . ($latestTricanter['log_time'] ?? '')) ?></div>
-    </div>
+<h1>SCADA Dashboard</h1>
 
-    <div class="panel">
-        <div class="metric-label">Page Refresh</div>
-        <div class="metric-value">30<span class="metric-unit">sec</span></div>
-        <div class="subtle">Newest records flash automatically</div>
-    </div>
+<div class="grid">
+
+<!-- NOZZLE -->
+<div class="panel">
+<h2>Nozzle</h2>
+
+<div class="kpis">
+<div class="kpi"><small>Flow</small><b><?=fmt($latestNozzle['flow']??null,1)?></b></div>
+<div class="kpi"><small>Pressure</small><b><?=fmt($latestNozzle['pressure']??null,2)?></b></div>
+<div class="kpi"><small>RPM</small><b><?=fmt($latestNozzle['rpm']??null,1)?></b></div>
+<div class="kpi"><small>Min Deg</small><b><?=fmt($latestNozzle['min_deg']??null,0)?></b></div>
+<div class="kpi"><small>Max Deg</small><b><?=fmt($latestNozzle['max_deg']??null,0)?></b></div>
 </div>
 
-<div class="main-grid">
-    <div class="panel">
-        <div class="section-title">
-            <h2>Nozzle</h2>
-            <div class="live-tag">Live feed</div>
-        </div>
+<canvas id="nozzleChart" class="chart"></canvas>
 
-        <div class="kpi-grid">
-            <div class="kpi">
-                <div class="metric-label">Flow</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">m³/hr</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Pressure</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">bar</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Nozzle</div>
-                <div class="metric-value"><?= h($latestNozzle['nozzle'] ?? '-') ?></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Min Deg</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">°</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Max Deg</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">°</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">RPM</div>
-                <div class="metric-value"><?= fmt($1, $2) ?></div>
-            </div>
-        </div>
-
-        <div class="chart-grid">
-            <div class="chart-panel">
-                <h3>Nozzle Trend</h3>
-                <canvas id="nozzleChart"></canvas>
-            </div>
-        </div>
-
-        <div class="table-wrap" id="nozzleFeed">
-            <table>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Nozzle</th>
-                    <th>Flow</th>
-                    <th>Pressure</th>
-                    <th>Min Deg</th>
-                    <th>Max Deg</th>
-                    <th>RPM</th>
-                    <th>Comments</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($recentNozzle as $row): ?>
-                    <tr class="nozzle-row" data-id="<?= (int)$row['id'] ?>">
-                        <td><?= h($row['id']) ?></td>
-                        <td><?= h($row['log_date']) ?></td>
-                        <td><?= h($row['log_time']) ?></td>
-                        <td><?= h($row['nozzle']) ?></td>
-                        <td><?= h($row['flow']) ?></td>
-                        <td><?= h($row['pressure']) ?></td>
-                        <td><?= h($row['min_deg']) ?></td>
-                        <td><?= h($row['max_deg']) ?></td>
-                        <td><?= h($row['rpm']) ?></td>
-                        <td><?= h($row['comments']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="section-title">
-            <h2>Tricanter</h2>
-            <div class="live-tag">Live feed</div>
-        </div>
-
-        <div class="kpi-grid">
-            <div class="kpi">
-                <div class="metric-label">Feed Rate</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">m³/hr</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Torque</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">%</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Temp</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">°C</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Pressure</div>
-                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">bar</span></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Bowl RPM</div>
-                <div class="metric-value"><?= fmt($1, $2) ?></div>
-            </div>
-            <div class="kpi">
-                <div class="metric-label">Screw RPM</div>
-                <div class="metric-value"><?= fmt($1, $2) ?></div>
-            </div>
-        </div>
-
-        <div class="chart-grid">
-            <div class="chart-panel">
-                <h3>Tricanter Trend</h3>
-                <canvas id="tricanterChart"></canvas>
-            </div>
-        </div>
-
-        <div class="table-wrap" id="tricanterFeed">
-            <table>
-                <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Bowl Speed</th>
-                    <th>Screw Speed</th>
-                    <th>Bowl RPM</th>
-                    <th>Screw RPM</th>
-                    <th>Impeller</th>
-                    <th>Feed Rate</th>
-                    <th>Torque</th>
-                    <th>Temp</th>
-                    <th>Pressure</th>
-                    <th>Comments</th>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($recentTricanter as $row): ?>
-                    <tr class="tricanter-row" data-id="<?= (int)$row['id'] ?>">
-                        <td><?= h($row['id']) ?></td>
-                        <td><?= h($row['log_date']) ?></td>
-                        <td><?= h($row['log_time']) ?></td>
-                        <td><?= h($row['bowl_speed']) ?></td>
-                        <td><?= h($row['screw_speed']) ?></td>
-                        <td><?= h($row['bowl_rpm']) ?></td>
-                        <td><?= h($row['screw_rpm']) ?></td>
-                        <td><?= h($row['impeller']) ?></td>
-                        <td><?= h($row['feed_rate']) ?></td>
-                        <td><?= h($row['torque']) ?></td>
-                        <td><?= h($row['temp']) ?></td>
-                        <td><?= h($row['pressure']) ?></td>
-                        <td><?= h($row['comments']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="table">
+<table>
+<tr>
+<th>ID</th><th>Date</th><th>Time</th><th>Nozzle</th><th>Flow</th><th>Pressure</th><th>Min</th><th>Max</th><th>RPM</th>
+</tr>
+<?php foreach($nozzle as $r): ?>
+<tr class="nozzle-row" data-id="<?=$r['id']?>">
+<td><?=$r['id']?></td>
+<td><?=$r['log_date']?></td>
+<td><?=$r['log_time']?></td>
+<td><?=$r['nozzle']?></td>
+<td><?=fmt($r['flow'],1)?></td>
+<td><?=fmt($r['pressure'],2)?></td>
+<td><?=fmt($r['min_deg'],0)?></td>
+<td><?=fmt($r['max_deg'],0)?></td>
+<td><?=fmt($r['rpm'],1)?></td>
+</tr>
+<?php endforeach; ?>
+</table>
+</div>
 </div>
 
-<div class="footer-note">Dashboard auto-refreshes every 30 seconds. Trending charts show the latest 30 records from each table.</div>
+<!-- TRICANTER -->
+<div class="panel">
+<h2>Tricanter</h2>
 
-</div><script>
-const nozzleLabels = <?= json_encode($nozzleLabels) ?>;
-const nozzleFlow = <?= json_encode($nozzleFlow) ?>;
-const nozzlePressure = <?= json_encode($nozzlePressure) ?>;
-const nozzleRpm = <?= json_encode($nozzleRpm) ?>;
-const nozzleMinDeg = <?= json_encode($nozzleMinDeg) ?>;
-const nozzleMaxDeg = <?= json_encode($nozzleMaxDeg) ?>;
+<div class="kpis">
+<div class="kpi"><small>Feed</small><b><?=fmt($latestTricanter['feed_rate']??null,2)?></b></div>
+<div class="kpi"><small>Torque</small><b><?=fmt($latestTricanter['torque']??null,1)?></b></div>
+<div class="kpi"><small>Temp</small><b><?=fmt($latestTricanter['temp']??null,1)?></b></div>
+<div class="kpi"><small>Pressure</small><b><?=fmt($latestTricanter['pressure']??null,3)?></b></div>
+<div class="kpi"><small>Bowl RPM</small><b><?=fmt($latestTricanter['bowl_rpm']??null,0)?></b></div>
+<div class="kpi"><small>Screw RPM</small><b><?=fmt($latestTricanter['screw_rpm']??null,2)?></b></div>
+</div>
 
-const tricanterLabels = <?= json_encode($tricanterLabels) ?>;
-const tricanterFeedRate = <?= json_encode($tricanterFeedRate) ?>;
-const tricanterTorque = <?= json_encode($tricanterTorque) ?>;
-const tricanterTemp = <?= json_encode($tricanterTemp) ?>;
-const tricanterPressure = <?= json_encode($tricanterPressure) ?>;
-const tricanterBowlRpm = <?= json_encode($tricanterBowlRpm) ?>;
-const tricanterScrewRpm = <?= json_encode($tricanterScrewRpm) ?>;
+<canvas id="triChart" class="chart"></canvas>
 
-function baseChartOptions() {
-    return {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        plugins: {
-            legend: { labels: { color: '#dcecff' } }
-        },
-        scales: {
-            x: {
-                display: false,
-                ticks: { display: false },
-                grid: { display: false }
-            },
-            y: {
-                display: false,
-                ticks: { display: false },
-                grid: { display: false },
-                grace: '8%'
-            }
-        },
-        elements: {
-            point: {
-                radius: 0,
-                hoverRadius: 3
-            }
-        }
-    };
-}
+<div class="table">
+<table>
+<tr>
+<th>ID</th><th>Date</th><th>Time</th><th>Feed</th><th>Torque</th><th>Temp</th><th>Pressure</th>
+</tr>
+<?php foreach($tricanter as $r): ?>
+<tr class="tri-row" data-id="<?=$r['id']?>">
+<td><?=$r['id']?></td>
+<td><?=$r['log_date']?></td>
+<td><?=$r['log_time']?></td>
+<td><?=fmt($r['feed_rate'],2)?></td>
+<td><?=fmt($r['torque'],1)?></td>
+<td><?=fmt($r['temp'],1)?></td>
+<td><?=fmt($r['pressure'],3)?></td>
+</tr>
+<?php endforeach; ?>
+</table>
+</div>
+</div>
 
-new Chart(document.getElementById('nozzleChart'), {
-    type: 'line',
-    data: {
-        labels: nozzleLabels,
-        datasets: [
-            { label: 'Flow', data: nozzleFlow, borderColor: '#00d3ff', backgroundColor: 'rgba(0,211,255,0.1)', tension: 0.25, yAxisID: 'yFlow' },
-            { label: 'Pressure', data: nozzlePressure, borderColor: '#ffd24d', backgroundColor: 'rgba(255,210,77,0.1)', tension: 0.25, yAxisID: 'yPressure' },
-            { label: 'RPM', data: nozzleRpm, borderColor: '#ff7e67', backgroundColor: 'rgba(255,126,103,0.1)', tension: 0.25, yAxisID: 'yRpm' },
-            { label: 'Min Deg', data: nozzleMinDeg, borderColor: '#6ee7a1', backgroundColor: 'rgba(110,231,161,0.1)', tension: 0.25, yAxisID: 'yMinDeg' },
-            { label: 'Max Deg', data: nozzleMaxDeg, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25, yAxisID: 'yMaxDeg' }
-        ]
-    },
-    options: {
-        ...baseChartOptions(),
-        plugins: {
-            legend: {
-                labels: {
-                    color: '#dcecff',
-                    boxWidth: 10,
-                    padding: 10,
-                    font: { size: 11 }
-                }
-            }
-        },
-        scales: {
-            x: {
-                display: false,
-                ticks: { display: false },
-                grid: { display: false }
-            },
-            yFlow: { display: false, grace: '8%' },
-            yPressure: { display: false, grace: '8%' },
-            yRpm: { display: false, grace: '8%' },
-            yMinDeg: { display: false, grace: '8%' },
-            yMaxDeg: { display: false, grace: '8%' }
-        }
-    }
+</div>
+
+<script>
+
+// NEW ROW FLASH
+function flashRows(cls,key){
+let last=localStorage.getItem(key)||0;
+let max=last;
+
+document.querySelectorAll(cls).forEach(r=>{
+let id=parseInt(r.dataset.id);
+if(id>last){r.classList.add('flash');}
+if(id>max)max=id;
 });
 
-new Chart(document.getElementById('tricanterChart'), {
-    type: 'line',
-    data: {
-        labels: tricanterLabels,
-        datasets: [
-            { label: 'Feed Rate', data: tricanterFeedRate, borderColor: '#00d3ff', backgroundColor: 'rgba(0,211,255,0.1)', tension: 0.25, yAxisID: 'yFeedRate' },
-            { label: 'Torque', data: tricanterTorque, borderColor: '#ffd24d', backgroundColor: 'rgba(255,210,77,0.1)', tension: 0.25, yAxisID: 'yTorque' },
-            { label: 'Temp', data: tricanterTemp, borderColor: '#ff7e67', backgroundColor: 'rgba(255,126,103,0.1)', tension: 0.25, yAxisID: 'yTemp' },
-            { label: 'Pressure', data: tricanterPressure, borderColor: '#6ee7a1', backgroundColor: 'rgba(110,231,161,0.1)', tension: 0.25, yAxisID: 'yPressure' },
-            { label: 'Bowl RPM', data: tricanterBowlRpm, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25, yAxisID: 'yBowlRpm' },
-            { label: 'Screw RPM', data: tricanterScrewRpm, borderColor: '#ff9bd6', backgroundColor: 'rgba(255,155,214,0.1)', tension: 0.25, yAxisID: 'yScrewRpm' }
-        ]
-    },
-    options: {
-        ...baseChartOptions(),
-        plugins: {
-            legend: {
-                labels: {
-                    color: '#dcecff',
-                    boxWidth: 10,
-                    padding: 10,
-                    font: { size: 11 }
-                }
-            }
-        },
-        scales: {
-            x: {
-                display: false,
-                ticks: { display: false },
-                grid: { display: false }
-            },
-            yFeedRate: { display: false, grace: '8%' },
-            yTorque: { display: false, grace: '8%' },
-            yTemp: { display: false, grace: '8%' },
-            yPressure: { display: false, grace: '8%' },
-            yBowlRpm: { display: false, grace: '8%' },
-            yScrewRpm: { display: false, grace: '8%' }
-        }
-    }
-});
-
-function setupFeed(rowSelector, storageKey, feedId) {
-    const rows = document.querySelectorAll(rowSelector);
-    const feed = document.getElementById(feedId);
-
-    let lastSeenId = parseInt(localStorage.getItem(storageKey) || '0', 10);
-    let maxIdOnPage = lastSeenId;
-    let firstNewRow = null;
-
-    rows.forEach((row) => {
-        const rowId = parseInt(row.dataset.id || '0', 10);
-        if (rowId > lastSeenId) {
-            row.classList.add('flash');
-            if (!firstNewRow) {
-                firstNewRow = row;
-            }
-        }
-        if (rowId > maxIdOnPage) {
-            maxIdOnPage = rowId;
-        }
-    });
-
-    if (feed) {
-        if (firstNewRow) {
-            firstNewRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-            feed.scrollTop = 0;
-        }
-    }
-
-    localStorage.setItem(storageKey, String(maxIdOnPage));
+localStorage.setItem(key,max);
 }
 
-setupFeed('.nozzle-row', 'scada_last_nozzle_id', 'nozzleFeed');
-setupFeed('.tricanter-row', 'scada_last_tricanter_id', 'tricanterFeed');
-</script></body>
+flashRows('.nozzle-row','nLast');
+flashRows('.tri-row','tLast');
+
+// CHARTS (auto-scale per dataset)
+function chart(id,data,color){
+new Chart(document.getElementById(id),{
+type:'line',
+data:{labels:data.map((_,i)=>i),datasets:[{data:data,borderColor:color,tension:.3}]},
+options:{
+responsive:true,
+maintainAspectRatio:false,
+scales:{x:{display:false},y:{display:false}}
+}
+});
+}
+
+chart('nozzleChart', <?=json_encode(array_column($nozzle,'flow'))?>, '#00ffff');
+chart('triChart', <?=json_encode(array_column($tricanter,'feed_rate'))?>, '#00ff88');
+
+</script>
+
+</body>
 </html>
