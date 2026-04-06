@@ -184,8 +184,9 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
 
     .main-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 18px;
+        align-items: start;
     }
 
     .section-title {
@@ -235,7 +236,9 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
         border: 1px solid rgba(30, 80, 120, 0.7);
         border-radius: 12px;
         padding: 12px;
-        min-height: 290px;
+        height: 260px;
+        min-height: 260px;
+        overflow: hidden;
     }
 
     .chart-panel h3 {
@@ -245,16 +248,17 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
     }
 
     .table-wrap {
-        max-height: 420px;
+        max-height: 360px;
         overflow: auto;
         border-radius: 10px;
         border: 1px solid rgba(30, 80, 120, 0.7);
+        width: 100%;
     }
 
     table {
         width: 100%;
         border-collapse: collapse;
-        min-width: 900px;
+        table-layout: auto;
     }
 
     th, td {
@@ -297,6 +301,7 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
     @media (max-width: 1200px) {
         .topbar { grid-template-columns: 1fr 1fr; }
         .main-grid { grid-template-columns: 1fr; }
+        .table-wrap { max-height: 320px; }
     }
 
     @media (max-width: 760px) {
@@ -304,6 +309,17 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
         .brand h1 { font-size: 24px; }
         .metric-value { font-size: 24px; }
         .wrap { padding: 12px; }
+        .chart-panel {
+            height: 220px;
+            min-height: 220px;
+        }
+        th, td {
+            font-size: 11px;
+            padding: 7px 8px;
+        }
+        .table-wrap {
+            max-height: 280px;
+        }
     }
 </style>
 
@@ -548,7 +564,19 @@ new Chart(document.getElementById('nozzleChart'), {
             { label: 'Max Deg', data: nozzleMaxDeg, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25 }
         ]
     },
-    options: baseChartOptions()
+    options: {
+        ...baseChartOptions(),
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#dcecff',
+                    boxWidth: 10,
+                    padding: 10,
+                    font: { size: 11 }
+                }
+            }
+        }
+    }
 });
 
 new Chart(document.getElementById('tricanterChart'), {
@@ -564,7 +592,19 @@ new Chart(document.getElementById('tricanterChart'), {
             { label: 'Screw RPM', data: tricanterScrewRpm, borderColor: '#ff9bd6', backgroundColor: 'rgba(255,155,214,0.1)', tension: 0.25 }
         ]
     },
-    options: baseChartOptions()
+    options: {
+        ...baseChartOptions(),
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#dcecff',
+                    boxWidth: 10,
+                    padding: 10,
+                    font: { size: 11 }
+                }
+            }
+        }
+    }
 });
 
 function setupFeed(rowSelector, storageKey, feedId) {
