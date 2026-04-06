@@ -1,6 +1,8 @@
 <?php
 session_start();
 
+date_default_timezone_set('Australia/Adelaide');
+
 $host = "mariadb";
 $dbname = "myapp";
 $dbuser = "zack";
