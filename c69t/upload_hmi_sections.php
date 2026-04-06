@@ -46,6 +46,12 @@ function parse_log_time($value) {
         return null;
     }
 
+    if (is_numeric($value)) {
+        $seconds = (int) round(((float)$value) * 86400);
+        $seconds = $seconds % 86400;
+        return gmdate('H:i:s', $seconds);
+    }
+
     $formats = [
         'H:i:s',
         'H:i',
@@ -85,8 +91,16 @@ try {
     }
 
     $records = json_decode($payloadJson, true);
+
     if (!is_array($records)) {
         fail("Invalid payload JSON");
+    }
+
+    // Handle both:
+    // 1) a single object: {"table":"TRICANTER","data":{...}}
+    // 2) an array of objects: [{"table":"NOZZLE","data":{...}}, {...}]
+    if (isset($records['table']) && isset($records['data'])) {
+        $records = [$records];
     }
 
     $pdo = new PDO(
@@ -133,11 +147,13 @@ try {
     $inserted = 0;
 
     foreach ($records as $record) {
+
         if (!isset($record['table']) || !isset($record['data']) || !is_array($record['data'])) {
             continue;
         }
 
         $section = strtoupper(trim((string)$record['table']));
+
         if (!isset($sectionMap[$section])) {
             continue;
         }
@@ -150,6 +166,9 @@ try {
         ];
 
         foreach ($record['data'] as $key => $value) {
+
+            $key = trim((string)$key);
+
             if (!isset($allowedColumns[$key])) {
                 continue;
             }
@@ -172,7 +191,13 @@ try {
             $insertData[$column] = $value;
         }
 
+        // Skip if only source_file exists and no mapped section fields were found
+        if (count($insertData) <= 1) {
+            continue;
+        }
+
         $columns = array_keys($insertData);
+
         $quotedColumns = array_map(function ($col) {
             return "`" . $col . "`";
         }, $columns);
@@ -195,11 +220,16 @@ try {
         $inserted++;
     }
 
+    if ($inserted === 0) {
+        fail("No records inserted (mapping mismatch or empty data)", 400);
+    }
+
     echo json_encode([
         "status" => "success",
         "message" => "Records uploaded",
         "inserted" => $inserted
     ]);
+
 } catch (Throwable $e) {
     fail($e->getMessage(), 500);
 }
