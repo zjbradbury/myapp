@@ -101,7 +101,6 @@ $lastTricanterStamp = trim(($latestTricanter['log_date'] ?? '-') . ' ' . ($lates
 <meta http-equiv="refresh" content="30">
 <title>SCADA Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
 body {
     background: #0b1e2d;
@@ -127,12 +126,14 @@ h1 {
     background: #122c44;
     padding: 12px;
     border-radius: 10px;
+    min-width: 0;
 }
 
 .info-title {
     font-size: 12px;
     color: #9ec3df;
     text-transform: uppercase;
+    letter-spacing: .8px;
     margin-bottom: 6px;
 }
 
@@ -144,14 +145,20 @@ h1 {
 .info-sub {
     font-size: 12px;
     color: #b7ccdd;
+    margin-top: 4px;
 }
 
-.status-online { color: #7dffb2; }
-.status-offline { color: #ffd36d; }
+.status-online {
+    color: #7dffb2;
+}
+
+.status-offline {
+    color: #ffd36d;
+}
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
     gap: 15px;
 }
 
@@ -159,11 +166,12 @@ h1 {
     background: #122c44;
     padding: 10px;
     border-radius: 10px;
+    min-width: 0;
 }
 
 .kpis {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0,1fr));
     gap: 8px;
     margin-bottom: 10px;
 }
@@ -175,16 +183,46 @@ h1 {
     text-align: center;
 }
 
-.kpi small { color: #b9c7d4; }
-.kpi b { font-size: 18px; }
+.kpi small {
+    color: #b9c7d4;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.kpi b {
+    font-size: 18px;
+}
+
+.chart-card {
+    background: #10273c;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.chart-title {
+    font-size: 11px;
+    color: #b9c7d4;
+    margin-bottom: 6px;
+}
 
 .chart-wrap {
+    position: relative;
+    width: 100%;
     height: 220px;
+    overflow: hidden;
+}
+
+.chart-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
 }
 
 .table {
     max-height: 320px;
     overflow: auto;
+    border-radius: 8px;
 }
 
 table {
@@ -196,6 +234,7 @@ th, td {
     padding: 6px;
     font-size: 11px;
     border-bottom: 1px solid #1f4a6e;
+    white-space: nowrap;
 }
 
 th {
@@ -204,15 +243,26 @@ th {
     top: 0;
 }
 
-.flash { animation: flash 2s 3; }
+.flash {
+    animation: flash 2s 3;
+}
 
 @keyframes flash {
     0% { background: yellow; color: black; }
-    100% { background: inherit; }
+    100% { background: inherit; color: inherit; }
+}
+
+@media (max-width: 1200px) {
+    .topbar { grid-template-columns: 1fr 1fr; }
+    .grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 700px) {
+    .topbar, .kpis { grid-template-columns: 1fr; }
+    .info-value { font-size: 20px; }
 }
 </style>
 </head>
-
 <body>
 
 <h1>SCADA Dashboard</h1>
@@ -220,69 +270,207 @@ th {
 <div class="topbar">
     <div class="info-card">
         <div class="info-title">System Status</div>
-        <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>">
-            <?= h($systemStatus) ?>
-        </div>
+        <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>"><?= h($systemStatus) ?></div>
+        <div class="info-sub">Auto refresh every 30 seconds</div>
     </div>
-
     <div class="info-card">
-        <div class="info-title">Latest Nozzle</div>
+        <div class="info-title">Latest Nozzle Log</div>
         <div class="info-value"><?= h($latestNozzle['id'] ?? '-') ?></div>
         <div class="info-sub"><?= h($lastNozzleStamp) ?></div>
     </div>
-
     <div class="info-card">
-        <div class="info-title">Latest Tricanter</div>
+        <div class="info-title">Latest Tricanter Log</div>
         <div class="info-value"><?= h($latestTricanter['id'] ?? '-') ?></div>
         <div class="info-sub"><?= h($lastTricanterStamp) ?></div>
     </div>
-
     <div class="info-card">
-        <div class="info-title">Records</div>
-        <div class="info-value"><?= count($nozzle)+count($tricanter) ?></div>
+        <div class="info-title">Records Loaded</div>
+        <div class="info-value"><?= count($nozzle) + count($tricanter) ?></div>
+        <div class="info-sub">30 nozzle + 30 tricanter max</div>
     </div>
 </div>
 
 <div class="grid">
 
 <div class="panel">
-<h2>Nozzle</h2>
+    <h2>Nozzle</h2>
 
-<div class="kpis">
-<div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'],1) ?></b></div>
-<div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'],2) ?></b></div>
-<div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'],1) ?></b></div>
-</div>
+    <div class="kpis">
+        <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?></b></div>
+        <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'] ?? null, 1) ?></b></div>
+        <div class="kpi"><small>Min Deg</small><b><?= fmt($latestNozzle['min_deg'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Max Deg</small><b><?= fmt($latestNozzle['max_deg'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Nozzle</small><b><?= h($latestNozzle['nozzle'] ?? '-') ?></b></div>
+    </div>
 
-<div class="chart-wrap"><canvas id="nozzleCombinedChart"></canvas></div>
+    <div class="chart-card">
+        <div class="chart-title">Nozzle Trends</div>
+        <div class="chart-wrap"><canvas id="nozzleCombinedChart"></canvas></div>
+    </div>
+
+    <div class="table">
+        <table>
+            <tr>
+                <th>ID</th><th>Date</th><th>Time</th><th>Nozzle</th><th>Flow</th><th>Pressure</th><th>Min</th><th>Max</th><th>RPM</th>
+            </tr>
+            <?php foreach ($nozzle as $r): ?>
+            <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
+                <td><?= h($r['id']) ?></td>
+                <td><?= h($r['log_date']) ?></td>
+                <td><?= h($r['log_time']) ?></td>
+                <td><?= h($r['nozzle']) ?></td>
+                <td><?= fmt($r['flow'] ?? null, 1) ?></td>
+                <td><?= fmt($r['pressure'] ?? null, 2) ?></td>
+                <td><?= fmt($r['min_deg'] ?? null, 0) ?></td>
+                <td><?= fmt($r['max_deg'] ?? null, 0) ?></td>
+                <td><?= fmt($r['rpm'] ?? null, 1) ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
 </div>
 
 <div class="panel">
-<h2>Tricanter</h2>
+    <h2>Tricanter</h2>
 
-<div class="kpis">
-<div class="kpi"><small>Bowl</small><b><?= fmt($latestTricanter['bowl_speed'],0) ?></b></div>
-<div class="kpi"><small>Screw</small><b><?= fmt($latestTricanter['screw_speed'],2) ?></b></div>
-<div class="kpi"><small>Torque</small><b><?= fmt($latestTricanter['torque'],1) ?></b></div>
-</div>
+    <div class="kpis">
+        <div class="kpi"><small>Bowl Speed</small><b><?= fmt($latestTricanter['bowl_speed'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Screw Speed</small><b><?= fmt($latestTricanter['screw_speed'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>Bowl RPM</small><b><?= fmt($latestTricanter['bowl_rpm'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Screw RPM</small><b><?= fmt($latestTricanter['screw_rpm'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>Impeller</small><b><?= fmt($latestTricanter['impeller'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Feed Rate</small><b><?= fmt($latestTricanter['feed_rate'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>Torque</small><b><?= fmt($latestTricanter['torque'] ?? null, 1) ?></b></div>
+        <div class="kpi"><small>Temp</small><b><?= fmt($latestTricanter['temp'] ?? null, 1) ?></b></div>
+        <div class="kpi"><small>Pressure</small><b><?= fmt($latestTricanter['pressure'] ?? null, 3) ?></b></div>
+    </div>
 
-<div class="chart-wrap"><canvas id="tricanterCombinedChart"></canvas></div>
+    <div class="chart-card">
+        <div class="chart-title">Tricanter Trends</div>
+        <div class="chart-wrap"><canvas id="tricanterCombinedChart"></canvas></div>
+    </div>
+
+    <div class="table">
+        <table>
+            <tr>
+                <th>ID</th><th>Date</th><th>Time</th><th>Bowl Speed</th><th>Screw Speed</th><th>Bowl RPM</th><th>Screw RPM</th><th>Impeller</th><th>Feed</th><th>Torque</th><th>Temp</th><th>Pressure</th>
+            </tr>
+            <?php foreach ($tricanter as $r): ?>
+            <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
+                <td><?= h($r['id']) ?></td>
+                <td><?= h($r['log_date']) ?></td>
+                <td><?= h($r['log_time']) ?></td>
+                <td><?= fmt($r['bowl_speed'] ?? null, 0) ?></td>
+                <td><?= fmt($r['screw_speed'] ?? null, 2) ?></td>
+                <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?></td>
+                <td><?= fmt($r['screw_rpm'] ?? null, 2) ?></td>
+                <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
+                <td><?= fmt($r['feed_rate'] ?? null, 2) ?></td>
+                <td><?= fmt($r['torque'] ?? null, 1) ?></td>
+                <td><?= fmt($r['temp'] ?? null, 1) ?></td>
+                <td><?= fmt($r['pressure'] ?? null, 3) ?></td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
 </div>
 
 </div>
 
 <script>
-function makeChart(id,data,label,color){
-    new Chart(document.getElementById(id),{
-        type:'line',
-        data:{labels:data.map((_,i)=>i+1),
-        datasets:[{label:label,data:data,borderColor:color,tension:0.2}]},
-        options:{plugins:{legend:{labels:{color:'#fff'}}}}
+function flashRows(selector, storageKey) {
+    let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    let max = last;
+
+    document.querySelectorAll(selector).forEach(row => {
+        const id = parseInt(row.dataset.id || '0', 10);
+        if (id > last) row.classList.add('flash');
+        if (id > max) max = id;
+    });
+
+    localStorage.setItem(storageKey, String(max));
+}
+
+flashRows('.nozzle-row', 'nLast');
+flashRows('.tri-row', 'tLast');
+
+function makeCombinedChart(canvasId, datasets) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
+    if (valid.length === 0) return;
+
+    const maxLen = Math.max(...valid.map(ds => ds.data.length));
+    const labels = Array.from({ length: maxLen }, (_, i) => i + 1);
+
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: valid.map(ds => ({
+                label: ds.label,
+                data: ds.data,
+                borderColor: ds.color,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                tension: 0.25,
+                pointRadius: 0,
+                yAxisID: ds.axis
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: '#dcecff',
+                        boxWidth: 10,
+                        padding: 10,
+                        font: { size: 11 }
+                    }
+                },
+                tooltip: { enabled: true }
+            },
+            scales: {
+                x: { display: false },
+                y1: { display: false },
+                y2: { display: false },
+                y3: { display: false },
+                y4: { display: false },
+                y5: { display: false },
+                y6: { display: false },
+                y7: { display: false },
+                y8: { display: false },
+                y9: { display: false }
+            }
+        }
     });
 }
 
-makeChart('nozzleCombinedChart',<?= json_encode($nozzleFlowSeries) ?>,'Flow','#00ffff');
-makeChart('tricanterCombinedChart',<?= json_encode($tricanterTorqueSeries) ?>,'Torque','#ff7e67');
+makeCombinedChart('nozzleCombinedChart', [
+    { label: 'Flow', data: <?= json_encode($nozzleFlowSeries) ?>, color: '#00ffff', axis: 'y1' },
+    { label: 'Pressure', data: <?= json_encode($nozzlePressureSeries) ?>, color: '#ffd24d', axis: 'y2' },
+    { label: 'Min Deg', data: <?= json_encode($nozzleMinDegSeries) ?>, color: '#6ee7a1', axis: 'y3' },
+    { label: 'Max Deg', data: <?= json_encode($nozzleMaxDegSeries) ?>, color: '#c8a7ff', axis: 'y4' },
+    { label: 'RPM', data: <?= json_encode($nozzleRpmSeries) ?>, color: '#ff7e67', axis: 'y5' }
+]);
+
+makeCombinedChart('tricanterCombinedChart', [
+    { label: 'Bowl Speed', data: <?= json_encode($tricanterBowlSpeedSeries) ?>, color: '#00ffff', axis: 'y1' },
+    { label: 'Screw Speed', data: <?= json_encode($tricanterScrewSpeedSeries) ?>, color: '#ffd24d', axis: 'y2' },
+    { label: 'Bowl RPM', data: <?= json_encode($tricanterBowlRpmSeries) ?>, color: '#c8a7ff', axis: 'y3' },
+    { label: 'Screw RPM', data: <?= json_encode($tricanterScrewRpmSeries) ?>, color: '#ff9bd6', axis: 'y4' },
+    { label: 'Impeller', data: <?= json_encode($tricanterImpellerSeries) ?>, color: '#b6ff7a', axis: 'y5' },
+    { label: 'Feed Rate', data: <?= json_encode($tricanterFeedRateSeries) ?>, color: '#00ff88', axis: 'y6' },
+    { label: 'Torque', data: <?= json_encode($tricanterTorqueSeries) ?>, color: '#ff7e67', axis: 'y7' },
+    { label: 'Temp', data: <?= json_encode($tricanterTempSeries) ?>, color: '#ffb36b', axis: 'y8' },
+    { label: 'Pressure', data: <?= json_encode($tricanterPressureSeries) ?>, color: '#8fd3ff', axis: 'y9' }
+]);
 </script>
 
 </body>
