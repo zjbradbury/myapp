@@ -99,6 +99,48 @@ if (!function_exists('get_current_shift_range')) {
     }
 }
 
+if (!function_exists('solid_diff_minutes_rows')) {
+    function solid_diff_minutes_rows(array $rows): array {
+        $chronological = array_reverse($rows);
+        $prevTs = null;
+
+        foreach ($chronological as &$row) {
+            $currentTs = null;
+
+            if (!empty($row['log_date']) && !empty($row['log_time'])) {
+                $currentTs = strtotime($row['log_date'] . ' ' . $row['log_time']);
+            }
+
+            if ($currentTs !== null && $prevTs !== null) {
+                $row['_diff_minutes'] = round(($currentTs - $prevTs) / 60, 2);
+            } else {
+                $row['_diff_minutes'] = null;
+            }
+
+            if ($currentTs !== null) {
+                $prevTs = $currentTs;
+            }
+        }
+        unset($row);
+
+        return array_reverse($chronological);
+    }
+}
+
+if (!function_exists('solid_diff_series')) {
+    function solid_diff_series(array $rows): array {
+        $out = [];
+        foreach (array_reverse($rows) as $row) {
+            if (isset($row['_diff_minutes']) && $row['_diff_minutes'] !== null && is_numeric($row['_diff_minutes'])) {
+                $out[] = (float)$row['_diff_minutes'];
+            } else {
+                $out[] = null;
+            }
+        }
+        return $out;
+    }
+}
+
 /* =========================
    RANGE FILTER
    ========================= */
@@ -229,6 +271,9 @@ try {
     die("DB Error: " . h($e->getMessage()));
 }
 
+$solidWaste = solid_diff_minutes_rows($solidWaste);
+$latestSolidWaste = $solidWaste[0] ?? [];
+
 $nozzleFlowSeries = numeric_series($nozzle, 'flow');
 $nozzlePressureSeries = numeric_series($nozzle, 'pressure');
 $nozzleMinDegSeries = numeric_series($nozzle, 'min_deg');
@@ -246,6 +291,17 @@ $tricanterTorqueSeries = numeric_series($tricanter, 'torque');
 $tricanterTempSeries = numeric_series($tricanter, 'temp');
 $tricanterPressureSeries = numeric_series($tricanter, 'pressure');
 $tricanterLabels = label_series($tricanter);
+
+$solidWasteLabels = label_series($solidWaste);
+$solidWasteAmountSeries = numeric_series($solidWaste, 'amount');
+$solidWasteDiffSeries = solid_diff_series($solidWaste);
+
+$solidWasteTotalAmount = 0.0;
+foreach ($solidWaste as $r) {
+    if (isset($r['amount']) && $r['amount'] !== '' && is_numeric($r['amount'])) {
+        $solidWasteTotalAmount += (float)$r['amount'];
+    }
+}
 
 $systemStatus = (!empty($latestNozzleOverall) || !empty($latestTricanterOverall) || !empty($latestSolidWasteOverall)) ? 'ONLINE' : 'NO DATA';
 
@@ -558,18 +614,6 @@ th {
     font-size: 12px;
 }
 
-.solid-comments {
-    font-size: 11px;
-    color: #dcecff;
-    line-height: 1.3;
-    background: #10273c;
-    border-radius: 8px;
-    padding: 8px;
-    margin-bottom: 10px;
-    min-height: 42px;
-    word-break: break-word;
-}
-
 @media (max-width: 1600px) {
     .grid { grid-template-columns: 1fr 1fr; }
 }
@@ -800,23 +844,23 @@ th {
     <h2>Solid Waste</h2>
 
     <div class="kpis">
-        <div class="kpi"><small>Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 2) ?></b></div>
-        <div class="kpi"><small>Source</small><b><?= h($latestSolidWaste['source_file'] ?? '-') ?></b></div>
+        <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>Total Amount</small><b><?= fmt($solidWasteTotalAmount, 2) ?></b></div>
         <div class="kpi"><small>Last Time</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b></div>
     </div>
 
     <div class="chart-card">
-        <div class="chart-title">Latest Comments</div>
-        <div class="solid-comments"><?= h($latestSolidWaste['comments'] ?? '-') ?></div>
+        <div class="chart-title">Solid Waste Trends</div>
+        <div class="chart-wrap"><canvas id="solidWasteCombinedChart"></canvas></div>
     </div>
 
     <div class="table">
         <table>
             <tr>
-                <th>ID</th><th>Date</th><th>Time</th><th>Amount</th><th>Comments</th>
+                <th>ID</th><th>Date</th><th>Time</th><th>Amount</th><th>Diff (min)</th><th>Comments</th>
             </tr>
             <?php if (!$solidWaste): ?>
-                <tr><td colspan="5">No solid waste data in selected range.</td></tr>
+                <tr><td colspan="6">No solid waste data in selected range.</td></tr>
             <?php else: ?>
                 <?php foreach ($solidWaste as $r): ?>
                 <tr class="solid-row" data-id="<?= (int)$r['id'] ?>">
@@ -824,6 +868,7 @@ th {
                     <td><?= h($r['log_date']) ?></td>
                     <td><?= h($r['log_time']) ?></td>
                     <td><?= fmt($r['amount'] ?? null, 2) ?></td>
+                    <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?></td>
                     <td><?= h($r['comments'] ?? '') ?></td>
                 </tr>
                 <?php endforeach; ?>
@@ -871,6 +916,7 @@ function makeCombinedChart(canvasId, labels, datasets) {
                 borderWidth: 2,
                 tension: 0.25,
                 pointRadius: 0,
+                spanGaps: true,
                 yAxisID: ds.axis
             }))
         },
@@ -931,6 +977,11 @@ makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>
     { label: 'Torque', data: <?= json_encode($tricanterTorqueSeries) ?>, color: '#ff7e67', axis: 'y7' },
     { label: 'Temp', data: <?= json_encode($tricanterTempSeries) ?>, color: '#ffb36b', axis: 'y8' },
     { label: 'Pressure', data: <?= json_encode($tricanterPressureSeries) ?>, color: '#8fd3ff', axis: 'y9' }
+]);
+
+makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [
+    { label: 'Amount', data: <?= json_encode($solidWasteAmountSeries) ?>, color: '#00ff88', axis: 'y1' },
+    { label: 'Diff (min)', data: <?= json_encode($solidWasteDiffSeries) ?>, color: '#ffd24d', axis: 'y2' }
 ]);
 </script>
 
