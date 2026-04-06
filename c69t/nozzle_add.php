@@ -1,6 +1,7 @@
 <?php
 require_once "config.php";
 requireRole(["admin", "operator"]);
+require_once "nav.php";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt = $pdo->prepare("
