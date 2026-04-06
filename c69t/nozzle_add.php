@@ -49,7 +49,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <textarea name="comments" placeholder="Comments"></textarea>
         <button type="submit">Save</button>
     </form>
-    <p><a href="nozzle_list.php">Back</a></p>
 </div>
 </body>
 </html>
