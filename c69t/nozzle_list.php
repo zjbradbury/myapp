@@ -22,7 +22,6 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
             <?php if ($canEdit): ?>
                 <a class="btn" href="nozzle_add.php">Add Record</a>
             <?php endif; ?>
-            <a class="btn" href="dashboard.php">Dashboard</a>
         </div>
     </div>
 
@@ -30,7 +29,6 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Source File</th>
                 <th>Uploaded At</th>
                 <th>Date</th>
                 <th>Time</th>
@@ -48,7 +46,6 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
         <?php foreach ($rows as $row): ?>
             <tr>
                 <td><?= h($row["id"]) ?></td>
-                <td><?= h($row["source_file"]) ?></td>
                 <td><?= h($row["uploaded_at"]) ?></td>
                 <td><?= h($row["log_date"]) ?></td>
                 <td><?= h($row["log_time"]) ?></td>
