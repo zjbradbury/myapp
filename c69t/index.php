@@ -1,8 +1,6 @@
 <?php
 session_start();
 
-require_once "nav.php";
-
 /* =========================
    PAGE PROTECTION
    ========================= */
@@ -264,7 +262,7 @@ th {
 </style>
 </head>
 <body>
-
+<?php require_once "nav.php"; ?>
 <h1>SCADA Dashboard</h1>
 
 <div class="topbar">
