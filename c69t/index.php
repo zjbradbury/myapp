@@ -54,6 +54,91 @@ if (!function_exists('numeric_series')) {
     }
 }
 
+if (!function_exists('label_series')) {
+    function label_series(array $rows): array {
+        $out = [];
+        foreach (array_reverse($rows) as $row) {
+            $out[] = trim(($row['log_date'] ?? '') . ' ' . ($row['log_time'] ?? ''));
+        }
+        return $out;
+    }
+}
+
+if (!function_exists('to_datetime_local_value')) {
+    function to_datetime_local_value(?string $value): string {
+        if (!$value) return '';
+        $ts = strtotime($value);
+        if ($ts === false) return '';
+        return date('Y-m-d\TH:i', $ts);
+    }
+}
+
+/* =========================
+   RANGE FILTER
+   ========================= */
+$rangeStart = trim($_GET['start'] ?? '');
+$rangeEnd   = trim($_GET['end'] ?? '');
+$quickRange = trim($_GET['quick'] ?? '');
+
+if ($quickRange !== '') {
+    $now = time();
+
+    switch ($quickRange) {
+        case 'today':
+            $rangeStart = date('Y-m-d 00:00', $now);
+            $rangeEnd   = date('Y-m-d H:i', $now);
+            break;
+
+        case '12h':
+            $rangeStart = date('Y-m-d H:i', strtotime('-12 hours', $now));
+            $rangeEnd   = date('Y-m-d H:i', $now);
+            break;
+
+        case '24h':
+            $rangeStart = date('Y-m-d H:i', strtotime('-24 hours', $now));
+            $rangeEnd   = date('Y-m-d H:i', $now);
+            break;
+
+        case '7d':
+            $rangeStart = date('Y-m-d H:i', strtotime('-7 days', $now));
+            $rangeEnd   = date('Y-m-d H:i', $now);
+            break;
+
+        case 'clear':
+            $rangeStart = '';
+            $rangeEnd = '';
+            break;
+    }
+}
+
+$startSql = null;
+$endSql = null;
+$rangeError = '';
+
+if ($rangeStart !== '') {
+    $ts = strtotime($rangeStart);
+    if ($ts === false) {
+        $rangeError = 'Invalid start date/time.';
+    } else {
+        $startSql = date('Y-m-d H:i:s', $ts);
+    }
+}
+
+if ($rangeEnd !== '') {
+    $ts = strtotime($rangeEnd);
+    if ($ts === false) {
+        $rangeError = 'Invalid end date/time.';
+    } else {
+        $endSql = date('Y-m-d H:i:s', $ts);
+    }
+}
+
+if ($rangeError === '' && $startSql !== null && $endSql !== null && strtotime($startSql) > strtotime($endSql)) {
+    $rangeError = 'Start date/time must be earlier than end date/time.';
+}
+
+$rangeActive = ($rangeStart !== '' || $rangeEnd !== '');
+
 try {
     $pdo = new PDO(
         "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
@@ -62,11 +147,39 @@ try {
         [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
     );
 
-    $latestNozzle = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
-    $latestTricanter = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC) ?: [];
+    $baseNozzleSql = "SELECT * FROM nozzle_logs";
+    $baseTricanterSql = "SELECT * FROM tricanter_logs";
 
-    $nozzle = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 30")->fetchAll(PDO::FETCH_ASSOC);
-    $tricanter = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 30")->fetchAll(PDO::FETCH_ASSOC);
+    $where = [];
+    $params = [];
+
+    if ($rangeError === '') {
+        if ($startSql !== null) {
+            $where[] = "TIMESTAMP(log_date, log_time) >= :start_dt";
+            $params[':start_dt'] = $startSql;
+        }
+
+        if ($endSql !== null) {
+            $where[] = "TIMESTAMP(log_date, log_time) <= :end_dt";
+            $params[':end_dt'] = $endSql;
+        }
+    }
+
+    $whereSql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+
+    $rowLimit = $rangeActive ? 500 : 30;
+
+    $stmt = $pdo->prepare($baseNozzleSql . $whereSql . " ORDER BY id DESC LIMIT " . (int)$rowLimit);
+    $stmt->execute($params);
+    $nozzle = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $stmt = $pdo->prepare($baseTricanterSql . $whereSql . " ORDER BY id DESC LIMIT " . (int)$rowLimit);
+    $stmt->execute($params);
+    $tricanter = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $latestNozzle = $nozzle[0] ?? [];
+    $latestTricanter = $tricanter[0] ?? [];
+
 } catch (Throwable $e) {
     die("DB Error: " . h($e->getMessage()));
 }
@@ -76,6 +189,7 @@ $nozzlePressureSeries = numeric_series($nozzle, 'pressure');
 $nozzleMinDegSeries = numeric_series($nozzle, 'min_deg');
 $nozzleMaxDegSeries = numeric_series($nozzle, 'max_deg');
 $nozzleRpmSeries = numeric_series($nozzle, 'rpm');
+$nozzleLabels = label_series($nozzle);
 
 $tricanterBowlSpeedSeries = numeric_series($tricanter, 'bowl_speed');
 $tricanterScrewSpeedSeries = numeric_series($tricanter, 'screw_speed');
@@ -86,10 +200,20 @@ $tricanterFeedRateSeries = numeric_series($tricanter, 'feed_rate');
 $tricanterTorqueSeries = numeric_series($tricanter, 'torque');
 $tricanterTempSeries = numeric_series($tricanter, 'temp');
 $tricanterPressureSeries = numeric_series($tricanter, 'pressure');
+$tricanterLabels = label_series($tricanter);
 
 $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' : 'NO DATA';
 $lastNozzleStamp = trim(($latestNozzle['log_date'] ?? '-') . ' ' . ($latestNozzle['log_time'] ?? ''));
 $lastTricanterStamp = trim(($latestTricanter['log_date'] ?? '-') . ' ' . ($latestTricanter['log_time'] ?? ''));
+
+$recordsLoaded = count($nozzle) + count($tricanter);
+$rangeSummary = 'Latest ' . ($rangeActive ? 'filtered data' : '30 nozzle + 30 tricanter max');
+
+if ($rangeStart !== '' || $rangeEnd !== '') {
+    $fromText = $rangeStart !== '' ? date('d/m/Y H:i', strtotime($rangeStart)) : 'Beginning';
+    $toText   = $rangeEnd !== '' ? date('d/m/Y H:i', strtotime($rangeEnd)) : 'Now';
+    $rangeSummary = $fromText . ' → ' . $toText;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -115,7 +239,7 @@ h1 {
 
 .topbar {
     display: grid;
-    grid-template-columns: 1.3fr 1fr 1fr 1fr;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr 2.2fr;
     gap: 12px;
     margin-bottom: 15px;
 }
@@ -250,14 +374,93 @@ th {
     100% { background: inherit; color: inherit; }
 }
 
-@media (max-width: 1200px) {
+.filter-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.filter-form label {
+    font-size: 11px;
+    color: #b7ccdd;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.filter-form input[type="datetime-local"] {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0d2234;
+    color: #fff;
+    border: 1px solid #2a5377;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 12px;
+}
+
+.filter-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.quick-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 2px;
+}
+
+.btn {
+    background: #1f4a6e;
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn:hover {
+    background: #295d89;
+}
+
+.btn-quick {
+    background: #163a59;
+    padding: 7px 10px;
+    font-size: 11px;
+}
+
+.btn-quick:hover {
+    background: #214d74;
+}
+
+.range-error {
+    margin-top: 8px;
+    color: #ff9d9d;
+    font-size: 12px;
+}
+
+.range-active {
+    margin-top: 8px;
+    color: #9ed0f2;
+    font-size: 12px;
+}
+
+@media (max-width: 1400px) {
     .topbar { grid-template-columns: 1fr 1fr; }
     .grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 700px) {
-    .topbar, .kpis { grid-template-columns: 1fr; }
+    .topbar, .kpis, .filter-form { grid-template-columns: 1fr; }
     .info-value { font-size: 20px; }
+    .filter-actions, .quick-actions { flex-direction: column; }
 }
 </style>
 </head>
@@ -271,20 +474,70 @@ th {
         <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>"><?= h($systemStatus) ?></div>
         <div class="info-sub">Auto refresh every 30 seconds</div>
     </div>
+
     <div class="info-card">
         <div class="info-title">Latest Nozzle Log</div>
         <div class="info-value"><?= h($latestNozzle['id'] ?? '-') ?></div>
         <div class="info-sub"><?= h($lastNozzleStamp) ?></div>
     </div>
+
     <div class="info-card">
         <div class="info-title">Latest Tricanter Log</div>
         <div class="info-value"><?= h($latestTricanter['id'] ?? '-') ?></div>
         <div class="info-sub"><?= h($lastTricanterStamp) ?></div>
     </div>
+
     <div class="info-card">
         <div class="info-title">Records Loaded</div>
-        <div class="info-value"><?= count($nozzle) + count($tricanter) ?></div>
-        <div class="info-sub">30 nozzle + 30 tricanter max</div>
+        <div class="info-value"><?= $recordsLoaded ?></div>
+        <div class="info-sub"><?= h($rangeSummary) ?></div>
+    </div>
+
+    <div class="info-card">
+        <div class="info-title">Date / Time Range</div>
+
+        <form method="get" class="filter-form">
+            <div>
+                <label for="start">From</label>
+                <input
+                    type="datetime-local"
+                    id="start"
+                    name="start"
+                    value="<?= h(to_datetime_local_value($rangeStart)) ?>"
+                >
+            </div>
+
+            <div>
+                <label for="end">To</label>
+                <input
+                    type="datetime-local"
+                    id="end"
+                    name="end"
+                    value="<?= h(to_datetime_local_value($rangeEnd)) ?>"
+                >
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn">Apply Range</button>
+                <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
+            </div>
+
+            <div class="quick-actions">
+                <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
+                <button type="submit" name="quick" value="12h" class="btn btn-quick">Last 12 Hours</button>
+                <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
+                <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
+                <button type="submit" name="quick" value="clear" class="btn btn-quick">Clear</button>
+            </div>
+        </form>
+
+        <?php if ($rangeError !== ''): ?>
+            <div class="range-error"><?= h($rangeError) ?></div>
+        <?php elseif ($rangeActive): ?>
+            <div class="range-active">Filtering graphs and tables to selected range</div>
+        <?php else: ?>
+            <div class="range-active">Showing latest records</div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -312,19 +565,23 @@ th {
             <tr>
                 <th>ID</th><th>Date</th><th>Time</th><th>Nozzle</th><th>Flow</th><th>Pressure</th><th>Min</th><th>Max</th><th>RPM</th>
             </tr>
-            <?php foreach ($nozzle as $r): ?>
-            <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['id']) ?></td>
-                <td><?= h($r['log_date']) ?></td>
-                <td><?= h($r['log_time']) ?></td>
-                <td><?= h($r['nozzle']) ?></td>
-                <td><?= fmt($r['flow'] ?? null, 1) ?></td>
-                <td><?= fmt($r['pressure'] ?? null, 2) ?></td>
-                <td><?= fmt($r['min_deg'] ?? null, 0) ?></td>
-                <td><?= fmt($r['max_deg'] ?? null, 0) ?></td>
-                <td><?= fmt($r['rpm'] ?? null, 1) ?></td>
-            </tr>
-            <?php endforeach; ?>
+            <?php if (!$nozzle): ?>
+                <tr><td colspan="9">No nozzle data in selected range.</td></tr>
+            <?php else: ?>
+                <?php foreach ($nozzle as $r): ?>
+                <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
+                    <td><?= h($r['id']) ?></td>
+                    <td><?= h($r['log_date']) ?></td>
+                    <td><?= h($r['log_time']) ?></td>
+                    <td><?= h($r['nozzle']) ?></td>
+                    <td><?= fmt($r['flow'] ?? null, 1) ?></td>
+                    <td><?= fmt($r['pressure'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['min_deg'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['max_deg'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['rpm'] ?? null, 1) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </table>
     </div>
 </div>
@@ -354,22 +611,26 @@ th {
             <tr>
                 <th>ID</th><th>Date</th><th>Time</th><th>Bowl Speed</th><th>Screw Speed</th><th>Bowl RPM</th><th>Screw RPM</th><th>Impeller</th><th>Feed</th><th>Torque</th><th>Temp</th><th>Pressure</th>
             </tr>
-            <?php foreach ($tricanter as $r): ?>
-            <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['id']) ?></td>
-                <td><?= h($r['log_date']) ?></td>
-                <td><?= h($r['log_time']) ?></td>
-                <td><?= fmt($r['bowl_speed'] ?? null, 0) ?></td>
-                <td><?= fmt($r['screw_speed'] ?? null, 2) ?></td>
-                <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?></td>
-                <td><?= fmt($r['screw_rpm'] ?? null, 2) ?></td>
-                <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
-                <td><?= fmt($r['feed_rate'] ?? null, 2) ?></td>
-                <td><?= fmt($r['torque'] ?? null, 1) ?></td>
-                <td><?= fmt($r['temp'] ?? null, 1) ?></td>
-                <td><?= fmt($r['pressure'] ?? null, 3) ?></td>
-            </tr>
-            <?php endforeach; ?>
+            <?php if (!$tricanter): ?>
+                <tr><td colspan="12">No tricanter data in selected range.</td></tr>
+            <?php else: ?>
+                <?php foreach ($tricanter as $r): ?>
+                <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
+                    <td><?= h($r['id']) ?></td>
+                    <td><?= h($r['log_date']) ?></td>
+                    <td><?= h($r['log_time']) ?></td>
+                    <td><?= fmt($r['bowl_speed'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['screw_speed'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['screw_rpm'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['feed_rate'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['torque'] ?? null, 1) ?></td>
+                    <td><?= fmt($r['temp'] ?? null, 1) ?></td>
+                    <td><?= fmt($r['pressure'] ?? null, 3) ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </table>
     </div>
 </div>
@@ -393,15 +654,12 @@ function flashRows(selector, storageKey) {
 flashRows('.nozzle-row', 'nLast');
 flashRows('.tri-row', 'tLast');
 
-function makeCombinedChart(canvasId, datasets) {
+function makeCombinedChart(canvasId, labels, datasets) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
     const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
     if (valid.length === 0) return;
-
-    const maxLen = Math.max(...valid.map(ds => ds.data.length));
-    const labels = Array.from({ length: maxLen }, (_, i) => i + 1);
 
     new Chart(canvas, {
         type: 'line',
@@ -432,7 +690,14 @@ function makeCombinedChart(canvasId, datasets) {
                         font: { size: 11 }
                     }
                 },
-                tooltip: { enabled: true }
+                tooltip: {
+                    enabled: true,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0]?.label || '';
+                        }
+                    }
+                }
             },
             scales: {
                 x: { display: false },
@@ -450,7 +715,7 @@ function makeCombinedChart(canvasId, datasets) {
     });
 }
 
-makeCombinedChart('nozzleCombinedChart', [
+makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [
     { label: 'Flow', data: <?= json_encode($nozzleFlowSeries) ?>, color: '#00ffff', axis: 'y1' },
     { label: 'Pressure', data: <?= json_encode($nozzlePressureSeries) ?>, color: '#ffd24d', axis: 'y2' },
     { label: 'Min Deg', data: <?= json_encode($nozzleMinDegSeries) ?>, color: '#6ee7a1', axis: 'y3' },
@@ -458,7 +723,7 @@ makeCombinedChart('nozzleCombinedChart', [
     { label: 'RPM', data: <?= json_encode($nozzleRpmSeries) ?>, color: '#ff7e67', axis: 'y5' }
 ]);
 
-makeCombinedChart('tricanterCombinedChart', [
+makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [
     { label: 'Bowl Speed', data: <?= json_encode($tricanterBowlSpeedSeries) ?>, color: '#00ffff', axis: 'y1' },
     { label: 'Screw Speed', data: <?= json_encode($tricanterScrewSpeedSeries) ?>, color: '#ffd24d', axis: 'y2' },
     { label: 'Bowl RPM', data: <?= json_encode($tricanterBowlRpmSeries) ?>, color: '#c8a7ff', axis: 'y3' },
