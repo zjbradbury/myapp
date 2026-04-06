@@ -1,8 +1,8 @@
 <?php
-$host = "localhost";
-$dbname = "hmi_data";
-$user = "your_user";
-$pass = "your_password";
+$host = "mariadb";
+$dbname = "myapp";
+$user = "zack";
+$pass = "Butcher69";
 
 $message = "";
 
@@ -229,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>New CSV Upload to Database</title>
+    <title>CSV Upload to Database</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
