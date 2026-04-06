@@ -25,6 +25,61 @@ function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function normalize_date_for_mysql(string $value): string {
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    // already yyyy-mm-dd
+    $dt = DateTime::createFromFormat('Y-m-d', $value);
+    if ($dt && $dt->format('Y-m-d') === $value) {
+        return $dt->format('Y-m-d');
+    }
+
+    // dd/mm/yyyy
+    $dt = DateTime::createFromFormat('d/m/Y', $value);
+    if ($dt && $dt->format('d/m/Y') === $value) {
+        return $dt->format('Y-m-d');
+    }
+
+    // d/m/Y
+    $dt = DateTime::createFromFormat('j/n/Y', $value);
+    if ($dt) {
+        return $dt->format('Y-m-d');
+    }
+
+    // fallback
+    $ts = strtotime($value);
+    if ($ts !== false) {
+        return date('Y-m-d', $ts);
+    }
+
+    return '';
+}
+
+function normalize_time_for_mysql(string $value): string {
+    $value = trim($value);
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('/^\d{2}:\d{2}$/', $value)) {
+        return $value . ':00';
+    }
+
+    if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $value)) {
+        return $value;
+    }
+
+    $ts = strtotime($value);
+    if ($ts !== false) {
+        return date('H:i:s', $ts);
+    }
+
+    return '';
+}
+
 /* =========================
    UPLOAD HANDLING
    ========================= */
@@ -32,11 +87,9 @@ $message = '';
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
-
     if ($_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
         $error = 'Upload failed.';
     } else {
-
         $tmpPath = $_FILES['csv_file']['tmp_name'];
         $fileName = $_FILES['csv_file']['name'];
 
@@ -45,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         if (!$handle) {
             $error = 'Could not open file.';
         } else {
-
-            // skip header
+            // skip header row
             fgetcsv($handle);
 
             $inserted = 0;
+            $skipped = 0;
 
             $stmt = $pdo->prepare("
                 INSERT INTO solid_waste_logs
@@ -58,21 +111,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
             ");
 
             while (($row = fgetcsv($handle)) !== false) {
+                if (count($row) < 4) {
+                    $skipped++;
+                    continue;
+                }
 
-                // expected: Date, Time, Amount, Comments
-                if (count($row) < 4) continue;
+                $rawDate = trim($row[0] ?? '');
+                $rawTime = trim($row[1] ?? '');
+                $amount = trim($row[2] ?? '');
+                $comments = trim($row[3] ?? '');
 
-                $logDate = trim($row[0]);
-                $logTime = trim($row[1]);
-                $amount  = trim($row[2]);
-                $comments = trim($row[3]);
+                $logDate = normalize_date_for_mysql($rawDate);
+                $logTime = normalize_time_for_mysql($rawTime);
 
-                if ($logDate === '' || $logTime === '' || $amount === '') continue;
-                if (!is_numeric($amount)) continue;
+                if ($logDate === '' || $logTime === '' || $amount === '') {
+                    $skipped++;
+                    continue;
+                }
 
-                // fix time format
-                if (strlen($logTime) === 5) {
-                    $logTime .= ":00";
+                if (!is_numeric($amount)) {
+                    $skipped++;
+                    continue;
                 }
 
                 $stmt->execute([
@@ -88,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
             fclose($handle);
 
-            $message = "Upload complete — {$inserted} rows inserted.";
+            $message = "Upload complete — {$inserted} rows inserted, {$skipped} skipped.";
         }
     }
 }
@@ -102,14 +161,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         body {
             background: #0b1e2d;
             color: #fff;
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             padding: 20px;
         }
         .card {
             background: #122c44;
             padding: 20px;
             border-radius: 10px;
-            max-width: 500px;
+            max-width: 520px;
             margin: auto;
         }
         .btn {
@@ -130,6 +189,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
         }
         .success { background: #1f6e3a; }
         .error { background: #6e1f1f; }
+        code {
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -137,11 +199,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 <div class="card">
     <h2>Upload Solid Waste CSV</h2>
 
-    <?php if ($message): ?>
+    <?php if ($message !== ''): ?>
         <div class="alert success"><?= h($message) ?></div>
     <?php endif; ?>
 
-    <?php if ($error): ?>
+    <?php if ($error !== ''): ?>
         <div class="alert error"><?= h($error) ?></div>
     <?php endif; ?>
 
@@ -151,7 +213,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
     </form>
 
     <p style="margin-top:15px;font-size:13px;">
-        Expected format:<br>
+        Accepted date formats:<br>
+        <code>dd/mm/yyyy</code> or <code>yyyy-mm-dd</code>
+    </p>
+
+    <p style="margin-top:10px;font-size:13px;">
+        Expected CSV format:<br>
         <code>Date,Time,Amount,Comments</code>
     </p>
 </div>
