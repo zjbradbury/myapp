@@ -14,6 +14,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<?php require_once "nav.php"; ?>
 <div class="container wide">
     <div class="topbar">
         <h2>Tricanter Logs</h2>
