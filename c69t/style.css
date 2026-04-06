@@ -1,0 +1,113 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #0b1f33;
+    color: #fff;
+    margin: 0;
+    padding: 20px;
+}
+
+.container {
+    max-width: 500px;
+    margin: auto;
+    background: #102944;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 14px rgba(0,0,0,0.3);
+}
+
+.container.wide {
+    max-width: 1400px;
+}
+
+h2, h3, p {
+    margin-top: 0;
+}
+
+input, textarea, select, button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border-radius: 6px;
+    border: 1px solid #2c4f73;
+    background: #0d2238;
+    color: #fff;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+button, .btn {
+    display: inline-block;
+    width: auto;
+    background: #2e7bb4;
+    color: #fff;
+    padding: 10px 14px;
+    border: none;
+    text-decoration: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.btn.small {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.btn.danger {
+    background: #b64242;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0d2238;
+    overflow-x: auto;
+}
+
+th, td {
+    border: 1px solid #21486e;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 14px;
+}
+
+th {
+    background: #16385a;
+    color: #cbe17e;
+}
+
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.message.error {
+    background: #5d2020;
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.card-link {
+    display: block;
+    background: #16385a;
+    color: #fff;
+    text-decoration: none;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 18px;
+    text-align: center;
+}
