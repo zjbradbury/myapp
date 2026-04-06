@@ -8,6 +8,14 @@ function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function fmt($value, $decimals = 0) {
+    if ($value === null || $value === '') return '-';
+    if (!is_numeric($value)) return h($value);
+    return number_format((float)$value, $decimals, '.', '');
+}
+    return $num;
+}
+
 function toFloatOrNull($value) {
     if ($value === null || $value === '') {
         return null;
@@ -363,11 +371,11 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
         <div class="kpi-grid">
             <div class="kpi">
                 <div class="metric-label">Flow</div>
-                <div class="metric-value"><?= h($latestNozzle['flow'] ?? '-') ?><span class="metric-unit">m³/hr</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">m³/hr</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Pressure</div>
-                <div class="metric-value"><?= h($latestNozzle['pressure'] ?? '-') ?><span class="metric-unit">bar</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">bar</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Nozzle</div>
@@ -375,15 +383,15 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
             </div>
             <div class="kpi">
                 <div class="metric-label">Min Deg</div>
-                <div class="metric-value"><?= h($latestNozzle['min_deg'] ?? '-') ?><span class="metric-unit">°</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">°</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Max Deg</div>
-                <div class="metric-value"><?= h($latestNozzle['max_deg'] ?? '-') ?><span class="metric-unit">°</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">°</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">RPM</div>
-                <div class="metric-value"><?= h($latestNozzle['rpm'] ?? '-') ?></div>
+                <div class="metric-value"><?= fmt($1, $2) ?></div>
             </div>
         </div>
 
@@ -439,27 +447,27 @@ $systemStatus = (!empty($latestNozzle) || !empty($latestTricanter)) ? 'ONLINE' :
         <div class="kpi-grid">
             <div class="kpi">
                 <div class="metric-label">Feed Rate</div>
-                <div class="metric-value"><?= h($latestTricanter['feed_rate'] ?? '-') ?><span class="metric-unit">m³/hr</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">m³/hr</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Torque</div>
-                <div class="metric-value"><?= h($latestTricanter['torque'] ?? '-') ?><span class="metric-unit">%</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">%</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Temp</div>
-                <div class="metric-value"><?= h($latestTricanter['temp'] ?? '-') ?><span class="metric-unit">°C</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">°C</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Pressure</div>
-                <div class="metric-value"><?= h($latestTricanter['pressure'] ?? '-') ?><span class="metric-unit">bar</span></div>
+                <div class="metric-value"><?= fmt($1, $2) ?><span class="metric-unit">bar</span></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Bowl RPM</div>
-                <div class="metric-value"><?= h($latestTricanter['bowl_rpm'] ?? '-') ?></div>
+                <div class="metric-value"><?= fmt($1, $2) ?></div>
             </div>
             <div class="kpi">
                 <div class="metric-label">Screw RPM</div>
-                <div class="metric-value"><?= h($latestTricanter['screw_rpm'] ?? '-') ?></div>
+                <div class="metric-value"><?= fmt($1, $2) ?></div>
             </div>
         </div>
 
@@ -541,12 +549,21 @@ function baseChartOptions() {
         },
         scales: {
             x: {
-                ticks: { color: '#9fc4e3', maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
-                grid: { color: 'rgba(159, 196, 227, 0.08)' }
+                display: false,
+                ticks: { display: false },
+                grid: { display: false }
             },
             y: {
-                ticks: { color: '#9fc4e3' },
-                grid: { color: 'rgba(159, 196, 227, 0.08)' }
+                display: false,
+                ticks: { display: false },
+                grid: { display: false },
+                grace: '8%'
+            }
+        },
+        elements: {
+            point: {
+                radius: 0,
+                hoverRadius: 3
             }
         }
     };
@@ -557,11 +574,11 @@ new Chart(document.getElementById('nozzleChart'), {
     data: {
         labels: nozzleLabels,
         datasets: [
-            { label: 'Flow', data: nozzleFlow, borderColor: '#00d3ff', backgroundColor: 'rgba(0,211,255,0.1)', tension: 0.25 },
-            { label: 'Pressure', data: nozzlePressure, borderColor: '#ffd24d', backgroundColor: 'rgba(255,210,77,0.1)', tension: 0.25 },
-            { label: 'RPM', data: nozzleRpm, borderColor: '#ff7e67', backgroundColor: 'rgba(255,126,103,0.1)', tension: 0.25 },
-            { label: 'Min Deg', data: nozzleMinDeg, borderColor: '#6ee7a1', backgroundColor: 'rgba(110,231,161,0.1)', tension: 0.25 },
-            { label: 'Max Deg', data: nozzleMaxDeg, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25 }
+            { label: 'Flow', data: nozzleFlow, borderColor: '#00d3ff', backgroundColor: 'rgba(0,211,255,0.1)', tension: 0.25, yAxisID: 'yFlow' },
+            { label: 'Pressure', data: nozzlePressure, borderColor: '#ffd24d', backgroundColor: 'rgba(255,210,77,0.1)', tension: 0.25, yAxisID: 'yPressure' },
+            { label: 'RPM', data: nozzleRpm, borderColor: '#ff7e67', backgroundColor: 'rgba(255,126,103,0.1)', tension: 0.25, yAxisID: 'yRpm' },
+            { label: 'Min Deg', data: nozzleMinDeg, borderColor: '#6ee7a1', backgroundColor: 'rgba(110,231,161,0.1)', tension: 0.25, yAxisID: 'yMinDeg' },
+            { label: 'Max Deg', data: nozzleMaxDeg, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25, yAxisID: 'yMaxDeg' }
         ]
     },
     options: {
@@ -575,6 +592,18 @@ new Chart(document.getElementById('nozzleChart'), {
                     font: { size: 11 }
                 }
             }
+        },
+        scales: {
+            x: {
+                display: false,
+                ticks: { display: false },
+                grid: { display: false }
+            },
+            yFlow: { display: false, grace: '8%' },
+            yPressure: { display: false, grace: '8%' },
+            yRpm: { display: false, grace: '8%' },
+            yMinDeg: { display: false, grace: '8%' },
+            yMaxDeg: { display: false, grace: '8%' }
         }
     }
 });
@@ -584,12 +613,12 @@ new Chart(document.getElementById('tricanterChart'), {
     data: {
         labels: tricanterLabels,
         datasets: [
-            { label: 'Feed Rate', data: tricanterFeedRate, borderColor: '#00d3ff', backgroundColor: 'rgba(0,211,255,0.1)', tension: 0.25 },
-            { label: 'Torque', data: tricanterTorque, borderColor: '#ffd24d', backgroundColor: 'rgba(255,210,77,0.1)', tension: 0.25 },
-            { label: 'Temp', data: tricanterTemp, borderColor: '#ff7e67', backgroundColor: 'rgba(255,126,103,0.1)', tension: 0.25 },
-            { label: 'Pressure', data: tricanterPressure, borderColor: '#6ee7a1', backgroundColor: 'rgba(110,231,161,0.1)', tension: 0.25 },
-            { label: 'Bowl RPM', data: tricanterBowlRpm, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25 },
-            { label: 'Screw RPM', data: tricanterScrewRpm, borderColor: '#ff9bd6', backgroundColor: 'rgba(255,155,214,0.1)', tension: 0.25 }
+            { label: 'Feed Rate', data: tricanterFeedRate, borderColor: '#00d3ff', backgroundColor: 'rgba(0,211,255,0.1)', tension: 0.25, yAxisID: 'yFeedRate' },
+            { label: 'Torque', data: tricanterTorque, borderColor: '#ffd24d', backgroundColor: 'rgba(255,210,77,0.1)', tension: 0.25, yAxisID: 'yTorque' },
+            { label: 'Temp', data: tricanterTemp, borderColor: '#ff7e67', backgroundColor: 'rgba(255,126,103,0.1)', tension: 0.25, yAxisID: 'yTemp' },
+            { label: 'Pressure', data: tricanterPressure, borderColor: '#6ee7a1', backgroundColor: 'rgba(110,231,161,0.1)', tension: 0.25, yAxisID: 'yPressure' },
+            { label: 'Bowl RPM', data: tricanterBowlRpm, borderColor: '#c8a7ff', backgroundColor: 'rgba(200,167,255,0.1)', tension: 0.25, yAxisID: 'yBowlRpm' },
+            { label: 'Screw RPM', data: tricanterScrewRpm, borderColor: '#ff9bd6', backgroundColor: 'rgba(255,155,214,0.1)', tension: 0.25, yAxisID: 'yScrewRpm' }
         ]
     },
     options: {
@@ -603,6 +632,19 @@ new Chart(document.getElementById('tricanterChart'), {
                     font: { size: 11 }
                 }
             }
+        },
+        scales: {
+            x: {
+                display: false,
+                ticks: { display: false },
+                grid: { display: false }
+            },
+            yFeedRate: { display: false, grace: '8%' },
+            yTorque: { display: false, grace: '8%' },
+            yTemp: { display: false, grace: '8%' },
+            yPressure: { display: false, grace: '8%' },
+            yBowlRpm: { display: false, grace: '8%' },
+            yScrewRpm: { display: false, grace: '8%' }
         }
     }
 });
