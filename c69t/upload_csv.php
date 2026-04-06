@@ -1,8 +1,8 @@
 <?php
-$host = "mariadb";
-$dbname = "myapp";
-$user = "zack";
-$pass = "Butcher69";
+$host = "localhost";
+$dbname = "hmi_data";
+$user = "your_user";
+$pass = "your_password";
 
 $message = "";
 
@@ -54,15 +54,15 @@ function parse_excel_date($value) {
         return null;
     }
 
-    $formats = ["d/m/Y", "j/n/Y", "Y-m-d", "d-m-Y"];
+    $formats = ["d/m/Y", "j/n/Y", "Y-m-d", "d-m-Y", "m/d/Y", "n/j/Y"];
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat($format, $value);
-        if ($dt && $dt->format($format) === $value) {
+        if ($dt instanceof DateTime) {
             return $dt->format("Y-m-d");
         }
     }
 
-    return $value;
+    return null;
 }
 
 function parse_excel_time($value) {
@@ -71,15 +71,37 @@ function parse_excel_time($value) {
         return null;
     }
 
-    $formats = ["H:i:s", "H:i", "g:i A", "g:i:s A"];
+    if (is_numeric($value)) {
+        $seconds = round(((float)$value) * 86400);
+        $seconds = $seconds % 86400;
+        return gmdate("H:i:s", $seconds);
+    }
+
+    $formats = ["H:i:s", "H:i", "g:i A", "g:i:s A", "h:i:s A", "h:i A"];
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat($format, $value);
-        if ($dt) {
+        if ($dt instanceof DateTime) {
             return $dt->format("H:i:s");
         }
     }
 
-    return $value;
+    return null;
+}
+
+function clean_nozzle($value) {
+    $value = trim((string)$value);
+    if ($value === "") {
+        return null;
+    }
+
+    $value = preg_replace('/^N/i', '', $value);
+    $value = trim($value);
+
+    if ($value === "") {
+        return null;
+    }
+
+    return is_numeric($value) ? (int)$value : null;
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -171,6 +193,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $value = parse_excel_time($value);
                 }
 
+                if ($mappedColumn === "nozzle" && $value !== null) {
+                    $value = clean_nozzle($value);
+                }
+
                 $data[$mappedColumn] = $value;
             }
 
@@ -203,7 +229,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CSV Upload to Database</title>
+    <title>New CSV Upload to Database</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body {
