@@ -1,325 +1,160 @@
 <?php
-require_once "config.php";
-requireLogin();
+/* =========================
+   DATABASE CONNECTION
+   ========================= */
+$host = "mariadb";
+$dbname = "myapp";
+$user = "zack";
+$pass = "Butcher69";
 
-$canUpload = in_array(currentRole(), ["admin", "operator"], true);
-
-if (!$canUpload) {
-    http_response_code(403);
-    die("Access denied.");
+try {
+    $pdo = new PDO(
+        "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
+        $user,
+        $pass,
+        [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+    );
+} catch (Throwable $e) {
+    die("DB Connection Failed: " . $e->getMessage());
 }
 
-$message = "";
-$error = "";
-
-// function h($value) {
-//     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-// }
-
-function normalizeHeader($header) {
-    $header = trim((string)$header);
-    $header = strtolower($header);
-    $header = str_replace([" ", "-", "/"], "_", $header);
-    return $header;
+/* =========================
+   HELPERS
+   ========================= */
+function h($value) {
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-function parseDateValue($value) {
-    $value = trim((string)$value);
-    if ($value === '') return null;
+/* =========================
+   UPLOAD HANDLING
+   ========================= */
+$message = '';
+$error = '';
 
-    $formats = [
-        'Y-m-d',
-        'd/m/Y',
-        'j/n/Y',
-        'd-m-Y',
-        'j-n-Y',
-        'm/d/Y',
-        'n/j/Y',
-    ];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['csv_file'])) {
 
-    foreach ($formats as $format) {
-        $dt = DateTime::createFromFormat($format, $value);
-        if ($dt && $dt->format($format) === $value) {
-            return $dt->format('Y-m-d');
-        }
-    }
-
-    $ts = strtotime($value);
-    if ($ts !== false) {
-        return date('Y-m-d', $ts);
-    }
-
-    return null;
-}
-
-function parseTimeValue($value) {
-    $value = trim((string)$value);
-    if ($value === '') return null;
-
-    $formats = [
-        'H:i:s',
-        'H:i',
-        'g:i A',
-        'g:i a',
-        'h:i A',
-        'h:i a',
-    ];
-
-    foreach ($formats as $format) {
-        $dt = DateTime::createFromFormat($format, $value);
-        if ($dt) {
-            return $dt->format('H:i:s');
-        }
-    }
-
-    $ts = strtotime($value);
-    if ($ts !== false) {
-        return date('H:i:s', $ts);
-    }
-
-    return null;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!isset($_FILES['csv_file']) || $_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
-        $error = "Please select a valid CSV file.";
+    if ($_FILES['csv_file']['error'] !== UPLOAD_ERR_OK) {
+        $error = 'Upload failed.';
     } else {
+
         $tmpPath = $_FILES['csv_file']['tmp_name'];
-        $originalName = $_FILES['csv_file']['name'];
-        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        $fileName = $_FILES['csv_file']['name'];
 
-        if ($ext !== 'csv') {
-            $error = "Only .csv files are allowed.";
+        $handle = fopen($tmpPath, 'r');
+
+        if (!$handle) {
+            $error = 'Could not open file.';
         } else {
-            $handle = fopen($tmpPath, 'r');
 
-            if (!$handle) {
-                $error = "Could not open uploaded CSV file.";
-            } else {
-                $header = fgetcsv($handle);
+            // skip header
+            fgetcsv($handle);
 
-                if ($header === false) {
-                    $error = "CSV file is empty.";
-                    fclose($handle);
-                } else {
-                    $normalizedHeaders = array_map('normalizeHeader', $header);
+            $inserted = 0;
 
-                    $dateIndex = array_search('date', $normalizedHeaders, true);
-                    $timeIndex = array_search('time', $normalizedHeaders, true);
-                    $amountIndex = array_search('amount', $normalizedHeaders, true);
-                    $commentsIndex = array_search('comments', $normalizedHeaders, true);
+            $stmt = $pdo->prepare("
+                INSERT INTO solid_waste_logs
+                (source_file, log_date, log_time, amount, comments)
+                VALUES (?, ?, ?, ?, ?)
+            ");
 
-                    if ($dateIndex === false || $timeIndex === false || $amountIndex === false) {
-                        $error = "CSV must contain headers: date, time, amount. Comments is optional.";
-                        fclose($handle);
-                    } else {
-                        $inserted = 0;
-                        $skipped = 0;
-                        $lineNumber = 1;
+            while (($row = fgetcsv($handle)) !== false) {
 
-                        try {
-                            $pdo->beginTransaction();
+                // expected: Date, Time, Amount, Comments
+                if (count($row) < 4) continue;
 
-                            $stmt = $pdo->prepare("
-                                INSERT INTO solid_waste_logs
-                                    (source_file, uploaded_at, log_date, log_time, amount, comments)
-                                VALUES
-                                    (:source_file, NOW(), :log_date, :log_time, :amount, :comments)
-                            ");
+                $logDate = trim($row[0]);
+                $logTime = trim($row[1]);
+                $amount  = trim($row[2]);
+                $comments = trim($row[3]);
 
-                            while (($row = fgetcsv($handle)) !== false) {
-                                $lineNumber++;
+                if ($logDate === '' || $logTime === '' || $amount === '') continue;
+                if (!is_numeric($amount)) continue;
 
-                                if (
-                                    count(array_filter($row, function($v) {
-                                        return trim((string)$v) !== '';
-                                    })) === 0
-                                ) {
-                                    continue;
-                                }
-
-                                $rawDate = $row[$dateIndex] ?? '';
-                                $rawTime = $row[$timeIndex] ?? '';
-                                $rawAmount = $row[$amountIndex] ?? '';
-                                $rawComments = ($commentsIndex !== false) ? ($row[$commentsIndex] ?? '') : '';
-
-                                $logDate = parseDateValue($rawDate);
-                                $logTime = parseTimeValue($rawTime);
-                                $amount = trim((string)$rawAmount);
-                                $comments = trim((string)$rawComments);
-
-                                if ($logDate === null || $logTime === null || $amount === '' || !is_numeric($amount)) {
-                                    $skipped++;
-                                    continue;
-                                }
-
-                                $stmt->execute([
-                                    ':source_file' => $originalName,
-                                    ':log_date' => $logDate,
-                                    ':log_time' => $logTime,
-                                    ':amount' => $amount,
-                                    ':comments' => $comments,
-                                ]);
-
-                                $inserted++;
-                            }
-
-                            $pdo->commit();
-
-                            $message = "Upload complete. Inserted {$inserted} row(s), skipped {$skipped} invalid row(s).";
-                        } catch (Throwable $e) {
-                            if ($pdo->inTransaction()) {
-                                $pdo->rollBack();
-                            }
-                            $error = "Upload failed: " . $e->getMessage();
-                        }
-
-                        fclose($handle);
-                    }
+                // fix time format
+                if (strlen($logTime) === 5) {
+                    $logTime .= ":00";
                 }
+
+                $stmt->execute([
+                    $fileName,
+                    $logDate,
+                    $logTime,
+                    $amount,
+                    $comments
+                ]);
+
+                $inserted++;
             }
+
+            fclose($handle);
+
+            $message = "Upload complete — {$inserted} rows inserted.";
         }
     }
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title>Solid Waste CSV Upload</title>
-    <link rel="stylesheet" href="style.css">
     <style>
-        .upload-wrap {
-            max-width: 760px;
-            margin: 30px auto;
-            background: #111827;
-            border: 1px solid #263043;
-            border-radius: 12px;
-            padding: 24px;
-            color: #e5e7eb;
+        body {
+            background: #0b1e2d;
+            color: #fff;
+            font-family: Arial;
+            padding: 20px;
         }
-
-        .upload-wrap h2 {
-            margin-top: 0;
-            margin-bottom: 18px;
+        .card {
+            background: #122c44;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: auto;
         }
-
-        .form-row {
-            margin-bottom: 16px;
-        }
-
-        .form-row label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-
-        .form-row input[type="file"] {
-            width: 100%;
-            padding: 10px;
-            background: #0b1220;
-            color: #e5e7eb;
-            border: 1px solid #374151;
-            border-radius: 8px;
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
         .btn {
-            display: inline-block;
-            padding: 10px 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: 1px solid #3b82f6;
-            background: #2563eb;
-            color: white;
+            background: #1f4a6e;
+            color: #fff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
             cursor: pointer;
         }
-
-        .btn.secondary {
-            background: #1f2937;
-            border-color: #4b5563;
+        .btn:hover {
+            background: #295d89;
         }
-
-        .msg {
-            padding: 12px 14px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-weight: 600;
+        .alert {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 6px;
         }
-
-        .msg.success {
-            background: #052e16;
-            border: 1px solid #166534;
-            color: #bbf7d0;
-        }
-
-        .msg.error {
-            background: #3f0d12;
-            border: 1px solid #991b1b;
-            color: #fecaca;
-        }
-
-        .help-box {
-            margin-top: 20px;
-            padding: 16px;
-            border-radius: 10px;
-            background: #0b1220;
-            border: 1px solid #263043;
-        }
-
-        .help-box code {
-            background: #1f2937;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
+        .success { background: #1f6e3a; }
+        .error { background: #6e1f1f; }
     </style>
 </head>
 <body>
-<?php require_once "nav.php"; ?>
 
-<div class="container">
-    <div class="upload-wrap">
-        <h2>Upload Solid Waste CSV</h2>
+<div class="card">
+    <h2>Upload Solid Waste CSV</h2>
 
-        <?php if ($message !== ""): ?>
-            <div class="msg success"><?= h($message) ?></div>
-        <?php endif; ?>
+    <?php if ($message): ?>
+        <div class="alert success"><?= h($message) ?></div>
+    <?php endif; ?>
 
-        <?php if ($error !== ""): ?>
-            <div class="msg error"><?= h($error) ?></div>
-        <?php endif; ?>
+    <?php if ($error): ?>
+        <div class="alert error"><?= h($error) ?></div>
+    <?php endif; ?>
 
-        <form method="post" enctype="multipart/form-data">
-            <div class="form-row">
-                <label for="csv_file">CSV File</label>
-                <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
-            </div>
+    <form method="post" enctype="multipart/form-data">
+        <input type="file" name="csv_file" accept=".csv" required><br><br>
+        <button class="btn" type="submit">Upload</button>
+    </form>
 
-            <div class="btn-row">
-                <button type="submit" class="btn">Upload CSV</button>
-                <a href="index.php" class="btn secondary">Back to Dashboard</a>
-                <a href="solid_waste_logs.php" class="btn secondary">View Solid Waste Logs</a>
-            </div>
-        </form>
-
-        <div class="help-box">
-            <strong>CSV format:</strong><br><br>
-            Required headers: <code>date,time,amount</code><br>
-            Optional header: <code>comments</code><br><br>
-
-            Example:<br>
-            <code>
-                date,time,amount,comments<br>
-                07/04/2026,06:00,125.5,morning run<br>
-                07/04/2026,12:15,98.0,manual entry
-            </code>
-        </div>
-    </div>
+    <p style="margin-top:15px;font-size:13px;">
+        Expected format:<br>
+        <code>Date,Time,Amount,Comments</code>
+    </p>
 </div>
+
 </body>
 </html>
