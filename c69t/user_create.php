@@ -34,6 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<?php require_once "nav.php"; ?>
 <div class="container">
     <h2>Create User</h2>
 
@@ -55,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <button type="submit">Create User</button>
     </form>
 
-    <p><a href="dashboard.php">Back</a></p>
 </div>
 </body>
 </html>
