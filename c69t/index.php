@@ -416,7 +416,7 @@ h1 {
 
 .grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0,1fr));
+    grid-template-columns: repeat(2, minmax(0,1fr));
     gap: 15px;
 }
 
@@ -425,6 +425,10 @@ h1 {
     padding: 10px;
     border-radius: 10px;
     min-width: 0;
+}
+
+.nozzle-panel {
+    grid-column: 1 / -1;
 }
 
 .kpis {
@@ -641,6 +645,10 @@ th {
         grid-template-columns: 1fr;
     }
 
+    .nozzle-panel {
+        grid-column: auto;
+    }
+
     .info-value {
         font-size: 20px;
     }
@@ -749,49 +757,6 @@ th {
 <div class="grid">
 
 <div class="panel">
-    <h2>Nozzle</h2>
-
-    <div class="kpis">
-        <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?></b></div>
-        <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?></b></div>
-        <div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'] ?? null, 1) ?></b></div>
-        <div class="kpi"><small>Min Deg</small><b><?= fmt($latestNozzle['min_deg'] ?? null, 0) ?></b></div>
-        <div class="kpi"><small>Max Deg</small><b><?= fmt($latestNozzle['max_deg'] ?? null, 0) ?></b></div>
-        <div class="kpi"><small>Nozzle</small><b><?= h($latestNozzle['nozzle'] ?? '-') ?></b></div>
-    </div>
-
-    <div class="chart-card">
-        <div class="chart-title">Nozzle Trends</div>
-        <div class="chart-wrap"><canvas id="nozzleCombinedChart"></canvas></div>
-    </div>
-
-    <div class="table">
-        <table>
-            <tr>
-                <th>ID</th><th>Date</th><th>Time</th><th>Nozzle</th><th>Flow</th><th>Pressure</th><th>Min</th><th>Max</th><th>RPM</th>
-            </tr>
-            <?php if (!$nozzle): ?>
-                <tr><td colspan="9">No nozzle data in selected range.</td></tr>
-            <?php else: ?>
-                <?php foreach ($nozzle as $r): ?>
-                <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
-                    <td><?= h($r['id']) ?></td>
-                    <td><?= h($r['log_date']) ?></td>
-                    <td><?= h($r['log_time']) ?></td>
-                    <td><?= h($r['nozzle']) ?></td>
-                    <td><?= fmt($r['flow'] ?? null, 1) ?></td>
-                    <td><?= fmt($r['pressure'] ?? null, 2) ?></td>
-                    <td><?= fmt($r['min_deg'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['max_deg'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['rpm'] ?? null, 1) ?></td>
-                </tr>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </table>
-    </div>
-</div>
-
-<div class="panel">
     <h2>Tricanter</h2>
 
     <div class="kpis">
@@ -870,6 +835,49 @@ th {
                     <td><?= fmt($r['amount'] ?? null, 2) ?></td>
                     <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?></td>
                     <td><?= h($r['comments'] ?? '') ?></td>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </table>
+    </div>
+</div>
+
+<div class="panel nozzle-panel">
+    <h2>Nozzle</h2>
+
+    <div class="kpis">
+        <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?></b></div>
+        <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?></b></div>
+        <div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'] ?? null, 1) ?></b></div>
+        <div class="kpi"><small>Min Deg</small><b><?= fmt($latestNozzle['min_deg'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Max Deg</small><b><?= fmt($latestNozzle['max_deg'] ?? null, 0) ?></b></div>
+        <div class="kpi"><small>Nozzle</small><b><?= h($latestNozzle['nozzle'] ?? '-') ?></b></div>
+    </div>
+
+    <div class="chart-card">
+        <div class="chart-title">Nozzle Trends</div>
+        <div class="chart-wrap"><canvas id="nozzleCombinedChart"></canvas></div>
+    </div>
+
+    <div class="table">
+        <table>
+            <tr>
+                <th>ID</th><th>Date</th><th>Time</th><th>Nozzle</th><th>Flow</th><th>Pressure</th><th>Min</th><th>Max</th><th>RPM</th>
+            </tr>
+            <?php if (!$nozzle): ?>
+                <tr><td colspan="9">No nozzle data in selected range.</td></tr>
+            <?php else: ?>
+                <?php foreach ($nozzle as $r): ?>
+                <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
+                    <td><?= h($r['id']) ?></td>
+                    <td><?= h($r['log_date']) ?></td>
+                    <td><?= h($r['log_time']) ?></td>
+                    <td><?= h($r['nozzle']) ?></td>
+                    <td><?= fmt($r['flow'] ?? null, 1) ?></td>
+                    <td><?= fmt($r['pressure'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['min_deg'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['max_deg'] ?? null, 0) ?></td>
+                    <td><?= fmt($r['rpm'] ?? null, 1) ?></td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
