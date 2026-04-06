@@ -12,6 +12,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<?php require_once "nav.php"; ?>
 <div class="container wide">
     <div class="topbar">
         <h2>Users</h2>
@@ -39,7 +40,6 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </tbody>
     </table>
 
-    <p><a href="dashboard.php">Back</a></p>
 </div>
 </body>
 </html>
