@@ -15,12 +15,10 @@ $isLoggedIn = isset($_SESSION['user_id']);
 ?>
 <style>
 .top-nav-wrap {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: 14px;
-    position: relative;
-    z-index: 1000;
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 2000;
 }
 
 .menu-toggle {
