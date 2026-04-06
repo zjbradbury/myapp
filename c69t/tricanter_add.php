@@ -36,6 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<?php require_once "nav.php"; ?>
 <div class="container">
     <h2>Add Tricanter Record</h2>
     <form method="post">
@@ -54,7 +55,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <textarea name="comments" placeholder="Comments"></textarea>
         <button type="submit">Save</button>
     </form>
-    <p><a href="tricanter_list.php">Back</a></p>
 </div>
 </body>
 </html>
