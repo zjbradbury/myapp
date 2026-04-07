@@ -96,6 +96,10 @@ th {
     margin-bottom: 15px;
 }
 
+.list-topbar {
+    align-items: flex-start;
+}
+
 .message.error {
     background: #5d2020;
     color: #fff;
@@ -151,4 +155,140 @@ th {
     line-height: 1;
     pointer-events: none;
     z-index: 2;
+}
+
+.list-filter-card {
+    background: #122c44;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.list-filter-title {
+    font-size: 12px;
+    color: #9ec3df;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    margin-bottom: 10px;
+}
+
+.list-range-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+}
+
+.list-filter-form {
+    display: block;
+}
+
+.list-range-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.list-range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.list-range-row label {
+    width: 38px;
+    min-width: 38px;
+    margin-bottom: 0;
+    font-size: 11px;
+    color: #b7ccdd;
+}
+
+.list-filter-form input[type="datetime-local"] {
+    width: 220px;
+    max-width: 100%;
+    box-sizing: border-box;
+    background: #0d2234;
+    color: #fff;
+    border: 1px solid #2a5377;
+    border-radius: 6px;
+    padding: 7px 8px;
+    font-size: 12px;
+    height: 36px;
+    margin: 0;
+}
+
+.list-range-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.list-filter-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.list-quick-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn-quick {
+    background: #163a59;
+    padding: 7px 10px;
+    font-size: 11px;
+}
+
+.btn-quick:hover {
+    background: #214d74;
+}
+
+.list-range-error {
+    margin-top: 8px;
+    color: #ff9d9d;
+    font-size: 12px;
+}
+
+.list-range-active {
+    margin-top: 8px;
+    color: #9ed0f2;
+    font-size: 12px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+    .list-range-layout {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .list-range-buttons,
+    .list-filter-actions,
+    .list-quick-actions {
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 700px) {
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .list-range-row {
+        flex-wrap: wrap;
+    }
+
+    .list-filter-form input[type="datetime-local"] {
+        width: 100%;
+    }
 }

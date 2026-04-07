@@ -2,120 +2,16 @@
 require_once "config.php";
 requireRole(['admin', 'operator', 'viewer']);
 
-/* =========================
-   RANGE FILTER
-   ========================= */
-$rangeStart = trim($_GET['start'] ?? '');
-$rangeEnd = trim($_GET['end'] ?? '');
-$quickRange = trim($_GET['quick'] ?? '');
-
-$usedDefaultShift = false;
-
-if ($quickRange !== '') {
-    $now = time();
-
-    switch ($quickRange) {
-        case 'current_shift':
-            [$rangeStart, $rangeEnd] = get_current_shift_range($now);
-            break;
-
-        case 'today':
-            $rangeStart = date('Y-m-d 00:00', $now);
-            $rangeEnd = date('Y-m-d H:i', $now);
-            break;
-
-        case '24h':
-            $rangeStart = date('Y-m-d H:i', strtotime('-24 hours', $now));
-            $rangeEnd = date('Y-m-d H:i', $now);
-            break;
-
-        case '7d':
-            $rangeStart = date('Y-m-d H:i', strtotime('-7 days', $now));
-            $rangeEnd = date('Y-m-d H:i', $now);
-            break;
-
-        case 'clear':
-            $rangeStart = '';
-            $rangeEnd = '';
-            break;
-    }
-}
-
-if ($rangeStart === '' && $rangeEnd === '' && $quickRange === '') {
-    [$rangeStart, $rangeEnd] = get_current_shift_range();
-    $usedDefaultShift = true;
-}
-
-$startSql = null;
-$endSql = null;
-$rangeError = '';
-
-if ($rangeStart !== '') {
-    $ts = strtotime($rangeStart);
-    if ($ts === false) {
-        $rangeError = 'Invalid start date/time.';
-    } else {
-        $startSql = date('Y-m-d H:i:s', $ts);
-    }
-}
-
-if ($rangeEnd !== '') {
-    $ts = strtotime($rangeEnd);
-    if ($ts === false) {
-        $rangeError = 'Invalid end date/time.';
-    } else {
-        $endSql = date('Y-m-d H:i:s', $ts);
-    }
-}
-
-if ($rangeError === '' && $startSql !== null && $endSql !== null && strtotime($startSql) > strtotime($endSql)) {
-    $rangeError = 'Start date/time must be earlier than end date/time.';
-}
-
-$rangeActive = ($rangeStart !== '' || $rangeEnd !== '');
+$range = get_range_filter_state();
 
 try {
-    $baseNozzleSql = "SELECT * FROM nozzle_logs";
-    $baseTricanterSql = "SELECT * FROM tricanter_logs";
-    $baseSolidWasteSql = "SELECT * FROM solid_waste_logs";
+    $nozzle = fetch_log_rows($pdo, 'nozzle_logs', $range, 'id DESC');
+    $tricanter = fetch_log_rows($pdo, 'tricanter_logs', $range, 'id DESC');
+    $solidWaste = fetch_log_rows($pdo, 'solid_waste_logs', $range, 'id DESC');
 
-    $where = [];
-    $params = [];
-
-    if ($rangeError === '') {
-        if ($startSql !== null) {
-            $where[] = "TIMESTAMP(log_date, log_time) >= :start_dt";
-            $params[':start_dt'] = $startSql;
-        }
-
-        if ($endSql !== null) {
-            $where[] = "TIMESTAMP(log_date, log_time) <= :end_dt";
-            $params[':end_dt'] = $endSql;
-        }
-    }
-
-    $whereSql = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
-
-    $stmt = $pdo->prepare($baseNozzleSql . $whereSql . " ORDER BY id DESC");
-    $stmt->execute($params);
-    $nozzle = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $stmt = $pdo->prepare($baseTricanterSql . $whereSql . " ORDER BY id DESC");
-    $stmt->execute($params);
-    $tricanter = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $stmt = $pdo->prepare($baseSolidWasteSql . $whereSql . " ORDER BY id DESC");
-    $stmt->execute($params);
-    $solidWaste = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    $stmt = $pdo->query("SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1");
-    $latestNozzleOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-
-    $stmt = $pdo->query("SELECT * FROM tricanter_logs ORDER BY id DESC LIMIT 1");
-    $latestTricanterOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
-
-    $stmt = $pdo->query("SELECT * FROM solid_waste_logs ORDER BY id DESC LIMIT 1");
-    $latestSolidWasteOverall = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
+    $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
+    $latestSolidWasteOverall = fetch_latest_row($pdo, 'solid_waste_logs') ?: [];
 
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
@@ -164,13 +60,7 @@ $lastTricanterStamp = trim(($latestTricanterOverall['log_date'] ?? '-') . ' ' . 
 $lastSolidWasteStamp = trim(($latestSolidWasteOverall['log_date'] ?? '-') . ' ' . ($latestSolidWasteOverall['log_time'] ?? ''));
 
 $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste);
-$rangeSummary = 'Current shift block';
-
-if ($rangeStart !== '' || $rangeEnd !== '') {
-    $fromText = $rangeStart !== '' ? date('d/m/Y H:i', strtotime($rangeStart)) : 'Beginning';
-    $toText = $rangeEnd !== '' ? date('d/m/Y H:i', strtotime($rangeEnd)) : 'Now';
-    $rangeSummary = $fromText . ' → ' . $toText;
-}
+$rangeSummary = range_summary_text($range, 'Current shift block');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -215,44 +105,13 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
         <div class="info-card">
             <div class="info-title">Date / Time Range</div>
 
-            <form method="get" class="filter-form">
-                <div class="range-layout">
-                    <div class="range-inputs">
-                        <div class="range-row">
-                            <label for="start">From</label>
-                            <input type="datetime-local" id="start" name="start"
-                                value="<?= h(to_datetime_local_value($rangeStart)) ?>">
-                        </div>
+            <?php render_dashboard_range_filter($range); ?>
 
-                        <div class="range-row">
-                            <label for="end">To</label>
-                            <input type="datetime-local" id="end" name="end"
-                                value="<?= h(to_datetime_local_value($rangeEnd)) ?>">
-                        </div>
-                    </div>
-
-                    <div class="range-buttons">
-                        <div class="filter-actions">
-                            <button type="submit" class="btn">Apply Range</button>
-                            <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
-                        </div>
-
-                        <div class="quick-actions">
-                            <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current
-                                Shift</button>
-                            <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
-                            <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
-                            <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
-                        </div>
-                    </div>
-                </div>
-            </form>
-
-            <?php if ($rangeError !== ''): ?>
-                <div class="range-error"><?= h($rangeError) ?></div>
-            <?php elseif ($rangeActive && $usedDefaultShift): ?>
+            <?php if (($range['error'] ?? '') !== ''): ?>
+                <div class="range-error"><?= h($range['error'] ?? '') ?></div>
+            <?php elseif (!empty($range['used_default_shift'])): ?>
                 <div class="range-active">Showing current 12 hour shift block</div>
-            <?php elseif ($rangeActive): ?>
+            <?php elseif (!empty($range['active'])): ?>
                 <div class="range-active">Filtering graphs and tables to selected range</div>
             <?php else: ?>
                 <div class="range-active">Showing all available records</div>

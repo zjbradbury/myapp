@@ -2,13 +2,8 @@
 require_once "config.php";
 requireRole(["admin", "operator", "viewer"]);
 
-$stmt = $pdo->query("
-    SELECT *
-    FROM solid_waste_logs
-    ORDER BY log_date DESC, log_time DESC, id DESC
-");
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+$range = get_range_filter_state();
+$rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
 $canEdit = in_array(currentRole(), ["admin", "operator"], true);
 ?>
 <!DOCTYPE html>
@@ -23,7 +18,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
     <?php require_once "nav.php"; ?>
 
     <div class="container wide">
-        <div class="topbar">
+        <div class="topbar list-topbar">
             <h2>Solid Waste Logs</h2>
             <div>
                 <?php if ($canEdit): ?>
@@ -32,7 +27,9 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
             </div>
         </div>
 
-        <div class="card">
+        <?php render_range_filter($range, 'Filtering solid waste table to selected range'); ?>
+
+        <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
@@ -47,7 +44,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                 <tbody>
                     <?php if (!$rows): ?>
                         <tr>
-                            <td colspan="<?= $canEdit ? 5 : 4; ?>">No records found.</td>
+                            <td colspan="<?= $canEdit ? 5 : 4; ?>">No records found in selected range.</td>
                         </tr>
                     <?php else: ?>
                         <?php foreach ($rows as $row): ?>
@@ -55,7 +52,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                                 <td><?= h($row["log_date"]) ?></td>
                                 <td><?= h($row["log_time"]) ?></td>
                                 <td>
-                                    <?= $row["amount"] !== null && $row["amount"] !== "" ? h(number_format((float) $row["amount"], 0)) . ' kg' : '' ?>
+                                    <?= $row["amount"] !== null && $row["amount"] !== "" ? fmt($row["amount"], 0) . ' kg' : '' ?>
                                 </td>
                                 <td><?= nl2br(h($row["comments"] ?? "")) ?></td>
                                 <?php if ($canEdit): ?>

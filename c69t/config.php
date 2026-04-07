@@ -54,10 +54,12 @@ function h($value)
 if (!function_exists('fmt')) {
     function fmt($value, $decimals = 0)
     {
-        if ($value === null || $value === '')
+        if ($value === null || $value === '') {
             return '-';
-        if (!is_numeric($value))
+        }
+        if (!is_numeric($value)) {
             return h($value);
+        }
         return number_format((float) $value, $decimals, '.', '');
     }
 }
@@ -89,11 +91,13 @@ if (!function_exists('label_series')) {
 if (!function_exists('to_datetime_local_value')) {
     function to_datetime_local_value(?string $value): string
     {
-        if (!$value)
+        if (!$value) {
             return '';
+        }
         $ts = strtotime($value);
-        if ($ts === false)
+        if ($ts === false) {
             return '';
+        }
         return date('Y-m-d\TH:i', $ts);
     }
 }
@@ -173,4 +177,219 @@ function nullIfBlank($value)
     return $value === '' ? null : $value;
 }
 
-?>
+function get_range_filter_state(bool $defaultToCurrentShift = true): array
+{
+    $rangeStart = trim($_GET['start'] ?? '');
+    $rangeEnd = trim($_GET['end'] ?? '');
+    $quickRange = trim($_GET['quick'] ?? '');
+    $usedDefaultShift = false;
+
+    if ($quickRange !== '') {
+        $now = time();
+
+        switch ($quickRange) {
+            case 'current_shift':
+                [$rangeStart, $rangeEnd] = get_current_shift_range($now);
+                break;
+
+            case 'today':
+                $rangeStart = date('Y-m-d 00:00', $now);
+                $rangeEnd = date('Y-m-d H:i', $now);
+                break;
+
+            case '24h':
+                $rangeStart = date('Y-m-d H:i', strtotime('-24 hours', $now));
+                $rangeEnd = date('Y-m-d H:i', $now);
+                break;
+
+            case '7d':
+                $rangeStart = date('Y-m-d H:i', strtotime('-7 days', $now));
+                $rangeEnd = date('Y-m-d H:i', $now);
+                break;
+
+            case 'clear':
+                $rangeStart = '';
+                $rangeEnd = '';
+                break;
+        }
+    }
+
+    if ($defaultToCurrentShift && $rangeStart === '' && $rangeEnd === '' && $quickRange === '') {
+        [$rangeStart, $rangeEnd] = get_current_shift_range();
+        $usedDefaultShift = true;
+    }
+
+    $startSql = null;
+    $endSql = null;
+    $rangeError = '';
+
+    if ($rangeStart !== '') {
+        $ts = strtotime($rangeStart);
+        if ($ts === false) {
+            $rangeError = 'Invalid start date/time.';
+        } else {
+            $startSql = date('Y-m-d H:i:s', $ts);
+        }
+    }
+
+    if ($rangeEnd !== '') {
+        $ts = strtotime($rangeEnd);
+        if ($ts === false) {
+            $rangeError = 'Invalid end date/time.';
+        } else {
+            $endSql = date('Y-m-d H:i:s', $ts);
+        }
+    }
+
+    if ($rangeError === '' && $startSql !== null && $endSql !== null && strtotime($startSql) > strtotime($endSql)) {
+        $rangeError = 'Start date/time must be earlier than end date/time.';
+    }
+
+    return [
+        'start' => $rangeStart,
+        'end' => $rangeEnd,
+        'start_sql' => $startSql,
+        'end_sql' => $endSql,
+        'quick' => $quickRange,
+        'error' => $rangeError,
+        'active' => ($rangeStart !== '' || $rangeEnd !== ''),
+        'used_default_shift' => $usedDefaultShift,
+    ];
+}
+
+function build_log_range_where(array $range): array
+{
+    $where = [];
+    $params = [];
+
+    if (($range['error'] ?? '') === '') {
+        if (!empty($range['start_sql'])) {
+            $where[] = "TIMESTAMP(log_date, log_time) >= :start_dt";
+            $params[':start_dt'] = $range['start_sql'];
+        }
+
+        if (!empty($range['end_sql'])) {
+            $where[] = "TIMESTAMP(log_date, log_time) <= :end_dt";
+            $params[':end_dt'] = $range['end_sql'];
+        }
+    }
+
+    return [
+        'sql' => $where ? (' WHERE ' . implode(' AND ', $where)) : '',
+        'params' => $params,
+    ];
+}
+
+function fetch_log_rows(PDO $pdo, string $table, array $range, string $orderBy = 'log_date DESC, log_time DESC, id DESC'): array
+{
+    $filter = build_log_range_where($range);
+    $stmt = $pdo->prepare("SELECT * FROM {$table}" . $filter['sql'] . " ORDER BY {$orderBy}");
+    $stmt->execute($filter['params']);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
+function fetch_latest_row(PDO $pdo, string $table, string $orderBy = 'id DESC'): array
+{
+    $stmt = $pdo->query("SELECT * FROM {$table} ORDER BY {$orderBy} LIMIT 1");
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+}
+
+function range_summary_text(array $range, string $defaultText = 'Current shift block'): string
+{
+    if (!empty($range['start']) || !empty($range['end'])) {
+        $fromText = !empty($range['start']) ? date('d/m/Y H:i', strtotime($range['start'])) : 'Beginning';
+        $toText = !empty($range['end']) ? date('d/m/Y H:i', strtotime($range['end'])) : 'Now';
+        return $fromText . ' → ' . $toText;
+    }
+
+    return $defaultText;
+}
+
+function render_dashboard_range_filter(array $range): void
+{
+    ?>
+    <form method="get" class="filter-form">
+        <div class="range-layout">
+            <div class="range-inputs">
+                <div class="range-row">
+                    <label for="start">From</label>
+                    <input type="datetime-local" id="start" name="start"
+                        value="<?= h(to_datetime_local_value($range['start'] ?? '')) ?>">
+                </div>
+
+                <div class="range-row">
+                    <label for="end">To</label>
+                    <input type="datetime-local" id="end" name="end"
+                        value="<?= h(to_datetime_local_value($range['end'] ?? '')) ?>">
+                </div>
+            </div>
+
+            <div class="range-buttons">
+                <div class="filter-actions">
+                    <button type="submit" class="btn">Apply Range</button>
+                    <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
+                </div>
+
+                <div class="quick-actions">
+                    <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
+                    <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
+                    <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
+                    <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
+                </div>
+            </div>
+        </div>
+    </form>
+    <?php
+}
+
+function render_range_filter(array $range, string $message = 'Filtering table to selected range'): void
+{
+    ?>
+    <div class="list-filter-card">
+        <div class="list-filter-title">Date / Time Range</div>
+
+        <form method="get" class="list-filter-form">
+            <div class="list-range-layout">
+                <div class="list-range-inputs">
+                    <div class="list-range-row">
+                        <label for="start">From</label>
+                        <input type="datetime-local" id="start" name="start"
+                            value="<?= h(to_datetime_local_value($range['start'] ?? '')) ?>">
+                    </div>
+
+                    <div class="list-range-row">
+                        <label for="end">To</label>
+                        <input type="datetime-local" id="end" name="end"
+                            value="<?= h(to_datetime_local_value($range['end'] ?? '')) ?>">
+                    </div>
+                </div>
+
+                <div class="list-range-buttons">
+                    <div class="list-filter-actions">
+                        <button type="submit" class="btn">Apply Range</button>
+                        <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
+                    </div>
+
+                    <div class="list-quick-actions">
+                        <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
+                        <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
+                        <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
+                        <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <?php if (($range['error'] ?? '') !== ''): ?>
+            <div class="list-range-error"><?= h($range['error']) ?></div>
+        <?php elseif (!empty($range['used_default_shift'])): ?>
+            <div class="list-range-active">Showing current 12 hour shift block</div>
+        <?php elseif (!empty($range['active'])): ?>
+            <div class="list-range-active"><?= h($message) ?></div>
+        <?php else: ?>
+            <div class="list-range-active">Showing all available records</div>
+        <?php endif; ?>
+    </div>
+    <?php
+}
