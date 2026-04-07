@@ -114,24 +114,35 @@ th {
     text-align: center;
 }
 
-.form-unit {
-    position: relative;
+.input-with-unit {
+    display: flex;
+    width: 100%;
     margin-bottom: 12px;
 }
 
-.form-unit input {
-    width: 100%;
-    box-sizing: border-box;
-    padding-right: 85px; /* room for unit text */
+.input-with-unit input.value-input {
+    flex: 1;
+    min-width: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
 
-.form-unit .unit {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
+.input-with-unit input.unit-input {
+    width: 80px;
+    text-align: center;
+    background: #3a3a3a;
     color: #aaa;
-    font-size: 13px;
-    pointer-events: none;
-    white-space: nowrap;
+    border-left: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    cursor: default;
+}
+
+.input-with-unit input.unit-input:disabled {
+    opacity: 1;
+    -webkit-text-fill-color: #aaa;
+}
+
+.input-with-unit input.unit-input.wide-unit {
+    width: 95px;
 }

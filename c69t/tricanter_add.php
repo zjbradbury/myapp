@@ -50,49 +50,49 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="date" name="log_date" id="log_date">
             <input type="time" name="log_time" id="log_time" step="1">
 
-            <div class="form-unit">
-                <input type="number" step="1" name="bowl_speed" placeholder="Bowl Speed">
-                <span class="unit">%</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="1" name="bowl_speed" placeholder="Bowl Speed">
+                <input class="unit-input" type="text" value="%" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="0.01" name="screw_speed" placeholder="Screw Speed">
-                <span class="unit">%</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="0.01" name="screw_speed" placeholder="Screw Speed">
+                <input class="unit-input" type="text" value="%" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="1" name="bowl_rpm" placeholder="Bowl RPM">
-                <span class="unit">RPM</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="1" name="bowl_rpm" placeholder="Bowl RPM">
+                <input class="unit-input" type="text" value="rpm" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="1" name="screw_rpm" placeholder="Screw RPM">
-                <span class="unit">RPM</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="1" name="screw_rpm" placeholder="Screw RPM">
+                <input class="unit-input" type="text" value="rpm" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="1" name="impeller" placeholder="Impeller">
-                <span class="unit">%</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="1" name="impeller" placeholder="Impeller">
+                <input class="unit-input" type="text" value="%" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="0.01" name="feed_rate" class="long-unit" placeholder="Feed Rate">
-                <span class="unit">m3/hr</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="0.01" name="feed_rate" placeholder="Feed Rate">
+                <input class="unit-input wide-unit" type="text" value="m³/hr" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="0.1" name="torque" placeholder="Torque">
-                <span class="unit">%</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="0.1" name="torque" placeholder="Torque">
+                <input class="unit-input" type="text" value="%" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="0.1" name="temp" placeholder="Temp">
-                <span class="unit">°C</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="0.1" name="temp" placeholder="Temp">
+                <input class="unit-input" type="text" value="°C" disabled tabindex="-1">
             </div>
 
-            <div class="form-unit">
-                <input type="number" step="0.001" name="pressure" placeholder="Pressure">
-                <span class="unit">BAR</span>
+            <div class="input-with-unit">
+                <input class="value-input" type="number" step="0.001" name="pressure" placeholder="Pressure">
+                <input class="unit-input" type="text" value="bar" disabled tabindex="-1">
             </div>
 
             <textarea name="comments" placeholder="Comments"></textarea>
