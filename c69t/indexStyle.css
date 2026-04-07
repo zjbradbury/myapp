@@ -328,7 +328,6 @@ th {
 }
 
 @media (max-width: 700px) {
-
     .topbar,
     .kpis,
     .grid {
@@ -500,6 +499,14 @@ th {
     animation: flashRed 1s infinite;
 }
 
+.monitor-state-warning.flash-yellow {
+    animation: flashYellow 1s infinite;
+}
+
+.monitor-state-overdue.flash-red {
+    animation: flashRed 1s infinite;
+}
+
 @keyframes flashYellow {
     0%, 100% {
         box-shadow: 0 0 6px rgba(255, 180, 0, 0.15);
@@ -534,20 +541,4 @@ th {
 #monitor_refresh_seconds {
     width: 80px;
     padding: 5px 6px;
-}
-
-@media (max-width: 900px) {
-    .master-monitor-strip {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .master-strip-right {
-        text-align: left;
-    }
-}
-
-.monitor-not-set-up {
-    background: rgba(120, 120, 120, 0.18);
-    color: #d6d6d6;
 }
