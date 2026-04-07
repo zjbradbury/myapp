@@ -33,7 +33,7 @@ $allowedKeys = [
 
 foreach ($allowedKeys as $key) {
     if (array_key_exists($key, $input)) {
-        setSetting($pdo, $key, (string) $input[$key]);
+        setSetting($pdo, $key, (string)$input[$key]);
     }
 }
 
