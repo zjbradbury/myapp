@@ -180,7 +180,10 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                         <div class="monitor-line">
                             <span class="monitor-label">Since Last</span>
-                            <span class="monitor-since"><?= h($item['since_text']) ?></span>
+                            <span class="monitor-since"
+                                data-since-seconds="<?= $item['since_seconds'] === null ? '' : (int) $item['since_seconds'] ?>">
+                                <?= h($item['since_text']) ?>
+                            </span>
                         </div>
 
                         <div class="monitor-line">
@@ -197,7 +200,10 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                         <div class="monitor-line">
                             <span class="monitor-label">Countdown</span>
-                            <span class="monitor-countdown"><?= h($item['countdown']) ?></span>
+                            <span class="monitor-countdown"
+                                data-remaining-seconds="<?= $item['remaining_seconds'] === null ? '' : (int) $item['remaining_seconds'] ?>">
+                                <?= h($item['countdown']) ?>
+                            </span>
                         </div>
 
                         <div class="monitor-line">
@@ -493,109 +499,124 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         }
 
         makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [
-            {
-                label: 'Flow',
-                data: <?= json_encode($nozzleFlowSeries) ?>,
-                color: '#00ffff',
-                axis: 'y1'
-            },
-            {
-                label: 'Pressure',
-                data: <?= json_encode($nozzlePressureSeries) ?>,
-                color: '#ffd24d',
-                axis: 'y2'
-            },
-            {
-                label: 'Min Deg',
-                data: <?= json_encode($nozzleMinDegSeries) ?>,
-                color: '#6ee7a1',
-                axis: 'y3'
-            },
-            {
-                label: 'Max Deg',
-                data: <?= json_encode($nozzleMaxDegSeries) ?>,
-                color: '#c8a7ff',
-                axis: 'y4'
-            },
-            {
-                label: 'RPM',
-                data: <?= json_encode($nozzleRpmSeries) ?>,
-                color: '#ff7e67',
-                axis: 'y5'
-            }
+            { label: 'Flow', data: <?= json_encode($nozzleFlowSeries) ?>, color: '#00ffff', axis: 'y1' },
+            { label: 'Pressure', data: <?= json_encode($nozzlePressureSeries) ?>, color: '#ffd24d', axis: 'y2' },
+            { label: 'Min Deg', data: <?= json_encode($nozzleMinDegSeries) ?>, color: '#6ee7a1', axis: 'y3' },
+            { label: 'Max Deg', data: <?= json_encode($nozzleMaxDegSeries) ?>, color: '#c8a7ff', axis: 'y4' },
+            { label: 'RPM', data: <?= json_encode($nozzleRpmSeries) ?>, color: '#ff7e67', axis: 'y5' }
         ]);
 
         makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [
-            {
-                label: 'Bowl Speed',
-                data: <?= json_encode($tricanterBowlSpeedSeries) ?>,
-                color: '#00ffff',
-                axis: 'y1'
-            },
-            {
-                label: 'Screw Speed',
-                data: <?= json_encode($tricanterScrewSpeedSeries) ?>,
-                color: '#ffd24d',
-                axis: 'y2'
-            },
-            {
-                label: 'Bowl RPM',
-                data: <?= json_encode($tricanterBowlRpmSeries) ?>,
-                color: '#c8a7ff',
-                axis: 'y3'
-            },
-            {
-                label: 'Screw RPM',
-                data: <?= json_encode($tricanterScrewRpmSeries) ?>,
-                color: '#ff9bd6',
-                axis: 'y4'
-            },
-            {
-                label: 'Impeller',
-                data: <?= json_encode($tricanterImpellerSeries) ?>,
-                color: '#b6ff7a',
-                axis: 'y5'
-            },
-            {
-                label: 'Feed Rate',
-                data: <?= json_encode($tricanterFeedRateSeries) ?>,
-                color: '#00ff88',
-                axis: 'y6'
-            },
-            {
-                label: 'Torque',
-                data: <?= json_encode($tricanterTorqueSeries) ?>,
-                color: '#ff7e67',
-                axis: 'y7'
-            },
-            {
-                label: 'Temp',
-                data: <?= json_encode($tricanterTempSeries) ?>,
-                color: '#ffb36b',
-                axis: 'y8'
-            },
-            {
-                label: 'Pressure',
-                data: <?= json_encode($tricanterPressureSeries) ?>,
-                color: '#8fd3ff',
-                axis: 'y9'
-            }
+            { label: 'Bowl Speed', data: <?= json_encode($tricanterBowlSpeedSeries) ?>, color: '#00ffff', axis: 'y1' },
+            { label: 'Screw Speed', data: <?= json_encode($tricanterScrewSpeedSeries) ?>, color: '#ffd24d', axis: 'y2' },
+            { label: 'Bowl RPM', data: <?= json_encode($tricanterBowlRpmSeries) ?>, color: '#c8a7ff', axis: 'y3' },
+            { label: 'Screw RPM', data: <?= json_encode($tricanterScrewRpmSeries) ?>, color: '#ff9bd6', axis: 'y4' },
+            { label: 'Impeller', data: <?= json_encode($tricanterImpellerSeries) ?>, color: '#b6ff7a', axis: 'y5' },
+            { label: 'Feed Rate', data: <?= json_encode($tricanterFeedRateSeries) ?>, color: '#00ff88', axis: 'y6' },
+            { label: 'Torque', data: <?= json_encode($tricanterTorqueSeries) ?>, color: '#ff7e67', axis: 'y7' },
+            { label: 'Temp', data: <?= json_encode($tricanterTempSeries) ?>, color: '#ffb36b', axis: 'y8' },
+            { label: 'Pressure', data: <?= json_encode($tricanterPressureSeries) ?>, color: '#8fd3ff', axis: 'y9' }
         ]);
 
         makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [
-            {
-                label: 'Amount',
-                data: <?= json_encode($solidWasteAmountSeries) ?>,
-                color: '#00ff88',
-                axis: 'y1'
-            },
-            {
-                label: 'Diff (min)',
-                data: <?= json_encode($solidWasteDiffSeries) ?>,
-                color: '#ffd24d',
-                axis: 'y2'
-            }
+            { label: 'Amount', data: <?= json_encode($solidWasteAmountSeries) ?>, color: '#00ff88', axis: 'y1' },
+            { label: 'Diff (min)', data: <?= json_encode($solidWasteDiffSeries) ?>, color: '#ffd24d', axis: 'y2' }
         ]);
+
+        function formatSince(seconds) {
+            if (seconds === '' || seconds === null || isNaN(seconds)) return 'No data';
+            seconds = parseInt(seconds, 10);
+
+            if (seconds < 60) return seconds + 's ago';
+
+            if (seconds < 3600) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return mins + 'm ' + secs + 's ago';
+            }
+
+            if (seconds < 86400) {
+                const hrs = Math.floor(seconds / 3600);
+                const mins = Math.floor((seconds % 3600) / 60);
+                return hrs + 'h ' + mins + 'm ago';
+            }
+
+            const days = Math.floor(seconds / 86400);
+            const hrs = Math.floor((seconds % 86400) / 3600);
+            return days + 'd ' + hrs + 'h ago';
+        }
+
+        function formatCountdown(seconds) {
+            if (seconds === '' || seconds === null || isNaN(seconds)) return '--';
+            seconds = parseInt(seconds, 10);
+
+            if (seconds <= 0) return 'OVERDUE';
+
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            if (hours > 0) {
+                return String(hours).padStart(2, '0') + ':' +
+                    String(minutes).padStart(2, '0') + ':' +
+                    String(secs).padStart(2, '0');
+            }
+
+            return String(minutes).padStart(2, '0') + ':' +
+                String(secs).padStart(2, '0');
+        }
+
+        function updateMonitorCardState(card, remaining) {
+            const statusEl = card.querySelector('.monitor-status');
+            if (!statusEl) return;
+
+            let status = 'OK';
+            let statusClass = 'monitor-ok';
+
+            if (remaining <= 0) {
+                status = 'OVERDUE';
+                statusClass = 'monitor-overdue';
+            } else if (remaining <= 300) {
+                status = 'WARNING';
+                statusClass = 'monitor-warning';
+            }
+
+            if (statusEl.textContent.trim() !== 'MASTER OFF' &&
+                statusEl.textContent.trim() !== 'OFF' &&
+                statusEl.textContent.trim() !== 'NO DATA' &&
+                statusEl.textContent.trim() !== 'NOT SET UP') {
+                statusEl.textContent = status;
+                statusEl.className = 'monitor-status ' + statusClass;
+            }
+        }
+
+        function updateMonitorTimers() {
+            document.querySelectorAll('.monitor-item').forEach(card => {
+                const sinceEl = card.querySelector('.monitor-since');
+                const countdownEl = card.querySelector('.monitor-countdown');
+
+                if (sinceEl && sinceEl.dataset.sinceSeconds !== '') {
+                    let since = parseInt(sinceEl.dataset.sinceSeconds, 10);
+                    if (!isNaN(since)) {
+                        since++;
+                        sinceEl.dataset.sinceSeconds = since;
+                        sinceEl.textContent = formatSince(since);
+                    }
+                }
+
+                if (countdownEl && countdownEl.dataset.remainingSeconds !== '') {
+                    let remaining = parseInt(countdownEl.dataset.remainingSeconds, 10);
+                    if (!isNaN(remaining)) {
+                        remaining--;
+                        countdownEl.dataset.remainingSeconds = remaining;
+                        countdownEl.textContent = formatCountdown(remaining);
+                        updateMonitorCardState(card, remaining);
+                    }
+                }
+            });
+        }
+
+        setInterval(updateMonitorTimers, 1000);
     </script>
 
 </body>
