@@ -372,7 +372,7 @@ th {
     align-items: center;
     gap: 14px;
     flex-wrap: wrap;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
 .monitor-toolbar-left {
@@ -393,47 +393,6 @@ th {
     font-size: 1.25rem;
     font-weight: 700;
     color: #dcecff;
-}
-
-.master-monitor-strip {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 14px;
-    border-radius: 10px;
-    margin-bottom: 14px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.04);
-    transition: border-color .25s ease, box-shadow .25s ease;
-}
-
-.master-strip-left {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-width: 150px;
-}
-
-.master-strip-title {
-    font-size: .8rem;
-    opacity: .75;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-}
-
-.master-strip-state {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: #dcecff;
-}
-
-.master-strip-right {
-    flex: 1;
-    text-align: right;
-    color: #dcecff;
-    font-size: .95rem;
-    word-break: break-word;
 }
 
 .monitor-grid {
@@ -512,7 +471,8 @@ th {
     color: #ccc;
 }
 
-.monitor-no-data {
+.monitor-no-data,
+.monitor-not-set-up {
     background: rgba(80, 80, 180, 0.18);
     color: #b7c7ff;
 }
@@ -530,27 +490,6 @@ th {
 .monitor-state-alarm {
     border-color: rgba(255, 60, 60, 0.55);
     box-shadow: 0 0 12px rgba(255, 60, 60, 0.18);
-}
-
-.monitor-strip-ok {
-    border-color: rgba(0, 150, 0, 0.25);
-    box-shadow: 0 0 8px rgba(0, 150, 0, 0.08);
-}
-
-.monitor-strip-warning {
-    border-color: rgba(255, 165, 0, 0.45);
-    box-shadow: 0 0 12px rgba(255, 165, 0, 0.16);
-}
-
-.monitor-strip-alarm,
-.monitor-strip-overdue {
-    border-color: rgba(255, 60, 60, 0.55);
-    box-shadow: 0 0 14px rgba(255, 60, 60, 0.20);
-}
-
-.monitor-strip-master-off,
-.monitor-strip-off {
-    border-color: rgba(160, 160, 160, 0.35);
 }
 
 .flash-yellow {
