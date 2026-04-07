@@ -437,6 +437,26 @@ function setSetting(PDO $pdo, string $key, string $value): void
     $stmt->execute([$key, $value]);
 }
 
+function tableExists(PDO $pdo, string $table): bool
+{
+    static $cache = [];
+
+    if (isset($cache[$table])) {
+        return $cache[$table];
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM information_schema.tables
+        WHERE table_schema = DATABASE()
+          AND table_name = ?
+    ");
+    $stmt->execute([$table]);
+
+    $cache[$table] = ((int)$stmt->fetchColumn() > 0);
+    return $cache[$table];
+}
+
 function formatCountdownSeconds(int $seconds): string
 {
     if ($seconds <= 0) {
@@ -479,15 +499,7 @@ function formatElapsedTime(int $seconds): string
 
 function getLastLogDateTime(PDO $pdo, string $table): ?string
 {
-    $allowed = [
-        'nozzle_logs',
-        'tricanter_logs',
-        'solid_waste_logs',
-        'sample_logs',
-        'gas_test_logs'
-    ];
-
-    if (!in_array($table, $allowed, true)) {
+    if (!tableExists($pdo, $table)) {
         return null;
     }
 
@@ -510,39 +522,39 @@ function getLastLogDateTime(PDO $pdo, string $table): ?string
 
 function buildMonitoringData(PDO $pdo): array
 {
-    $masterEnabled = (int) getSetting($pdo, 'monitor_master', '1') === 1;
-    $refreshSeconds = max(5, (int) getSetting($pdo, 'monitor_refresh_seconds', '30'));
+    $masterEnabled = (int)getSetting($pdo, 'monitor_master', '1') === 1;
+    $refreshSeconds = max(5, (int)getSetting($pdo, 'monitor_refresh_seconds', '30'));
 
     $items = [
         'nozzle' => [
             'label' => 'Nozzle',
             'table' => 'nozzle_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_nozzle_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_nozzle_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_nozzle_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_nozzle_minutes', '60')),
         ],
         'tricanter' => [
             'label' => 'Tricanter',
             'table' => 'tricanter_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_tricanter_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_tricanter_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_tricanter_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_tricanter_minutes', '60')),
         ],
         'solid_waste' => [
             'label' => 'Solid Waste',
             'table' => 'solid_waste_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_solid_waste_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_solid_waste_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_solid_waste_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_solid_waste_minutes', '60')),
         ],
         'sample' => [
             'label' => 'Sample',
             'table' => 'sample_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_sample_enabled', '0') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_sample_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_sample_enabled', '0') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_sample_minutes', '60')),
         ],
         'gas_test' => [
             'label' => 'Gas Test',
             'table' => 'gas_test_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_gas_test_enabled', '0') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_gas_test_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_gas_test_enabled', '0') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_gas_test_minutes', '60')),
         ],
     ];
 
@@ -550,10 +562,9 @@ function buildMonitoringData(PDO $pdo): array
     $masterState = $masterEnabled ? 'OK' : 'MASTER OFF';
 
     foreach ($items as $key => &$item) {
-        $last = getLastLogDateTime($pdo, $item['table']);
-
-        $item['last_entry'] = $last;
-        $item['last_entry_display'] = $last ? date('d/m/Y H:i', strtotime($last)) : 'No data';
+        $item['exists'] = tableExists($pdo, $item['table']);
+        $item['last_entry'] = null;
+        $item['last_entry_display'] = 'No data';
         $item['since_seconds'] = null;
         $item['since_text'] = 'No data';
         $item['remaining_seconds'] = null;
@@ -568,6 +579,19 @@ function buildMonitoringData(PDO $pdo): array
             $item['status'] = 'OFF';
             continue;
         }
+
+        if (!$item['exists']) {
+            $item['status'] = 'NOT SET UP';
+            $item['countdown'] = '--';
+            if ($masterState !== 'ALARM') {
+                $masterState = 'WARNING';
+            }
+            continue;
+        }
+
+        $last = getLastLogDateTime($pdo, $item['table']);
+        $item['last_entry'] = $last;
+        $item['last_entry_display'] = $last ? date('d/m/Y H:i', strtotime($last)) : 'No data';
 
         if (!$last) {
             $item['status'] = 'NO DATA';
