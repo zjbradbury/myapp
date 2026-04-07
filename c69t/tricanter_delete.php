@@ -2,7 +2,7 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
-$id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
+$id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 
 $stmt = $pdo->prepare("DELETE FROM tricanter_logs WHERE id = ?");
 $stmt->execute([$id]);

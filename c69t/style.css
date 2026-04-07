@@ -13,18 +13,23 @@ body {
     background: #102944;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 14px rgba(0,0,0,0.3);
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.3);
 }
 
 .container.wide {
     max-width: 1600px;
 }
 
-h2, h3, p {
+h2,
+h3,
+p {
     margin-top: 0;
 }
 
-input, textarea, select, button {
+input,
+textarea,
+select,
+button {
     width: 100%;
     padding: 10px;
     margin: 8px 0;
@@ -40,7 +45,8 @@ textarea {
     resize: vertical;
 }
 
-button, .btn {
+button,
+.btn {
     display: inline-block;
     width: auto;
     background: #2e7bb4;
@@ -68,7 +74,8 @@ table {
     overflow-x: auto;
 }
 
-th, td {
+th,
+td {
     border: 1px solid #21486e;
     padding: 8px;
     text-align: left;

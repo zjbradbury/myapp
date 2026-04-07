@@ -2,7 +2,7 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
-$id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
+$id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM solid_waste_logs WHERE id = ?");
 $stmt->execute([$id]);
@@ -36,30 +36,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Edit Solid Waste Record</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="container">
-    <h2>Edit Solid Waste Record</h2>
+    <div class="container">
+        <h2>Edit Solid Waste Record</h2>
 
-    <form method="post">
-        <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>" required>
-        <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>" required>
+        <form method="post">
+            <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>" required>
+            <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>" required>
 
-        <div class="input-unit-wrap">
-            <input type="number" step="0.01" name="amount" value="<?= h($row["amount"]) ?>" placeholder="Amount" required>
-            <span class="unit">KG</span>
-        </div>
+            <div class="input-unit-wrap">
+                <input type="number" step="0.01" name="amount" value="<?= h($row["amount"]) ?>" placeholder="Amount"
+                    required>
+                <span class="unit">KG</span>
+            </div>
 
-        <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
+            <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
 
-        <button type="submit">Update</button>
-    </form>
-</div>
+            <button type="submit">Update</button>
+        </form>
+    </div>
 
 </body>
+
 </html>

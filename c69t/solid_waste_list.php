@@ -27,7 +27,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
             <h2>Solid Waste Logs</h2>
             <div>
                 <?php if ($canEdit): ?>
-                <a class="btn" href="solid_waste_add.php">Add Record</a>
+                    <a class="btn" href="solid_waste_add.php">Add Record</a>
                 <?php endif; ?>
             </div>
         </div>
@@ -40,32 +40,33 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                         <th>Time</th>
                         <th>Amount</th>
                         <th>Comments</th>
-                        <?php if ($canEdit): ?><th>Actions</th><?php endif; ?>
+                        <?php if ($canEdit): ?>
+                            <th>Actions</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
                     <?php if (!$rows): ?>
-                    <tr>
-                        <td colspan="<?= $canEdit ? 5 : 4; ?>">No records found.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="<?= $canEdit ? 5 : 4; ?>">No records found.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($rows as $row): ?>
-                    <tr>
-                        <td><?= h($row["log_date"]) ?></td>
-                        <td><?= h($row["log_time"]) ?></td>
-                        <td>
-                            <?= $row["amount"] !== null && $row["amount"] !== "" ? h(number_format((float)$row["amount"], 0)) . ' kg' : '' ?>
-                        </td>
-                        <td><?= nl2br(h($row["comments"] ?? "")) ?></td>
-                        <?php if ($canEdit): ?>
-                        <td>
-                            <a class="btn small" href="solid_waste_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>
-                            <a class="btn small danger" href="solid_waste_delete.php?id=<?= (int)$row["id"] ?>"
-                                onclick="return confirm('Delete this record?')">Delete</a>
-                        </td>
-                        <?php endif; ?>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($rows as $row): ?>
+                            <tr>
+                                <td><?= h($row["log_date"]) ?></td>
+                                <td><?= h($row["log_time"]) ?></td>
+                                <td>
+                                    <?= $row["amount"] !== null && $row["amount"] !== "" ? h(number_format((float) $row["amount"], 0)) . ' kg' : '' ?>
+                                </td>
+                                <td><?= nl2br(h($row["comments"] ?? "")) ?></td>
+                                <?php if ($canEdit): ?>
+                                    <td>
+                                        <a class="btn small" href="solid_waste_edit.php?id=<?= (int) $row["id"] ?>">Edit</a>
+                                        <a class="btn small danger" href="solid_waste_delete.php?id=<?= (int) $row["id"] ?>"
+                                            onclick="return confirm('Delete this record?')">Delete</a>
+                                    </td>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </tbody>
             </table>

@@ -6,7 +6,7 @@ requireRole(['admin', 'operator', 'viewer']);
    RANGE FILTER
    ========================= */
 $rangeStart = trim($_GET['start'] ?? '');
-$rangeEnd   = trim($_GET['end'] ?? '');
+$rangeEnd = trim($_GET['end'] ?? '');
 $quickRange = trim($_GET['quick'] ?? '');
 
 $usedDefaultShift = false;
@@ -21,17 +21,17 @@ if ($quickRange !== '') {
 
         case 'today':
             $rangeStart = date('Y-m-d 00:00', $now);
-            $rangeEnd   = date('Y-m-d H:i', $now);
+            $rangeEnd = date('Y-m-d H:i', $now);
             break;
 
         case '24h':
             $rangeStart = date('Y-m-d H:i', strtotime('-24 hours', $now));
-            $rangeEnd   = date('Y-m-d H:i', $now);
+            $rangeEnd = date('Y-m-d H:i', $now);
             break;
 
         case '7d':
             $rangeStart = date('Y-m-d H:i', strtotime('-7 days', $now));
-            $rangeEnd   = date('Y-m-d H:i', $now);
+            $rangeEnd = date('Y-m-d H:i', $now);
             break;
 
         case 'clear':
@@ -153,7 +153,7 @@ $solidWasteDiffSeries = solid_diff_series($solidWaste);
 $solidWasteTotalAmount = 0.0;
 foreach ($solidWaste as $r) {
     if (isset($r['amount']) && $r['amount'] !== '' && is_numeric($r['amount'])) {
-        $solidWasteTotalAmount += (float)$r['amount'];
+        $solidWasteTotalAmount += (float) $r['amount'];
     }
 }
 
@@ -168,7 +168,7 @@ $rangeSummary = 'Current shift block';
 
 if ($rangeStart !== '' || $rangeEnd !== '') {
     $fromText = $rangeStart !== '' ? date('d/m/Y H:i', strtotime($rangeStart)) : 'Beginning';
-    $toText   = $rangeEnd !== '' ? date('d/m/Y H:i', strtotime($rangeEnd)) : 'Now';
+    $toText = $rangeEnd !== '' ? date('d/m/Y H:i', strtotime($rangeEnd)) : 'Now';
     $rangeSummary = $fromText . ' → ' . $toText;
 }
 ?>
@@ -193,7 +193,8 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
             <div class="info-title">System Status</div>
             <div class="status-row">
                 <div class="info-value <?= $systemStatus === 'ONLINE' ? 'status-online' : 'status-offline' ?>">
-                    <?= h($systemStatus) ?></div>
+                    <?= h($systemStatus) ?>
+                </div>
 
                 <div class="last-entry-inline">
                     <div class="last-entry-heading">Last Entry</div>
@@ -248,13 +249,13 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
             </form>
 
             <?php if ($rangeError !== ''): ?>
-            <div class="range-error"><?= h($rangeError) ?></div>
+                <div class="range-error"><?= h($rangeError) ?></div>
             <?php elseif ($rangeActive && $usedDefaultShift): ?>
-            <div class="range-active">Showing current 12 hour shift block</div>
+                <div class="range-active">Showing current 12 hour shift block</div>
             <?php elseif ($rangeActive): ?>
-            <div class="range-active">Filtering graphs and tables to selected range</div>
+                <div class="range-active">Filtering graphs and tables to selected range</div>
             <?php else: ?>
-            <div class="range-active">Showing all available records</div>
+                <div class="range-active">Showing all available records</div>
             <?php endif; ?>
         </div>
     </div>
@@ -303,25 +304,25 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
                         <th>Pressure</th>
                     </tr>
                     <?php if (!$tricanter): ?>
-                    <tr>
-                        <td colspan="11">No tricanter data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="11">No tricanter data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($tricanter as $r): ?>
-                    <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
-                        <td><?= fmt($r['screw_speed'] ?? null, 2) ?> %</td>
-                        <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?> RPM</td>
-                        <td><?= fmt($r['screw_rpm'] ?? null, 2) ?> RPM</td>
-                        <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
-                        <td><?= fmt($r['feed_rate'] ?? null, 2) ?> M3/hr</td>
-                        <td><?= fmt($r['torque'] ?? null, 1) ?> %</td>
-                        <td><?= fmt($r['temp'] ?? null, 1) ?> °C</td>
-                        <td><?= fmt($r['pressure'] ?? null, 3) ?> BAR</td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($tricanter as $r): ?>
+                            <tr class="tri-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
+                                <td><?= fmt($r['screw_speed'] ?? null, 2) ?> %</td>
+                                <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?> RPM</td>
+                                <td><?= fmt($r['screw_rpm'] ?? null, 2) ?> RPM</td>
+                                <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
+                                <td><?= fmt($r['feed_rate'] ?? null, 2) ?> M3/hr</td>
+                                <td><?= fmt($r['torque'] ?? null, 1) ?> %</td>
+                                <td><?= fmt($r['temp'] ?? null, 1) ?> °C</td>
+                                <td><?= fmt($r['pressure'] ?? null, 3) ?> BAR</td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -354,20 +355,20 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
                         <th>Comments</th>
                     </tr>
                     <?php if (!$solidWaste): ?>
-                    <tr>
-                        <td colspan="5">No solid waste data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="5">No solid waste data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($solidWaste as $r): ?>
-                    <tr class="solid-row" data-id="<?= (int)$r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td><?= fmt($r['amount'] ?? null, 2) ?> KG</td>
-                        <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?>
-                        </td>
-                        <td><?= h($r['comments'] ?? '') ?></td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($solidWaste as $r): ?>
+                            <tr class="solid-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= fmt($r['amount'] ?? null, 2) ?> KG</td>
+                                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?>
+                                </td>
+                                <td><?= h($r['comments'] ?? '') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -404,22 +405,22 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
                         <th>RPM</th>
                     </tr>
                     <?php if (!$nozzle): ?>
-                    <tr>
-                        <td colspan="8">No nozzle data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="8">No nozzle data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($nozzle as $r): ?>
-                    <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td>N<?= h($r['nozzle']) ?></td>
-                        <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
-                        <td><?= fmt($r['pressure'] ?? null, 2) ?> BAR</td>
-                        <td><?= fmt($r['min_deg'] ?? null, 0) ?> °</td>
-                        <td><?= fmt($r['max_deg'] ?? null, 0) ?> °</td>
-                        <td><?= fmt($r['rpm'] ?? null, 1) ?> RPM</td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($nozzle as $r): ?>
+                            <tr class="nozzle-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td>N<?= h($r['nozzle']) ?></td>
+                                <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
+                                <td><?= fmt($r['pressure'] ?? null, 2) ?> BAR</td>
+                                <td><?= fmt($r['min_deg'] ?? null, 0) ?> °</td>
+                                <td><?= fmt($r['max_deg'] ?? null, 0) ?> °</td>
+                                <td><?= fmt($r['rpm'] ?? null, 1) ?> RPM</td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -428,108 +429,108 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
     </div>
 
     <script>
-    function flashRows(selector, storageKey) {
-        let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
-        let max = last;
+        function flashRows(selector, storageKey) {
+            let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
+            let max = last;
 
-        document.querySelectorAll(selector).forEach(row => {
-            const id = parseInt(row.dataset.id || '0', 10);
-            if (id > last) row.classList.add('flash');
-            if (id > max) max = id;
-        });
+            document.querySelectorAll(selector).forEach(row => {
+                const id = parseInt(row.dataset.id || '0', 10);
+                if (id > last) row.classList.add('flash');
+                if (id > max) max = id;
+            });
 
-        localStorage.setItem(storageKey, String(max));
-    }
+            localStorage.setItem(storageKey, String(max));
+        }
 
-    flashRows('.nozzle-row', 'nLast');
-    flashRows('.tri-row', 'tLast');
-    flashRows('.solid-row', 'sLast');
+        flashRows('.nozzle-row', 'nLast');
+        flashRows('.tri-row', 'tLast');
+        flashRows('.solid-row', 'sLast');
 
-    function makeCombinedChart(canvasId, labels, datasets) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
+        function makeCombinedChart(canvasId, labels, datasets) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
 
-        const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
-        if (valid.length === 0) return;
+            const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
+            if (valid.length === 0) return;
 
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: valid.map(ds => ({
-                    label: ds.label,
-                    data: ds.data,
-                    borderColor: ds.color,
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    tension: 0.25,
-                    pointRadius: 0,
-                    spanGaps: true,
-                    yAxisID: ds.axis
-                }))
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            color: '#dcecff',
-                            boxWidth: 10,
-                            padding: 10,
-                            font: {
-                                size: 11
-                            }
-                        }
-                    },
-                    tooltip: {
-                        enabled: true,
-                        callbacks: {
-                            title: function(context) {
-                                return context[0]?.label || '';
-                            }
-                        }
-                    }
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: valid.map(ds => ({
+                        label: ds.label,
+                        data: ds.data,
+                        borderColor: ds.color,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.25,
+                        pointRadius: 0,
+                        spanGaps: true,
+                        yAxisID: ds.axis
+                    }))
                 },
-                scales: {
-                    x: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#dcecff',
+                                boxWidth: 10,
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                title: function (context) {
+                                    return context[0]?.label || '';
+                                }
+                            }
+                        }
                     },
-                    y1: {
-                        display: false
-                    },
-                    y2: {
-                        display: false
-                    },
-                    y3: {
-                        display: false
-                    },
-                    y4: {
-                        display: false
-                    },
-                    y5: {
-                        display: false
-                    },
-                    y6: {
-                        display: false
-                    },
-                    y7: {
-                        display: false
-                    },
-                    y8: {
-                        display: false
-                    },
-                    y9: {
-                        display: false
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y1: {
+                            display: false
+                        },
+                        y2: {
+                            display: false
+                        },
+                        y3: {
+                            display: false
+                        },
+                        y4: {
+                            display: false
+                        },
+                        y5: {
+                            display: false
+                        },
+                        y6: {
+                            display: false
+                        },
+                        y7: {
+                            display: false
+                        },
+                        y8: {
+                            display: false
+                        },
+                        y9: {
+                            display: false
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [{
+        makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [{
             label: 'Flow',
             data: <?= json_encode($nozzleFlowSeries) ?>,
             color: '#00ffff',
@@ -559,9 +560,9 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
             color: '#ff7e67',
             axis: 'y5'
         }
-    ]);
+        ]);
 
-    makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [{
+        makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [{
             label: 'Bowl Speed',
             data: <?= json_encode($tricanterBowlSpeedSeries) ?>,
             color: '#00ffff',
@@ -615,9 +616,9 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
             color: '#8fd3ff',
             axis: 'y9'
         }
-    ]);
+        ]);
 
-    makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [{
+        makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [{
             label: 'Amount',
             data: <?= json_encode($solidWasteAmountSeries) ?>,
             color: '#00ff88',
@@ -629,7 +630,7 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
             color: '#ffd24d',
             axis: 'y2'
         }
-    ]);
+        ]);
     </script>
 
 </body>

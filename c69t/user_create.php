@@ -29,33 +29,36 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Create User</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
-<div class="container">
-    <h2>Create User</h2>
+    <?php require_once "nav.php"; ?>
+    <div class="container">
+        <h2>Create User</h2>
 
-    <?php if ($message !== ""): ?>
-        <p class="message error"><?= h($message) ?></p>
-    <?php endif; ?>
+        <?php if ($message !== ""): ?>
+            <p class="message error"><?= h($message) ?></p>
+        <?php endif; ?>
 
-    <form method="post">
-        <input type="text" name="username" placeholder="Username" required>
-        <input type="password" name="password" placeholder="Password" required>
+        <form method="post">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
 
-        <select name="role" required>
-            <option value="user">user</option>
-            <option value="operator">operator</option>
-            <option value="viewer">viewer</option>
-            <option value="admin">admin</option>
-        </select>
+            <select name="role" required>
+                <option value="user">user</option>
+                <option value="operator">operator</option>
+                <option value="viewer">viewer</option>
+                <option value="admin">admin</option>
+            </select>
 
-        <button type="submit">Create User</button>
-    </form>
+            <button type="submit">Create User</button>
+        </form>
 
-</div>
+    </div>
 </body>
+
 </html>

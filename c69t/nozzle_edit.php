@@ -2,7 +2,7 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
-$id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
+$id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM nozzle_logs WHERE id = ?");
 $stmt->execute([$id]);
@@ -39,55 +39,59 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Edit Nozzle Record</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="container">
-    <h2>Edit Nozzle Record</h2>
+    <div class="container">
+        <h2>Edit Nozzle Record</h2>
 
-    <form method="post">
-        <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>">
-        <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>">
+        <form method="post">
+            <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>">
+            <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>">
 
-        <div class="input-unit-wrap">
-            <input type="number" name="nozzle" value="<?= h($row["nozzle"]) ?>" placeholder="Nozzle">
-            <span class="unit">N</span>
-        </div>
+            <div class="input-unit-wrap">
+                <input type="number" name="nozzle" value="<?= h($row["nozzle"]) ?>" placeholder="Nozzle">
+                <span class="unit">N</span>
+            </div>
 
-        <div class="input-unit-wrap long">
-            <input type="number" step="0.1" name="flow" value="<?= h($row["flow"]) ?>" placeholder="Flow">
-            <span class="unit">m3/hr</span>
-        </div>
+            <div class="input-unit-wrap long">
+                <input type="number" step="0.1" name="flow" value="<?= h($row["flow"]) ?>" placeholder="Flow">
+                <span class="unit">m3/hr</span>
+            </div>
 
-        <div class="input-unit-wrap">
-            <input type="number" step="0.01" name="pressure" value="<?= h($row["pressure"]) ?>" placeholder="Pressure">
-            <span class="unit">BAR</span>
-        </div>
+            <div class="input-unit-wrap">
+                <input type="number" step="0.01" name="pressure" value="<?= h($row["pressure"]) ?>"
+                    placeholder="Pressure">
+                <span class="unit">BAR</span>
+            </div>
 
-        <div class="input-unit-wrap">
-            <input type="number" name="min_deg" value="<?= h($row["min_deg"]) ?>" placeholder="Min Deg">
-            <span class="unit">°</span>
-        </div>
+            <div class="input-unit-wrap">
+                <input type="number" name="min_deg" value="<?= h($row["min_deg"]) ?>" placeholder="Min Deg">
+                <span class="unit">°</span>
+            </div>
 
-        <div class="input-unit-wrap">
-            <input type="number" name="max_deg" value="<?= h($row["max_deg"]) ?>" placeholder="Max Deg">
-            <span class="unit">°</span>
-        </div>
+            <div class="input-unit-wrap">
+                <input type="number" name="max_deg" value="<?= h($row["max_deg"]) ?>" placeholder="Max Deg">
+                <span class="unit">°</span>
+            </div>
 
-        <div class="input-unit-wrap">
-            <input type="number" step="0.1" name="rpm" value="<?= h($row["rpm"]) ?>" placeholder="RPM">
-            <span class="unit">RPM</span>
-        </div>
+            <div class="input-unit-wrap">
+                <input type="number" step="0.1" name="rpm" value="<?= h($row["rpm"]) ?>" placeholder="RPM">
+                <span class="unit">RPM</span>
+            </div>
 
-        <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
+            <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
 
-        <button type="submit">Update</button>
-    </form>
-</div>
+            <button type="submit">Update</button>
+        </form>
+    </div>
 
 </body>
+
 </html>

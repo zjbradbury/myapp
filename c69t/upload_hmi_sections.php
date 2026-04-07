@@ -7,7 +7,8 @@ $user = "zack";
 $pass = "Butcher69";
 $sharedSecret = "ButcherWhiskeyTango";
 
-function fail($msg, $code = 400) {
+function fail($msg, $code = 400)
+{
     http_response_code($code);
     echo json_encode([
         "status" => "error",
@@ -16,8 +17,9 @@ function fail($msg, $code = 400) {
     exit;
 }
 
-function parse_log_date($value) {
-    $value = trim((string)$value);
+function parse_log_date($value)
+{
+    $value = trim((string) $value);
     if ($value === '') {
         return null;
     }
@@ -40,14 +42,15 @@ function parse_log_date($value) {
     return null;
 }
 
-function parse_log_time($value) {
-    $value = trim((string)$value);
+function parse_log_time($value)
+{
+    $value = trim((string) $value);
     if ($value === '') {
         return null;
     }
 
     if (is_numeric($value)) {
-        $seconds = (int) round(((float)$value) * 86400);
+        $seconds = (int) round(((float) $value) * 86400);
         $seconds = $seconds % 86400;
         return gmdate('H:i:s', $seconds);
     }
@@ -152,7 +155,7 @@ try {
             continue;
         }
 
-        $section = strtoupper(trim((string)$record['table']));
+        $section = strtoupper(trim((string) $record['table']));
 
         if (!isset($sectionMap[$section])) {
             continue;
@@ -167,7 +170,7 @@ try {
 
         foreach ($record['data'] as $key => $value) {
 
-            $key = trim((string)$key);
+            $key = trim((string) $key);
 
             if (!isset($allowedColumns[$key])) {
                 continue;
