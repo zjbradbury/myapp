@@ -75,15 +75,6 @@ th, td {
     text-align: left;
     vertical-align: top;
     font-size: 14px;
-    text-overflow: ellipsis;
-}
-
-td.comments-cell {
-    max-width: 120px;
-    width: 120px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 th {
