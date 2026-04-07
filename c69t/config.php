@@ -561,7 +561,7 @@ function buildMonitoringData(PDO $pdo): array
     $now = time();
     $masterState = $masterEnabled ? 'OK' : 'MASTER OFF';
 
-    foreach ($items as $key => &$item) {
+    foreach ($items as &$item) {
         $item['exists'] = tableExists($pdo, $item['table']);
         $item['last_entry'] = null;
         $item['last_entry_display'] = 'No data';
@@ -582,7 +582,6 @@ function buildMonitoringData(PDO $pdo): array
 
         if (!$item['exists']) {
             $item['status'] = 'NOT SET UP';
-            $item['countdown'] = '--';
             if ($masterState !== 'ALARM') {
                 $masterState = 'WARNING';
             }
