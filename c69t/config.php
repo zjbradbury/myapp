@@ -127,6 +127,23 @@ if (!function_exists('get_current_shift_range')) {
     }
 }
 
+
+if (!function_exists('get_previous_shift_range')) {
+    function get_previous_shift_range(?int $timestamp = null): array
+    {
+        $timestamp = $timestamp ?? time();
+        [$currentStart] = get_current_shift_range($timestamp);
+
+        $previousStartTs = strtotime($currentStart . ' -12 hours');
+        $previousEndTs = strtotime($currentStart);
+
+        return [
+            date('Y-m-d H:i', $previousStartTs),
+            date('Y-m-d H:i', $previousEndTs),
+        ];
+    }
+}
+
 if (!function_exists('solid_diff_minutes_rows')) {
     function solid_diff_minutes_rows(array $rows): array
     {
@@ -190,6 +207,10 @@ function get_range_filter_state(bool $defaultToCurrentShift = true): array
         switch ($quickRange) {
             case 'current_shift':
                 [$rangeStart, $rangeEnd] = get_current_shift_range($now);
+                break;
+
+            case 'previous_shift':
+                [$rangeStart, $rangeEnd] = get_previous_shift_range($now);
                 break;
 
             case 'today':
@@ -333,6 +354,7 @@ function render_dashboard_range_filter(array $range): void
 
                 <div class="quick-actions">
                     <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
+                    <button type="submit" name="quick" value="previous_shift" class="btn btn-quick">Previous Shift</button>
                     <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
                     <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
                     <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
@@ -373,6 +395,7 @@ function render_range_filter(array $range, string $message = 'Filtering table to
 
                     <div class="list-quick-actions">
                         <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
+                        <button type="submit" name="quick" value="previous_shift" class="btn btn-quick">Previous Shift</button>
                         <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
                         <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
                         <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
