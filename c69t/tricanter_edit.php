@@ -2,6 +2,11 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
+function nullIfBlank($value) {
+    $value = trim((string)($value ?? ''));
+    return $value === '' ? null : $value;
+}
+
 $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM tricanter_logs WHERE id = ?");
@@ -21,18 +26,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $stmt->execute([
         "web_entry_" . ($_SESSION['username'] ?? 'unknown'),
-        trim($_POST["log_date"] ?? "") ?: null,
-        trim($_POST["log_time"] ?? "") ?: null,
-        trim($_POST["bowl_speed"] ?? "") ?: null,
-        trim($_POST["screw_speed"] ?? "") ?: null,
-        trim($_POST["bowl_rpm"] ?? "") ?: null,
-        trim($_POST["screw_rpm"] ?? "") ?: null,
-        trim($_POST["impeller"] ?? "") ?: null,
-        trim($_POST["feed_rate"] ?? "") ?: null,
-        trim($_POST["torque"] ?? "") ?: null,
-        trim($_POST["temp"] ?? "") ?: null,
-        trim($_POST["pressure"] ?? "") ?: null,
-        trim($_POST["comments"] ?? "") ?: null,
+        nullIfBlank($_POST["log_date"] ?? null),
+        nullIfBlank($_POST["log_time"] ?? null),
+        nullIfBlank($_POST["bowl_speed"] ?? null),
+        nullIfBlank($_POST["screw_speed"] ?? null),
+        nullIfBlank($_POST["bowl_rpm"] ?? null),
+        nullIfBlank($_POST["screw_rpm"] ?? null),
+        nullIfBlank($_POST["impeller"] ?? null),
+        nullIfBlank($_POST["feed_rate"] ?? null),
+        nullIfBlank($_POST["torque"] ?? null),
+        nullIfBlank($_POST["temp"] ?? null),
+        nullIfBlank($_POST["pressure"] ?? null),
+        nullIfBlank($_POST["comments"] ?? null),
         $id
     ]);
 
@@ -42,38 +47,70 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Edit Tricanter Record</title>
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-    <?php require_once "nav.php"; ?>
-    <div class="container">
-        <h2>Edit Tricanter Record</h2>
-        <form method="post">
-            <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>">
-            <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>">
-            <input type="number" step="0.000001" name="bowl_speed" value="<?= h($row["bowl_speed"]) ?>"
-                placeholder="Bowl Speed">
-            <input type="number" step="0.000001" name="screw_speed" value="<?= h($row["screw_speed"]) ?>"
-                placeholder="Screw Speed">
-            <input type="number" step="0.000001" name="bowl_rpm" value="<?= h($row["bowl_rpm"]) ?>"
-                placeholder="Bowl RPM">
-            <input type="number" step="0.000001" name="screw_rpm" value="<?= h($row["screw_rpm"]) ?>"
-                placeholder="Screw RPM">
-            <input type="text" name="impeller" value="<?= h($row["impeller"]) ?>" placeholder="Impeller">
-            <input type="number" step="0.000001" name="feed_rate" value="<?= h($row["feed_rate"]) ?>"
-                placeholder="Feed Rate">
-            <input type="number" step="0.000001" name="torque" value="<?= h($row["torque"]) ?>" placeholder="Torque">
-            <input type="number" step="0.000001" name="temp" value="<?= h($row["temp"]) ?>" placeholder="Temp">
-            <input type="number" step="0.000001" name="pressure" value="<?= h($row["pressure"]) ?>"
-                placeholder="Pressure">
-            <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
-            <button type="submit">Update</button>
-        </form>
-    </div>
-</body>
+<?php require_once "nav.php"; ?>
 
+<div class="container">
+    <h2>Edit Tricanter Record</h2>
+
+    <form method="post">
+        <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>">
+        <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>">
+
+        <div class="input-unit-wrap">
+            <input type="number" name="bowl_speed" value="<?= h($row["bowl_speed"]) ?>" placeholder="Bowl Speed">
+            <span class="unit">%</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" step="0.01" name="screw_speed" value="<?= h($row["screw_speed"]) ?>" placeholder="Screw Speed">
+            <span class="unit">%</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" name="bowl_rpm" value="<?= h($row["bowl_rpm"]) ?>" placeholder="Bowl RPM">
+            <span class="unit">RPM</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" name="screw_rpm" value="<?= h($row["screw_rpm"]) ?>" placeholder="Screw RPM">
+            <span class="unit">RPM</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" name="impeller" value="<?= h($row["impeller"]) ?>" placeholder="Impeller">
+            <span class="unit">%</span>
+        </div>
+
+        <div class="input-unit-wrap long">
+            <input type="number" step="0.01" name="feed_rate" value="<?= h($row["feed_rate"]) ?>" placeholder="Feed Rate">
+            <span class="unit">m3/hr</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" step="0.1" name="torque" value="<?= h($row["torque"]) ?>" placeholder="Torque">
+            <span class="unit">%</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" step="0.1" name="temp" value="<?= h($row["temp"]) ?>" placeholder="Temp">
+            <span class="unit">°C</span>
+        </div>
+
+        <div class="input-unit-wrap">
+            <input type="number" step="0.001" name="pressure" value="<?= h($row["pressure"]) ?>" placeholder="Pressure">
+            <span class="unit">BAR</span>
+        </div>
+
+        <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
+
+        <button type="submit">Update</button>
+    </form>
+</div>
+
+</body>
 </html>

@@ -2,6 +2,11 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
+function nullIfBlank($value) {
+    $value = trim((string)($value ?? ''));
+    return $value === '' ? null : $value;
+}
+
 $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM solid_waste_logs WHERE id = ?");
@@ -23,10 +28,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $stmt->execute([
         "web_entry_" . $currentUser,
-        trim($_POST["log_date"] ?? "") ?: null,
-        trim($_POST["log_time"] ?? "") ?: null,
-        trim($_POST["amount"] ?? "") ?: null,
-        trim($_POST["comments"] ?? "") ?: null,
+        nullIfBlank($_POST["log_date"] ?? null),
+        nullIfBlank($_POST["log_time"] ?? null),
+        nullIfBlank($_POST["amount"] ?? null),
+        nullIfBlank($_POST["comments"] ?? null),
         $id
     ]);
 
@@ -52,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="input-unit-wrap">
             <input type="number" step="0.01" name="amount" value="<?= h($row["amount"]) ?>" placeholder="Amount" required>
-            <span class="unit">kg</span>
+            <span class="unit">KG</span>
         </div>
 
         <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>

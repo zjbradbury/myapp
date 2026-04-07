@@ -4,6 +4,11 @@ requireRole(["admin", "operator"]);
 
 $currentUser = $_SESSION['username'] ?? 'unknown';
 
+function nullIfBlank($value) {
+    $value = trim((string)($value ?? ''));
+    return $value === '' ? null : $value;
+}
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt = $pdo->prepare("
         INSERT INTO solid_waste_logs
@@ -13,10 +18,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $stmt->execute([
         "web_entry_" . $currentUser,
-        trim($_POST["log_date"] ?? "") ?: null,
-        trim($_POST["log_time"] ?? "") ?: null,
-        trim($_POST["amount"] ?? "") ?: null,
-        trim($_POST["comments"] ?? "") ?: null
+        nullIfBlank($_POST["log_date"] ?? null),
+        nullIfBlank($_POST["log_time"] ?? null),
+        nullIfBlank($_POST["amount"] ?? null),
+        nullIfBlank($_POST["comments"] ?? null)
     ]);
 
     header("Location: solid_waste_list.php");
@@ -53,7 +58,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <script>
 (function () {
     const now = new Date();
-
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
