@@ -29,7 +29,6 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                 <?php if ($canEdit): ?>
                 <a class="btn" href="solid_waste_add.php">Add Record</a>
                 <?php endif; ?>
-                <a class="btn" href="index.php">Back</a>
             </div>
         </div>
 
