@@ -550,7 +550,7 @@ th {
 }
 
 .filter-form input[type="datetime-local"] {
-    width: 185px;
+    width: 195px;
     max-width: 100%;
     box-sizing: border-box;
     background: #0d2234;
