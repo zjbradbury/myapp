@@ -792,15 +792,15 @@ th {
                 <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
                     <td><?= h($r['log_date']) ?></td>
                     <td><?= h($r['log_time']) ?></td>
-                    <td><?= fmt($r['bowl_speed'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['screw_speed'] ?? null, 2) ?></td>
-                    <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['screw_rpm'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
+                    <td><?= fmt($r['screw_speed'] ?? null, 2) ?> %</td>
+                    <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?> RPM</td>
+                    <td><?= fmt($r['screw_rpm'] ?? null, 2) ?> RPM</td>
                     <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['feed_rate'] ?? null, 2) ?></td>
-                    <td><?= fmt($r['torque'] ?? null, 1) ?></td>
-                    <td><?= fmt($r['temp'] ?? null, 1) ?></td>
-                    <td><?= fmt($r['pressure'] ?? null, 3) ?></td>
+                    <td><?= fmt($r['feed_rate'] ?? null, 2) ?> M3/hr</td>
+                    <td><?= fmt($r['torque'] ?? null, 1) ?> %</td>
+                    <td><?= fmt($r['temp'] ?? null, 1) ?> °C</td>
+                    <td><?= fmt($r['pressure'] ?? null, 3) ?> BAR</td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -834,7 +834,7 @@ th {
                 <tr class="solid-row" data-id="<?= (int)$r['id'] ?>">
                     <td><?= h($r['log_date']) ?></td>
                     <td><?= h($r['log_time']) ?></td>
-                    <td><?= fmt($r['amount'] ?? null, 2) ?></td>
+                    <td><?= fmt($r['amount'] ?? null, 2) ?> KG</td>
                     <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?></td>
                     <td><?= h($r['comments'] ?? '') ?></td>
                 </tr>
@@ -874,11 +874,11 @@ th {
                     <td><?= h($r['log_date']) ?></td>
                     <td><?= h($r['log_time']) ?></td>
                     <td><?= h($r['nozzle']) ?></td>
-                    <td><?= fmt($r['flow'] ?? null, 1) ?></td>
-                    <td><?= fmt($r['pressure'] ?? null, 2) ?></td>
-                    <td><?= fmt($r['min_deg'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['max_deg'] ?? null, 0) ?></td>
-                    <td><?= fmt($r['rpm'] ?? null, 1) ?></td>
+                    <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
+                    <td><?= fmt($r['pressure'] ?? null, 2) ?> BAR</td>
+                    <td><?= fmt($r['min_deg'] ?? null, 0) ?> °</td>
+                    <td><?= fmt($r['max_deg'] ?? null, 0) ?> °</td>
+                    <td><?= fmt($r['rpm'] ?? null, 1) ?> RPM</td>
                 </tr>
                 <?php endforeach; ?>
             <?php endif; ?>
