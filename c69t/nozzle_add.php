@@ -50,17 +50,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" name="nozzle" placeholder="Nozzle">
-                <input class="unit-input" type="text" value="#" disabled tabindex="-1">
+                <input class="unit-input" type="text" value="N" disabled tabindex="-1">
             </div>
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" step="0.1" name="flow" placeholder="Flow">
-                <input class="unit-input wide-unit" type="text" value="m³/hr" disabled tabindex="-1">
+                <input class="unit-input wide-unit" type="text" value="m3/hr" disabled tabindex="-1">
             </div>
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" step="0.01" name="pressure" placeholder="Pressure">
-                <input class="unit-input" type="text" value="bar" disabled tabindex="-1">
+                <input class="unit-input" type="text" value="BAR" disabled tabindex="-1">
             </div>
 
             <div class="input-with-unit">
@@ -75,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" step="0.1" name="rpm" placeholder="RPM">
-                <input class="unit-input" type="text" value="rpm" disabled tabindex="-1">
+                <input class="unit-input" type="text" value="RPM" disabled tabindex="-1">
             </div>
 
             <textarea name="comments" placeholder="Comments"></textarea>

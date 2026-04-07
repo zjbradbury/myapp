@@ -62,12 +62,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" step="1" name="bowl_rpm" placeholder="Bowl RPM">
-                <input class="unit-input" type="text" value="rpm" disabled tabindex="-1">
+                <input class="unit-input" type="text" value="RPM" disabled tabindex="-1">
             </div>
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" step="1" name="screw_rpm" placeholder="Screw RPM">
-                <input class="unit-input" type="text" value="rpm" disabled tabindex="-1">
+                <input class="unit-input" type="text" value="RPM" disabled tabindex="-1">
             </div>
 
             <div class="input-with-unit">
@@ -77,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="input-with-unit">
                 <input class="value-input" type="number" step="0.01" name="feed_rate" placeholder="Feed Rate">
-                <input class="unit-input wide-unit" type="text" value="m³/hr" disabled tabindex="-1">
+                <input class="unit-input wide-unit" type="text" value="m3/hr" disabled tabindex="-1">
             </div>
 
             <div class="input-with-unit">
