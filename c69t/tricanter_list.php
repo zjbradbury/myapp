@@ -63,7 +63,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                     <td><?= fmt($row["torque"], 1) ?> %</td>
                     <td><?= fmt($row["temp"], 1) ?> °C</td>
                     <td><?= fmt($row["pressure"], 3) ?> BAR</td>
-                    <td class="comments-cell"><?= h($row["comments"]) ?></td>
+                    <td class="comments-cell" title="<?= h($row["comments"]) ?>"><?= h($row["comments"]) ?></td>
                     <?php if ($canEdit): ?>
                     <td>
                         <a class="btn small" href="tricanter_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>

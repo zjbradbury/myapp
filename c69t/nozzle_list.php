@@ -57,7 +57,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                     <td><?= fmt($row["min_deg"], 0) ?> °</td>
                     <td><?= fmt($row["max_deg"], 0) ?> °</td>
                     <td><?= fmt($row["rpm"], 1) ?> RPM</td>
-                    <td class="comments-cell"><?= h($row["comments"]) ?></td>
+                    <td class="comments-cell" title="<?= h($row["comments"]) ?>"><?= h($row["comments"]) ?></td>
                     <?php if ($canEdit): ?>
                     <td>
                         <a class="btn small" href="nozzle_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>

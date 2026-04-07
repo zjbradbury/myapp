@@ -74,13 +74,13 @@ th, td {
     text-align: left;
     vertical-align: top;
     font-size: 14px;
-    white-space: nowrap;
 }
 
 td.comments-cell {
-    white-space: normal;
-    max-width: 240px;
-    word-break: break-word;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 th {
