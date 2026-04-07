@@ -97,25 +97,6 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                     <span>Refresh (sec)</span>
                     <input type="number" id="monitor_refresh_seconds" min="5" max="300" value="<?= (int) $monitorData['refresh_seconds'] ?>">
                 </label>
-
-                <button type="button" class="btn" id="save-monitor-settings">Save</button>
-            </div>
-        </div>
-
-        <div id="master-monitor-strip" class="master-monitor-strip monitor-strip-<?= strtolower(str_replace(' ', '-', $monitorData['master_state'])) ?>">
-            <div class="master-strip-left">
-                <div class="master-strip-title">Master Monitor</div>
-                <div class="master-strip-state" id="master-strip-state"><?= h($monitorData['master_state']) ?></div>
-            </div>
-
-            <div class="master-strip-right" id="master-strip-summary">
-                <?php
-                $summaryParts = [];
-                foreach ($monitorData['items'] as $item) {
-                    $summaryParts[] = $item['label'] . ': ' . $item['status'];
-                }
-                echo h(implode(' | ', $summaryParts));
-                ?>
             </div>
         </div>
 
@@ -423,7 +404,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         tooltip: {
                             enabled: true,
                             callbacks: {
-                                title: function (context) {
+                                title: function(context) {
                                     return context[0]?.label || '';
                                 }
                             }
@@ -469,6 +450,9 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             { label: 'Amount', data: <?= json_encode($solidWasteAmountSeries) ?>, color: '#00ff88', axis: 'y1' },
             { label: 'Diff (min)', data: <?= json_encode($solidWasteDiffSeries) ?>, color: '#ffd24d', axis: 'y2' }
         ]);
+
+        let monitorIsSaving = false;
+        let monitorReloadTimer = null;
 
         function formatCountdown(seconds) {
             if (seconds === null || seconds === '' || isNaN(seconds)) return '--';
@@ -527,52 +511,26 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             }
         }
 
-        function applyMasterStripState(status) {
-            const strip = document.getElementById('master-monitor-strip');
-            const stateEl = document.getElementById('master-strip-state');
-
-            cleanClassesByPrefix(strip, 'monitor-strip-');
-            strip.classList.remove('flash-yellow', 'flash-red');
-
-            const state = status.toLowerCase().replace(/\s+/g, '-');
-            strip.classList.add('monitor-strip-' + state);
-
-            stateEl.textContent = status;
-
-            if (state === 'warning') {
-                strip.classList.add('flash-yellow');
-            } else if (state === 'alarm' || state === 'overdue') {
-                strip.classList.add('flash-red');
-            }
-        }
-
-        function recomputeMasterStripFromCards() {
-            const items = [...document.querySelectorAll('.monitor-item')];
-            const summary = [];
-            let masterState = document.getElementById('monitor_master').checked ? 'OK' : 'MASTER OFF';
-
-            items.forEach(item => {
-                const label = item.querySelector('.monitor-item-top strong')?.textContent || '';
-                const status = item.querySelector('.monitor-status')?.textContent || 'OK';
-
-                summary.push(label + ': ' + status);
-
-                if (masterState !== 'MASTER OFF') {
-                    if (status === 'OVERDUE') {
-                        masterState = 'ALARM';
-                    } else if ((status === 'WARNING' || status === 'NO DATA') && masterState !== 'ALARM') {
-                        masterState = 'WARNING';
-                    }
-                }
-            });
-
-            document.getElementById('master-strip-summary').textContent = summary.join(' | ');
-
+        function recomputeMasterBadgeFromCards() {
+            const masterToggle = document.getElementById('monitor_master');
             const badge = document.getElementById('master-status-badge');
-            badge.textContent = masterState;
-            badge.className = 'monitor-badge monitor-' + masterState.toLowerCase().replace(/\s+/g, '-');
 
-            applyMasterStripState(masterState);
+            let state = masterToggle.checked ? 'OK' : 'MASTER OFF';
+
+            if (masterToggle.checked) {
+                document.querySelectorAll('.monitor-item').forEach(item => {
+                    const status = item.querySelector('.monitor-status')?.textContent || 'OK';
+
+                    if (status === 'OVERDUE') {
+                        state = 'ALARM';
+                    } else if ((status === 'WARNING' || status === 'NO DATA' || status === 'NOT SET UP') && state !== 'ALARM') {
+                        state = 'WARNING';
+                    }
+                });
+            }
+
+            badge.textContent = state;
+            badge.className = 'monitor-badge monitor-' + state.toLowerCase().replace(/\s+/g, '-');
         }
 
         function tickCountdowns() {
@@ -609,10 +567,67 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 applyCardState(item, status);
             });
 
-            recomputeMasterStripFromCards();
+            recomputeMasterBadgeFromCards();
+        }
+
+        function getMonitorPayload() {
+            const payload = {
+                monitor_master: document.getElementById('monitor_master').checked ? 1 : 0,
+                monitor_refresh_seconds: document.getElementById('monitor_refresh_seconds').value || 30
+            };
+
+            document.querySelectorAll('.monitor-enabled').forEach(el => {
+                payload['monitor_' + el.dataset.key + '_enabled'] = el.checked ? 1 : 0;
+            });
+
+            document.querySelectorAll('.monitor-minutes').forEach(el => {
+                payload['monitor_' + el.dataset.key + '_minutes'] = el.value || 60;
+            });
+
+            return payload;
+        }
+
+        function updateMonitorUiImmediately() {
+            const masterOn = document.getElementById('monitor_master').checked;
+
+            document.querySelectorAll('.monitor-item').forEach(item => {
+                const enabledEl = item.querySelector('.monitor-enabled');
+                const countdownEl = item.querySelector('.monitor-countdown');
+                const statusEl = item.querySelector('.monitor-status');
+
+                let status = 'OK';
+
+                if (!masterOn) {
+                    status = 'MASTER OFF';
+                    countdownEl.dataset.seconds = '';
+                    countdownEl.textContent = '--';
+                } else if (enabledEl && !enabledEl.checked) {
+                    status = 'OFF';
+                    countdownEl.dataset.seconds = '';
+                    countdownEl.textContent = '--';
+                } else {
+                    const seconds = countdownEl.dataset.seconds;
+                    if (seconds === '') {
+                        status = statusEl.textContent || 'NO DATA';
+                    } else {
+                        const n = parseInt(seconds, 10);
+                        if (n <= 0) status = 'OVERDUE';
+                        else if (n <= 300) status = 'WARNING';
+                        else status = 'OK';
+                    }
+                }
+
+                statusEl.textContent = status;
+                applyStatusClass(statusEl, status);
+                applyCardState(item, status);
+            });
+
+            recomputeMasterBadgeFromCards();
         }
 
         async function loadMonitorStatus() {
+            if (monitorIsSaving) return;
+
             try {
                 const res = await fetch('monitor_status.php?_=' + Date.now());
                 const data = await res.json();
@@ -623,8 +638,6 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                 document.getElementById('monitor_master').checked = !!data.master_enabled;
                 document.getElementById('monitor_refresh_seconds').value = data.refresh_seconds;
-
-                const summaryParts = [];
 
                 Object.entries(data.items).forEach(([key, item]) => {
                     const cardEl = document.querySelector('.monitor-item[data-key="' + key + '"]');
@@ -638,7 +651,6 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                     if (enabledEl) enabledEl.checked = !!item.enabled;
                     if (minutesEl) minutesEl.value = item.minutes;
-
                     if (lastEntryEl) lastEntryEl.textContent = item.last_entry_display || 'No data';
 
                     if (sinceEl) {
@@ -657,53 +669,61 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                     }
 
                     if (cardEl) applyCardState(cardEl, item.status);
-
-                    summaryParts.push(item.label + ': ' + item.status);
                 });
-
-                document.getElementById('master-strip-summary').textContent = summaryParts.join(' | ');
-                document.getElementById('master-strip-state').textContent = data.master_state;
-                applyMasterStripState(data.master_state);
             } catch (err) {
                 console.error('Monitor refresh failed', err);
             }
         }
 
         async function saveMonitorSettings() {
-            const payload = {
-                monitor_master: document.getElementById('monitor_master').checked ? 1 : 0,
-                monitor_refresh_seconds: document.getElementById('monitor_refresh_seconds').value || 30
-            };
-
-            document.querySelectorAll('.monitor-enabled').forEach(el => {
-                payload['monitor_' + el.dataset.key + '_enabled'] = el.checked ? 1 : 0;
-            });
-
-            document.querySelectorAll('.monitor-minutes').forEach(el => {
-                payload['monitor_' + el.dataset.key + '_minutes'] = el.value || 60;
-            });
+            monitorIsSaving = true;
 
             try {
                 const res = await fetch('monitor_save.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(getMonitorPayload())
                 });
 
                 const data = await res.json();
 
-                if (data.ok) {
-                    loadMonitorStatus();
-                } else {
+                if (!data.ok) {
                     alert('Failed to save monitoring settings');
+                } else {
+                    await loadMonitorStatus();
                 }
             } catch (err) {
                 console.error(err);
                 alert('Failed to save monitoring settings');
+            } finally {
+                monitorIsSaving = false;
             }
         }
 
-        document.getElementById('save-monitor-settings').addEventListener('click', saveMonitorSettings);
+        function saveMonitorSettingsDebounced() {
+            updateMonitorUiImmediately();
+
+            if (monitorReloadTimer) {
+                clearTimeout(monitorReloadTimer);
+            }
+
+            monitorReloadTimer = setTimeout(() => {
+                saveMonitorSettings();
+            }, 250);
+        }
+
+        document.getElementById('monitor_master').addEventListener('change', saveMonitorSettingsDebounced);
+        document.getElementById('monitor_refresh_seconds').addEventListener('input', saveMonitorSettingsDebounced);
+        document.getElementById('monitor_refresh_seconds').addEventListener('change', saveMonitorSettingsDebounced);
+
+        document.querySelectorAll('.monitor-enabled').forEach(el => {
+            el.addEventListener('change', saveMonitorSettingsDebounced);
+        });
+
+        document.querySelectorAll('.monitor-minutes').forEach(el => {
+            el.addEventListener('input', saveMonitorSettingsDebounced);
+            el.addEventListener('change', saveMonitorSettingsDebounced);
+        });
 
         loadMonitorStatus();
         setInterval(tickCountdowns, 1000);
