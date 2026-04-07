@@ -121,13 +121,18 @@ th {
 
 .input-unit-wrap {
     position: relative;
-    margin-bottom: 12px;
+    margin: 8px 0;
 }
 
 .input-unit-wrap input {
     width: 100%;
     box-sizing: border-box;
-    padding-right: 70px; /* space for unit */
+    padding-right: 70px !important;
+    margin: 0 !important;
+}
+
+.input-unit-wrap.long input {
+    padding-right: 90px !important;
 }
 
 .input-unit-wrap .unit {
@@ -137,9 +142,7 @@ th {
     transform: translateY(-50%);
     color: #888;
     font-size: 13px;
+    line-height: 1;
     pointer-events: none;
-}
-
-.input-unit-wrap.long input {
-    padding-right: 90px;
+    z-index: 2;
 }

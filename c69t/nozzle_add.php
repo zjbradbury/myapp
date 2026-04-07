@@ -45,22 +45,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <form method="post">
 
-            <input type="date" name="log_date" id="log_date">
-            <input type="time" name="log_time" id="log_time" step="1">
-
             <div class="input-unit-wrap">
                 <input type="number" name="nozzle" placeholder="Nozzle">
-                <span class="unit">N</span>
+                <span class="unit">#</span>
             </div>
 
             <div class="input-unit-wrap long">
                 <input type="number" step="0.1" name="flow" placeholder="Flow">
-                <span class="unit">m3/hr</span>
+                <span class="unit">m³/hr</span>
             </div>
 
             <div class="input-unit-wrap">
                 <input type="number" step="0.01" name="pressure" placeholder="Pressure">
-                <span class="unit">BAR</span>
+                <span class="unit">bar</span>
             </div>
 
             <div class="input-unit-wrap">
@@ -75,10 +72,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="input-unit-wrap">
                 <input type="number" step="0.1" name="rpm" placeholder="RPM">
-                <span class="unit">RPM</span>
+                <span class="unit">rpm</span>
             </div>
-
-            <textarea name="comments" placeholder="Comments"></textarea>
 
             <button type="submit">Save</button>
         </form>
