@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ");
 
     $stmt->execute([
-        trim($_POST["source_file"] ?? "") ?: null,
+        "web_entry_" . ($_SESSION['username'] ?? 'unknown'),
         trim($_POST["log_date"] ?? "") ?: null,
         trim($_POST["log_time"] ?? "") ?: null,
         trim($_POST["nozzle"] ?? "") ?: null,
@@ -48,7 +48,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <div class="container">
     <h2>Edit Nozzle Record</h2>
     <form method="post">
-        <input type="text" name="source_file" value="<?= h($row["source_file"]) ?>" placeholder="Source File">
         <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>">
         <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>">
         <input type="number" name="nozzle" value="<?= h($row["nozzle"]) ?>" placeholder="Nozzle">

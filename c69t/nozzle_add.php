@@ -2,6 +2,8 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
+$currentUser = $_SESSION['username'] ?? 'unknown';
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt = $pdo->prepare("
         INSERT INTO nozzle_logs
@@ -10,45 +12,85 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     ");
 
     $stmt->execute([
-        trim($_POST["source_file"] ?? "") ?: null,
-        trim($_POST["log_date"] ?? "") ?: null,
-        trim($_POST["log_time"] ?? "") ?: null,
-        trim($_POST["nozzle"] ?? "") ?: null,
-        trim($_POST["flow"] ?? "") ?: null,
-        trim($_POST["pressure"] ?? "") ?: null,
-        trim($_POST["min_deg"] ?? "") ?: null,
-        trim($_POST["max_deg"] ?? "") ?: null,
-        trim($_POST["rpm"] ?? "") ?: null,
-        trim($_POST["comments"] ?? "") ?: null
+        "web_entry_" . $currentUser,
+        $_POST["log_date"],
+        $_POST["log_time"],
+        $_POST["nozzle"],
+        $_POST["flow"],
+        $_POST["pressure"],
+        $_POST["min_deg"],
+        $_POST["max_deg"],
+        $_POST["rpm"],
+        $_POST["comments"]
     ]);
 
     header("Location: nozzle_list.php");
     exit;
 }
 ?>
+
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Add Nozzle Record</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
-<div class="container">
-    <h2>Add Nozzle Record</h2>
-    <form method="post">
-        <input type="text" name="source_file" placeholder="Source File">
-        <input type="date" name="log_date">
-        <input type="time" name="log_time" step="1">
-        <input type="number" name="nozzle" placeholder="Nozzle">
-        <input type="number" step="0.000001" name="flow" placeholder="Flow">
-        <input type="number" step="0.000001" name="pressure" placeholder="Pressure">
-        <input type="number" step="0.000001" name="min_deg" placeholder="Min Deg">
-        <input type="number" step="0.000001" name="max_deg" placeholder="Max Deg">
-        <input type="number" step="0.000001" name="rpm" placeholder="RPM">
-        <textarea name="comments" placeholder="Comments"></textarea>
-        <button type="submit">Save</button>
-    </form>
-</div>
+    <?php require_once "nav.php"; ?>
+
+    <div class="container">
+        <h2>Add Nozzle Record</h2>
+
+        <form method="post">
+
+            <input type="date" name="log_date" id="log_date">
+            <input type="time" name="log_time" id="log_time" step="1">
+
+            <div class="form-unit">
+                <input type="number" name="nozzle" placeholder="Nozzle">
+                <span class="unit">N</span>
+            </div>
+
+            <div class="form-unit">
+                <input type="number" step="0.1" name="flow" class="long-unit" placeholder="Flow">
+                <span class="unit">m3/hr</span>
+            </div>
+
+            <div class="form-unit">
+                <input type="number" step="0.01" name="pressure" placeholder="Pressure">
+                <span class="unit">BAR</span>
+            </div>
+
+            <div class="form-unit">
+                <input type="number" name="min_deg" placeholder="Min Deg">
+                <span class="unit">°</span>
+            </div>
+
+            <div class="form-unit">
+                <input type="number" name="max_deg" placeholder="Max Deg">
+                <span class="unit">°</span>
+            </div>
+
+            <div class="form-unit">
+                <input type="number" step="0.1" name="rpm" placeholder="RPM">
+                <span class="unit">RPM</span>
+            </div>
+
+            <textarea name="comments" placeholder="Comments"></textarea>
+
+            <button type="submit">Save</button>
+        </form>
+    </div>
+
+    <script>
+    const now = new Date();
+
+    document.getElementById('log_date').value = now.toISOString().split('T')[0];
+    document.getElementById('log_time').value = now.toTimeString().split(' ')[0];
+    </script>
+
 </body>
+
 </html>

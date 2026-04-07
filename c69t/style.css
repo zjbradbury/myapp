@@ -113,3 +113,25 @@ th {
     font-size: 18px;
     text-align: center;
 }
+
+.form-unit {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.form-unit input {
+    width: 100%;
+    box-sizing: border-box;
+    padding-right: 85px; /* room for unit text */
+}
+
+.form-unit .unit {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 13px;
+    pointer-events: none;
+    white-space: nowrap;
+}
