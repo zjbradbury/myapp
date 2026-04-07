@@ -51,6 +51,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                     <td><?= h($row["uploaded_at"]) ?></td>
                     <td><?= h($row["log_date"]) ?></td>
                     <td><?= h($row["log_time"]) ?></td>
+                    <td>N<?= h($row["nozzle"]) ?></td>
                     <td><?= fmt($row["flow"], 1) ?> M3/hr</td>
                     <td><?= fmt($row["pressure"], 2) ?> BAR</td>
                     <td><?= fmt($row["min_deg"], 0) ?> °</td>
