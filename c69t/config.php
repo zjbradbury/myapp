@@ -44,4 +44,13 @@ function requireRole(array $allowedRoles) {
 function h($value) {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
+
+if (!function_exists('fmt')) {
+    function fmt($value, $decimals = 0) {
+        if ($value === null || $value === '') return '-';
+        if (!is_numeric($value)) return htmlspecialchars($value);
+        return number_format((float)$value, $decimals, '.', '');
+    }
+}
+
 ?>
