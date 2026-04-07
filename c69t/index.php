@@ -180,7 +180,7 @@ if ($rangeStart !== '' || $rangeEnd !== '') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="refresh" content="30">
     <title>SCADA Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="indexStyle.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
