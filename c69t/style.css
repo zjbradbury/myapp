@@ -62,6 +62,7 @@ button, .btn {
 }
 
 table {
+    table-layout: fixed;
     width: 100%;
     border-collapse: collapse;
     background: #0d2238;
