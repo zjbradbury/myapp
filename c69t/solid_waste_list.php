@@ -60,9 +60,9 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                         <td><?= nl2br(h($row["comments"] ?? "")) ?></td>
                         <?php if ($canEdit): ?>
                         <td>
-                            <a class="btn" href="solid_waste_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>
-                            <a class="btn" href="solid_waste_delete.php?id=<?= (int)$row["id"] ?>"
-                                onclick="return confirm('Delete this record?');">Delete</a>
+                            <a class="btn small" href="solid_waste_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>
+                            <a class="btn small danger" href="solid_waste_delete.php?id=<?= (int)$row["id"] ?>"
+                                onclick="return confirm('Delete this record?')">Delete</a>
                         </td>
                         <?php endif; ?>
                     </tr>
