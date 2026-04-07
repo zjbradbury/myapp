@@ -4,11 +4,6 @@ requireRole(["admin", "operator"]);
 
 $currentUser = $_SESSION['username'] ?? 'unknown';
 
-function nullIfBlank($value) {
-    $value = trim((string)($value ?? ''));
-    return $value === '' ? null : $value;
-}
-
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $stmt = $pdo->prepare("
         INSERT INTO solid_waste_logs

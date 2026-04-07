@@ -2,11 +2,6 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
-function nullIfBlank($value) {
-    $value = trim((string)($value ?? ''));
-    return $value === '' ? null : $value;
-}
-
 $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM solid_waste_logs WHERE id = ?");

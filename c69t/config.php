@@ -150,4 +150,10 @@ if (!function_exists('solid_diff_series')) {
         return $out;
     }
 }
+
+function nullIfBlank($value) {
+    $value = trim((string)($value ?? ''));
+    return $value === '' ? null : $value;
+}
+
 ?>
