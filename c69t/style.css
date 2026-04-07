@@ -113,10 +113,13 @@ th {
     font-size: 18px;
     text-align: center;
 }
-
 .input-unit-wrap input {
     width: 100% !important;
     padding-right: 70px !important;
+}
+.input-unit-wrap {
+    position: relative;
+    margin-bottom: 12px;
 }
 
 .input-unit-wrap input {
