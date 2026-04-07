@@ -121,10 +121,13 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="tricanter_list.php" class="<?= $currentPage === 'tricanter_list.php' ? 'active' : '' ?>">Tricanter Logs</a>
             <a href="nozzle_list.php" class="<?= $currentPage === 'nozzle_list.php' ? 'active' : '' ?>">Nozzle Logs</a>
+            <a href="solid_waste_list.php" class="<?= $currentPage === 'solid_waste_list.php' ? 'active' : '' ?>">Solid Waste Logs</a>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
                 <a href="tricanter_add.php" class="<?= $currentPage === 'tricanter_add.php' ? 'active' : '' ?>">Add Tricanter Record</a>
                 <a href="nozzle_add.php" class="<?= $currentPage === 'nozzle_add.php' ? 'active' : '' ?>">Add Nozzle Record</a>
+                <a href="solid_waste_add.php" class="<?= $currentPage === 'solid_waste_add.php' ? 'active' : '' ?>">Add Solid Waste Record</a>
+
             <?php endif; ?>
 
             <?php if ($currentRole === 'admin'): ?>
