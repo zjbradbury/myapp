@@ -812,8 +812,8 @@ th {
     <h2>Solid Waste</h2>
 
     <div class="kpis">
-        <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 2) ?></b></div>
-        <div class="kpi"><small>Total Amount</small><b><?= fmt($solidWasteTotalAmount, 2) ?></b></div>
+        <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 2) ?> KG</b></div>
+        <div class="kpi"><small>Total Amount</small><b><?= fmt($solidWasteTotalAmount, 2) ?> KG</b></div>
         <div class="kpi"><small>Last Time</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b></div>
     </div>
 
@@ -848,12 +848,12 @@ th {
     <h2>Nozzle</h2>
 
     <div class="kpis">
-        <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?></b></div>
-        <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?></b></div>
-        <div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'] ?? null, 1) ?></b></div>
-        <div class="kpi"><small>Min Deg</small><b><?= fmt($latestNozzle['min_deg'] ?? null, 0) ?></b></div>
-        <div class="kpi"><small>Max Deg</small><b><?= fmt($latestNozzle['max_deg'] ?? null, 0) ?></b></div>
-        <div class="kpi"><small>Nozzle</small><b><?= h($latestNozzle['nozzle'] ?? '-') ?></b></div>
+        <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?> M3/hr</b></div>
+        <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?> BAR</b></div>
+        <div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'] ?? null, 1) ?> RPM</b></div>
+        <div class="kpi"><small>Min Deg</small><b><?= fmt($latestNozzle['min_deg'] ?? null, 0) ?> °</b></div>
+        <div class="kpi"><small>Max Deg</small><b><?= fmt($latestNozzle['max_deg'] ?? null, 0) ?> °</b></div>
+        <div class="kpi"><small>Nozzle</small><b>N<?= h($latestNozzle['nozzle'] ?? '-') ?></b></div>
     </div>
 
     <div class="chart-card">
@@ -873,7 +873,7 @@ th {
                 <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
                     <td><?= h($r['log_date']) ?></td>
                     <td><?= h($r['log_time']) ?></td>
-                    <td><?= h($r['nozzle']) ?></td>
+                    <td>N<?= h($r['nozzle']) ?></td>
                     <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
                     <td><?= fmt($r['pressure'] ?? null, 2) ?> BAR</td>
                     <td><?= fmt($r['min_deg'] ?? null, 0) ?> °</td>
