@@ -48,34 +48,34 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="date" name="log_date" id="log_date">
             <input type="time" name="log_time" id="log_time" step="1">
 
-            <div class="input-with-unit">
-                <input class="value-input" type="number" name="nozzle" placeholder="Nozzle">
-                <input class="unit-input" type="text" value="N" disabled tabindex="-1">
+            <div class="input-unit-wrap">
+                <input type="number" name="nozzle" placeholder="Nozzle">
+                <span class="unit">N</span>
             </div>
 
-            <div class="input-with-unit">
-                <input class="value-input" type="number" step="0.1" name="flow" placeholder="Flow">
-                <input class="unit-input wide-unit" type="text" value="m3/hr" disabled tabindex="-1">
+            <div class="input-unit-wrap long">
+                <input type="number" step="0.1" name="flow" placeholder="Flow">
+                <span class="unit">m3/hr</span>
             </div>
 
-            <div class="input-with-unit">
-                <input class="value-input" type="number" step="0.01" name="pressure" placeholder="Pressure">
-                <input class="unit-input" type="text" value="BAR" disabled tabindex="-1">
+            <div class="input-unit-wrap">
+                <input type="number" step="0.01" name="pressure" placeholder="Pressure">
+                <span class="unit">BAR</span>
             </div>
 
-            <div class="input-with-unit">
-                <input class="value-input" type="number" name="min_deg" placeholder="Min Deg">
-                <input class="unit-input" type="text" value="°" disabled tabindex="-1">
+            <div class="input-unit-wrap">
+                <input type="number" name="min_deg" placeholder="Min Deg">
+                <span class="unit">°</span>
             </div>
 
-            <div class="input-with-unit">
-                <input class="value-input" type="number" name="max_deg" placeholder="Max Deg">
-                <input class="unit-input" type="text" value="°" disabled tabindex="-1">
+            <div class="input-unit-wrap">
+                <input type="number" name="max_deg" placeholder="Max Deg">
+                <span class="unit">°</span>
             </div>
 
-            <div class="input-with-unit">
-                <input class="value-input" type="number" step="0.1" name="rpm" placeholder="RPM">
-                <input class="unit-input" type="text" value="RPM" disabled tabindex="-1">
+            <div class="input-unit-wrap">
+                <input type="number" step="0.1" name="rpm" placeholder="RPM">
+                <span class="unit">RPM</span>
             </div>
 
             <textarea name="comments" placeholder="Comments"></textarea>
