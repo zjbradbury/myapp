@@ -127,7 +127,6 @@ if (!function_exists('get_current_shift_range')) {
     }
 }
 
-
 if (!function_exists('get_previous_shift_range')) {
     function get_previous_shift_range(?int $timestamp = null): array
     {
@@ -309,7 +308,6 @@ function fetch_log_rows(PDO $pdo, string $table, array $range, string $orderBy =
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
-
 function fetch_latest_row(PDO $pdo, string $table, string $orderBy = 'id DESC'): array
 {
     $stmt = $pdo->query("SELECT * FROM {$table} ORDER BY {$orderBy} LIMIT 1");
@@ -415,4 +413,199 @@ function render_range_filter(array $range, string $message = 'Filtering table to
         <?php endif; ?>
     </div>
     <?php
+}
+
+/* =========================
+   MONITOR HELPERS
+   ========================= */
+
+function getSetting(PDO $pdo, string $key, $default = null)
+{
+    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ?");
+    $stmt->execute([$key]);
+    $value = $stmt->fetchColumn();
+    return $value !== false ? $value : $default;
+}
+
+function setSetting(PDO $pdo, string $key, string $value): void
+{
+    $stmt = $pdo->prepare("
+        INSERT INTO settings (setting_key, setting_value)
+        VALUES (?, ?)
+        ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+    ");
+    $stmt->execute([$key, $value]);
+}
+
+function formatCountdownSeconds(int $seconds): string
+{
+    if ($seconds <= 0) {
+        return 'OVERDUE';
+    }
+
+    $hours = floor($seconds / 3600);
+    $minutes = floor(($seconds % 3600) / 60);
+    $secs = $seconds % 60;
+
+    if ($hours > 0) {
+        return sprintf('%02d:%02d:%02d', $hours, $minutes, $secs);
+    }
+
+    return sprintf('%02d:%02d', $minutes, $secs);
+}
+
+function formatElapsedTime(int $seconds): string
+{
+    if ($seconds < 60) {
+        return $seconds . 's ago';
+    }
+
+    if ($seconds < 3600) {
+        $minutes = floor($seconds / 60);
+        $secs = $seconds % 60;
+        return $minutes . 'm ' . $secs . 's ago';
+    }
+
+    if ($seconds < 86400) {
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        return $hours . 'h ' . $minutes . 'm ago';
+    }
+
+    $days = floor($seconds / 86400);
+    $hours = floor(($seconds % 86400) / 3600);
+    return $days . 'd ' . $hours . 'h ago';
+}
+
+function getLastLogDateTime(PDO $pdo, string $table): ?string
+{
+    $allowed = [
+        'nozzle_logs',
+        'tricanter_logs',
+        'solid_waste_logs',
+        'sample_logs',
+        'gas_test_logs'
+    ];
+
+    if (!in_array($table, $allowed, true)) {
+        return null;
+    }
+
+    $sql = "
+        SELECT CONCAT(log_date, ' ', log_time) AS dt
+        FROM {$table}
+        WHERE log_date IS NOT NULL
+          AND log_time IS NOT NULL
+          AND log_date <> ''
+          AND log_time <> ''
+        ORDER BY log_date DESC, log_time DESC, id DESC
+        LIMIT 1
+    ";
+
+    $stmt = $pdo->query($sql);
+    $dt = $stmt->fetchColumn();
+
+    return $dt ?: null;
+}
+
+function buildMonitoringData(PDO $pdo): array
+{
+    $masterEnabled = (int) getSetting($pdo, 'monitor_master', '1') === 1;
+    $refreshSeconds = max(5, (int) getSetting($pdo, 'monitor_refresh_seconds', '30'));
+
+    $items = [
+        'nozzle' => [
+            'label' => 'Nozzle',
+            'table' => 'nozzle_logs',
+            'enabled' => (int) getSetting($pdo, 'monitor_nozzle_enabled', '1') === 1,
+            'minutes' => max(1, (int) getSetting($pdo, 'monitor_nozzle_minutes', '60')),
+        ],
+        'tricanter' => [
+            'label' => 'Tricanter',
+            'table' => 'tricanter_logs',
+            'enabled' => (int) getSetting($pdo, 'monitor_tricanter_enabled', '1') === 1,
+            'minutes' => max(1, (int) getSetting($pdo, 'monitor_tricanter_minutes', '60')),
+        ],
+        'solid_waste' => [
+            'label' => 'Solid Waste',
+            'table' => 'solid_waste_logs',
+            'enabled' => (int) getSetting($pdo, 'monitor_solid_waste_enabled', '1') === 1,
+            'minutes' => max(1, (int) getSetting($pdo, 'monitor_solid_waste_minutes', '60')),
+        ],
+        'sample' => [
+            'label' => 'Sample',
+            'table' => 'sample_logs',
+            'enabled' => (int) getSetting($pdo, 'monitor_sample_enabled', '0') === 1,
+            'minutes' => max(1, (int) getSetting($pdo, 'monitor_sample_minutes', '60')),
+        ],
+        'gas_test' => [
+            'label' => 'Gas Test',
+            'table' => 'gas_test_logs',
+            'enabled' => (int) getSetting($pdo, 'monitor_gas_test_enabled', '0') === 1,
+            'minutes' => max(1, (int) getSetting($pdo, 'monitor_gas_test_minutes', '60')),
+        ],
+    ];
+
+    $now = time();
+    $masterState = $masterEnabled ? 'OK' : 'MASTER OFF';
+
+    foreach ($items as $key => &$item) {
+        $last = getLastLogDateTime($pdo, $item['table']);
+
+        $item['last_entry'] = $last;
+        $item['last_entry_display'] = $last ? date('d/m/Y H:i', strtotime($last)) : 'No data';
+        $item['since_seconds'] = null;
+        $item['since_text'] = 'No data';
+        $item['remaining_seconds'] = null;
+        $item['countdown'] = '--';
+
+        if (!$masterEnabled) {
+            $item['status'] = 'MASTER OFF';
+            continue;
+        }
+
+        if (!$item['enabled']) {
+            $item['status'] = 'OFF';
+            continue;
+        }
+
+        if (!$last) {
+            $item['status'] = 'NO DATA';
+            $item['countdown'] = 'NO DATA';
+            if ($masterState !== 'ALARM') {
+                $masterState = 'WARNING';
+            }
+            continue;
+        }
+
+        $lastTs = strtotime($last);
+        $limitTs = $lastTs + ($item['minutes'] * 60);
+        $remaining = $limitTs - $now;
+        $since = max(0, $now - $lastTs);
+
+        $item['remaining_seconds'] = $remaining;
+        $item['since_seconds'] = $since;
+        $item['since_text'] = formatElapsedTime($since);
+        $item['countdown'] = formatCountdownSeconds($remaining);
+
+        if ($remaining <= 0) {
+            $item['status'] = 'OVERDUE';
+            $masterState = 'ALARM';
+        } elseif ($remaining <= 300) {
+            $item['status'] = 'WARNING';
+            if ($masterState !== 'ALARM') {
+                $masterState = 'WARNING';
+            }
+        } else {
+            $item['status'] = 'OK';
+        }
+    }
+    unset($item);
+
+    return [
+        'master_enabled' => $masterEnabled,
+        'refresh_seconds' => $refreshSeconds,
+        'master_state' => $masterState,
+        'items' => $items,
+    ];
 }
