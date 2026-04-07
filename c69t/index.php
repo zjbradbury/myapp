@@ -542,8 +542,8 @@ th {
 }
 
 .range-row label {
-    width: 50px;
-    min-width: 50px;
+    width: 38px;
+    min-width: 38px;
     margin-bottom: 0;
     font-size: 11px;
     color: #b7ccdd;
