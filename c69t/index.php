@@ -69,14 +69,14 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="refresh" content="30">
-    <title>SCADA Dashboard</title>
+    <title>Dashboard</title>
     <link rel="stylesheet" href="indexStyle.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
     <?php require_once "nav.php"; ?>
-    <h1>SCADA Dashboard</h1>
+    <h1>Dashboard</h1>
 
     <div class="topbar">
         <div class="info-card">
