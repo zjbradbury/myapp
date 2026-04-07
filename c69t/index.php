@@ -2,9 +2,6 @@
 require_once "config.php";
 requireRole(['admin', 'operator', 'viewer']);
 
-/* =========================
-   HANDLE MONITOR FORM POSTS
-   ========================= */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
     $form = $_POST['monitor_form'] ?? '';
 
@@ -566,9 +563,32 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 String(secs).padStart(2, '0');
         }
 
+        function clearMonitorStateClasses(card) {
+            card.classList.remove(
+                'monitor-state-ok',
+                'monitor-state-warning',
+                'monitor-state-overdue',
+                'monitor-state-alarm',
+                'flash-yellow',
+                'flash-red'
+            );
+        }
+
         function updateMonitorCardState(card, remaining) {
             const statusEl = card.querySelector('.monitor-status');
             if (!statusEl) return;
+
+            const fixedStates = ['MASTER OFF', 'OFF', 'NO DATA', 'NOT SET UP'];
+            const currentText = statusEl.textContent.trim();
+
+            clearMonitorStateClasses(card);
+
+            if (fixedStates.includes(currentText)) {
+                if (currentText === 'NO DATA') {
+                    card.classList.add('monitor-state-warning', 'flash-yellow');
+                }
+                return;
+            }
 
             let status = 'OK';
             let statusClass = 'monitor-ok';
@@ -576,18 +596,17 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             if (remaining <= 0) {
                 status = 'OVERDUE';
                 statusClass = 'monitor-overdue';
+                card.classList.add('monitor-state-overdue', 'flash-red');
             } else if (remaining <= 300) {
                 status = 'WARNING';
                 statusClass = 'monitor-warning';
+                card.classList.add('monitor-state-warning', 'flash-yellow');
+            } else {
+                card.classList.add('monitor-state-ok');
             }
 
-            if (statusEl.textContent.trim() !== 'MASTER OFF' &&
-                statusEl.textContent.trim() !== 'OFF' &&
-                statusEl.textContent.trim() !== 'NO DATA' &&
-                statusEl.textContent.trim() !== 'NOT SET UP') {
-                statusEl.textContent = status;
-                statusEl.className = 'monitor-status ' + statusClass;
-            }
+            statusEl.textContent = status;
+            statusEl.className = 'monitor-status ' + statusClass;
         }
 
         function updateMonitorTimers() {
@@ -612,10 +631,13 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         countdownEl.textContent = formatCountdown(remaining);
                         updateMonitorCardState(card, remaining);
                     }
+                } else {
+                    updateMonitorCardState(card, null);
                 }
             });
         }
 
+        updateMonitorTimers();
         setInterval(updateMonitorTimers, 1000);
     </script>
 
