@@ -607,3 +607,8 @@ th {
         text-align: left;
     }
 }
+
+.monitor-not-set-up {
+    background: rgba(120, 120, 120, 0.18);
+    color: #d6d6d6;
+}
