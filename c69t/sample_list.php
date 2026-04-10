@@ -23,15 +23,16 @@ $rows = fetch_log_rows($pdo, "sample_logs", $range, "log_date DESC, log_time DES
         <?php if ($canEdit): ?>
             <a class="btn" href="sample_add.php">Add Record</a>
         <?php endif; ?>
+
 <a class="btn" href="csv_download.php?<?= http_build_query([
     'table' => 'sample_logs',
-    'from_date' => $fromDate,
-    'from_time' => $fromTime,
-    'to_date' => $toDate,
-    'to_time' => $toTime
+    'start' => $range['start'] ?? '',
+    'end' => $range['end'] ?? '',
+    'quick' => $range['quick'] ?? ''
 ]) ?>">
     Download CSV
 </a>
+
     </div>
 
     <?php render_range_filter($range, 'Filtering table to selected range'); ?>
