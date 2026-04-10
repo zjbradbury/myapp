@@ -547,13 +547,13 @@ function buildMonitoringData(PDO $pdo): array
         'sample' => [
             'label' => 'Sample',
             'table' => 'sample_logs',
-            'enabled' => (int)getSetting($pdo, 'monitor_sample_enabled', '0') === 1,
+            'enabled' => (int)getSetting($pdo, 'monitor_sample_enabled', '1') === 1,
             'minutes' => max(1, (int)getSetting($pdo, 'monitor_sample_minutes', '60')),
         ],
         'gas_test' => [
             'label' => 'Gas Test',
             'table' => 'gas_test_logs',
-            'enabled' => (int)getSetting($pdo, 'monitor_gas_test_enabled', '0') === 1,
+            'enabled' => (int)getSetting($pdo, 'monitor_gas_test_enabled', '1') === 1,
             'minutes' => max(1, (int)getSetting($pdo, 'monitor_gas_test_minutes', '60')),
         ],
     ];
