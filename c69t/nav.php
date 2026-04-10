@@ -130,6 +130,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
 <a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test Logs</a>
 
+<div class="hamburger-divider"></div>
+
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
                 <a href="tricanter_add.php" class="<?= $currentPage === 'tricanter_add.php' ? 'active' : '' ?>">Add Tricanter
                     Record</a>
