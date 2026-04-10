@@ -322,9 +322,9 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <h2>Solid Waste</h2>
 
             <div class="kpis">
-                <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 2) ?> KG</b></div>
-                <div class="kpi"><small>Total Amount</small><b><?= fmt($solidWasteTotalAmount, 2) ?> KG</b></div>
-                <div class="kpi"><small>Last Time</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b></div>
+                <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 0) ?> KG</b></div>
+                <div class="kpi"><small>Total Amount</small><b><?= fmt($solidWasteTotalAmount, 0) ?> KG</b></div>
+                <div class="kpi"><small>Last Entry</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b></div>
             </div>
 
             <div class="chart-card">
@@ -350,7 +350,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                             <tr class="solid-row" data-id="<?= (int) $r['id'] ?>">
                                 <td><?= h($r['log_date']) ?></td>
                                 <td><?= h($r['log_time']) ?></td>
-                                <td><?= fmt($r['amount'] ?? null, 2) ?> KG</td>
+                                <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
                                 <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?></td>
                                 <td><?= h($r['comments'] ?? '') ?></td>
                             </tr>
