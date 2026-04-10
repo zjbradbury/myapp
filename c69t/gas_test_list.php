@@ -3,7 +3,7 @@ require_once "config.php";
 requireLogin();
 
 $canEdit = in_array(currentRole(), ["admin", "operator"], true);
-$canDelete = currentRole() === "admin";
+$canDelete = in_array(currentRole(), ["admin", "operator"], true);
 
 $range = get_range_filter_state(true);
 $rows = fetch_log_rows($pdo, "gas_test_logs", $range, "log_date DESC, log_time DESC, id DESC");
