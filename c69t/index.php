@@ -498,7 +498,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             </div>
         </div>
 
-        <div class="panel nozzle-panel">
+        <div class="panel wide-panel">
             <h2>Gas Test</h2>
 
             <div class="kpis">
