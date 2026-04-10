@@ -24,7 +24,7 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                     <a class="btn" href="tricanter_add.php">Add Record</a>
                 <?php endif; ?>
 
-<a<a class="btn" href="csv_download.php?<?= http_build_query([
+<a class="btn" href="csv_download.php?<?= http_build_query([
     'table' => 'tricanter_logs',
     'start' => $range['start'] ?? '',
     'end' => $range['end'] ?? '',
