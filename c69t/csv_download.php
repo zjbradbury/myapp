@@ -33,7 +33,7 @@ $exportTables = [
     ],
     "gas_test_logs" => [
         "label" => "gas_test",
-        "columns" => ["log_date", "log_time", "device", "operator", "location", "area_details", "mercury", "benzene", "lel", "h2s", "o2", "product_details", "actions"],
+        "columns" => ["log_date", "log_time", "device", "operator", "location", "area_details", "mercury", "benzene", "lel", "h2s", "o2", "product_details", "action_taken"],
     ],
 ];
 
