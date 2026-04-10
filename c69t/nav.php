@@ -147,6 +147,9 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <div class="hamburger-divider"></div>
                 <a href="users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">Manage Users</a>
                 <a href="user_create.php" class="<?= $currentPage === 'user_create.php' ? 'active' : '' ?>">Create User</a>
+
+<a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
+
             <?php endif; ?>
 
             <div class="hamburger-divider"></div>
