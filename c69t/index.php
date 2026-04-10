@@ -351,7 +351,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                                 <td><?= h($r['log_date']) ?></td>
                                 <td><?= h($r['log_time']) ?></td>
                                 <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
-                                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 2) : '-' ?></td>
+                                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
                                 <td><?= h($r['comments'] ?? '') ?></td>
                             </tr>
                         <?php endforeach; ?>
