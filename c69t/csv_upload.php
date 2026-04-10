@@ -9,8 +9,6 @@ error_reporting(E_ALL);
 |--------------------------------------------------------------------------
 | TABLE DEFINITIONS
 |--------------------------------------------------------------------------
-| Add or remove tables/columns here to match your DB.
-| The order in "columns" is the insert order.
 */
 $uploadTables = [
     "solid_waste_logs" => [
@@ -87,7 +85,7 @@ $uploadTables = [
 
     "gas_test_logs" => [
         "label" => "Gas Test Logs",
-        "columns" => ["source_file", "log_date", "log_time", "device", "operator", "location", "area_details", "mercury", "benzene", "lel", "h2s", "o2", "product_details", "actions"],
+        "columns" => ["source_file", "log_date", "log_time", "device", "operator", "location", "area_details", "mercury", "benzene", "lel", "h2s", "o2", "product_details", "action_taken"],
         "required" => ["log_date", "log_time"],
         "aliases" => [
             "source_file"     => ["source_file", "source file", "file", "filename"],
@@ -103,7 +101,7 @@ $uploadTables = [
             "h2s"             => ["h2s"],
             "o2"              => ["o2", "oxygen"],
             "product_details" => ["product_details", "product details", "product"],
-            "actions"         => ["actions", "action"]
+            "action_taken"         => ["actions", "action", "action_taken"]
         ]
     ]
 ];
@@ -113,30 +111,28 @@ $uploadTables = [
 | HELPERS
 |--------------------------------------------------------------------------
 */
-function h($value): string {
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
-
-function normalizeHeader(string $value): string {
+function normalizeHeader(string $value): string
+{
     $value = trim(strtolower($value));
     $value = str_replace(["-", "/", "\\", ".", "(", ")", "[", "]"], " ", $value);
     $value = preg_replace('/\s+/', ' ', $value);
     return trim($value);
 }
 
-function cleanNumeric($value) {
+function cleanNumeric($value)
+{
     if ($value === null) return null;
-    $value = trim((string)$value);
+    $value = trim((string) $value);
     if ($value === '') return null;
 
-    // Keep minus and decimal, remove commas/spaces/units
     $value = str_replace(",", "", $value);
     $value = preg_replace('/[^0-9.\-]/', '', $value);
 
     return $value === '' ? null : $value;
 }
 
-function parseDbDate(?string $value): ?string {
+function parseDbDate(?string $value): ?string
+{
     if ($value === null) return null;
     $value = trim($value);
     if ($value === '') return null;
@@ -181,7 +177,8 @@ function parseDbDate(?string $value): ?string {
     return null;
 }
 
-function parseDbTime(?string $value): ?string {
+function parseDbTime(?string $value): ?string
+{
     if ($value === null) return null;
     $value = trim($value);
     if ($value === '') return null;
@@ -218,12 +215,13 @@ function parseDbTime(?string $value): ?string {
     return null;
 }
 
-function mapHeaders(array $csvHeaders, array $aliases): array {
+function mapHeaders(array $csvHeaders, array $aliases): array
+{
     $mapped = [];
     $normalizedHeaders = [];
 
     foreach ($csvHeaders as $index => $header) {
-        $normalizedHeaders[$index] = normalizeHeader((string)$header);
+        $normalizedHeaders[$index] = normalizeHeader((string) $header);
     }
 
     foreach ($aliases as $dbColumn => $possibleNames) {
@@ -241,16 +239,18 @@ function mapHeaders(array $csvHeaders, array $aliases): array {
     return $mapped;
 }
 
-function buildInsertSql(string $table, array $columns): string {
+function buildInsertSql(string $table, array $columns): string
+{
     $colSql = implode(", ", array_map(fn($c) => "`{$c}`", $columns));
     $placeholders = implode(", ", array_fill(0, count($columns), "?"));
     return "INSERT INTO `{$table}` ({$colSql}) VALUES ({$placeholders})";
 }
 
-function getRowValue(array $row, array $mappedHeaders, string $column) {
+function getRowValue(array $row, array $mappedHeaders, string $column)
+{
     if (!isset($mappedHeaders[$column])) return null;
     $index = $mappedHeaders[$column];
-    return array_key_exists($index, $row) ? trim((string)$row[$index]) : null;
+    return array_key_exists($index, $row) ? trim((string) $row[$index]) : null;
 }
 
 /*
@@ -309,14 +309,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $sql = buildInsertSql($selectedTable, $insertColumns);
                 $stmt = $pdo->prepare($sql);
 
-                $rowNumber = 1; // header row
+                $rowNumber = 1;
                 $pdo->beginTransaction();
 
                 try {
                     while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
                         $rowNumber++;
 
-                        if (count(array_filter($row, fn($v) => trim((string)$v) !== "")) === 0) {
+                        if (count(array_filter($row, fn($v) => trim((string) $v) !== "")) === 0) {
                             continue;
                         }
 
@@ -333,7 +333,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                             if ($column === "log_date") {
                                 $parsed = parseDbDate($value);
-                                if ($value !== null && trim((string)$value) !== "" && $parsed === null) {
+                                if ($value !== null && trim((string) $value) !== "" && $parsed === null) {
                                     $rowErrors[] = "invalid date '{$value}'";
                                 }
                                 $data[$column] = $parsed;
@@ -342,7 +342,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                             if ($column === "log_time") {
                                 $parsed = parseDbTime($value);
-                                if ($value !== null && trim((string)$value) !== "" && $parsed === null) {
+                                if ($value !== null && trim((string) $value) !== "" && $parsed === null) {
                                     $rowErrors[] = "invalid time '{$value}'";
                                 }
                                 $data[$column] = $parsed;
