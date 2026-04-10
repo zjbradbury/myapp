@@ -23,15 +23,16 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                 <?php if ($canEdit): ?>
                     <a class="btn" href="nozzle_add.php">Add Record</a>
                 <?php endif; ?>
+
 <a class="btn" href="csv_download.php?<?= http_build_query([
     'table' => 'nozzle_logs',
-    'from_date' => $fromDate,
-    'from_time' => $fromTime,
-    'to_date' => $toDate,
-    'to_time' => $toTime
+    'start' => $range['start'] ?? '',
+    'end' => $range['end'] ?? '',
+    'quick' => $range['quick'] ?? ''
 ]) ?>">
     Download CSV
 </a>
+
             </div>
         </div>
 
