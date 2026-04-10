@@ -86,28 +86,20 @@ $filename = $tableDef["label"] . "_" . $startPart . "_to_" . $endPart . ".csv";
 | OUTPUT CSV
 |--------------------------------------------------------------------------
 */
-$csv = fopen('php://temp', 'r+');
+header("Content-Type: text/csv; charset=utf-8");
+header("Content-Disposition: attachment; filename=\"{$filename}\"");
 
-fputcsv($csv, $columns);
+$output = fopen("php://output", "w");
+
+fputcsv($output, $columns);
 
 foreach ($rows as $row) {
     $line = [];
     foreach ($columns as $col) {
-        $line[] = $row[$col] ?? '';
+        $line[] = $row[$col] ?? "";
     }
-    fputcsv($csv, $line);
+    fputcsv($output, $line);
 }
 
-rewind($csv);
-$content = stream_get_contents($csv);
-fclose($csv);
-
-header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $filename . '"');
-header('Content-Length: ' . strlen($content));
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
-header('Expires: 0');
-
-echo $content;
+fclose($output);
 exit;
