@@ -128,7 +128,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
 <a href="sample_list.php" class="<?= $currentPage === 'sample_list.php' ? 'active' : '' ?>">Sample Logs</a>
 
-<a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>"<Gas Test Logs</a>
+<a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test Logs</a>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
                 <a href="tricanter_add.php" class="<?= $currentPage === 'tricanter_add.php' ? 'active' : '' ?>">Add Tricanter
