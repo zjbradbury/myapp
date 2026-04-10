@@ -20,6 +20,7 @@ $rows = fetch_log_rows($pdo, "gas_test_logs", $range, "log_date DESC, log_time D
 <div class="container wide">
     <div class="topbar">
         <h2>Gas Test Logs</h2>
+<div>
         <?php if ($canEdit): ?>
             <a class="btn" href="gas_test_add.php">Add Record</a>
         <?php endif; ?>
@@ -33,6 +34,7 @@ $rows = fetch_log_rows($pdo, "gas_test_logs", $range, "log_date DESC, log_time D
     Download CSV
 </a>
 
+</div>
     </div>
 
     <?php render_range_filter($range, 'Filtering table to selected range'); ?>
