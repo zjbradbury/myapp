@@ -99,6 +99,10 @@ h1 {
 }
 
 .nozzle-panel {
+    grid-column: auto;
+}
+
+.wide-panel {
     grid-column: 1 / -1;
 }
 
@@ -483,118 +487,6 @@ th {
     padding: 5px 6px;
 }
 
-/* New dashboard layout styles */
-
-.dashboard-grid {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 16px;
-}
-
-.span-12 {
-    grid-column: span 12;
-}
-
-.span-8 {
-    grid-column: span 8;
-}
-
-.span-6 {
-    grid-column: span 6;
-}
-
-.span-4 {
-    grid-column: span 4;
-}
-
-.section-title {
-    margin: 0 0 12px 0;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-bottom: 14px;
-}
-
-.stat-box {
-    background: rgba(255,255,255,0.04);
-    border-radius: 10px;
-    padding: 12px;
-}
-
-.stat-label {
-    font-size: 12px;
-    opacity: 0.8;
-    margin-bottom: 6px;
-}
-
-.stat-value {
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
-}
-
-.monitor-table td,
-.monitor-table th {
-    white-space: nowrap;
-}
-
-.status-pill {
-    display: inline-block;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-weight: 700;
-    font-size: 12px;
-}
-
-.status-ok {
-    background: #1f6f43;
-    color: #fff;
-}
-
-.status-warning {
-    background: #a66a00;
-    color: #fff;
-}
-
-.status-overdue,
-.status-alarm {
-    background: #a62828;
-    color: #fff;
-}
-
-.status-off,
-.status-master-off,
-.status-no-data,
-.status-not-set-up {
-    background: #555;
-    color: #fff;
-}
-
-.mini-meta {
-    display: grid;
-    gap: 6px;
-    font-size: 14px;
-}
-
-.table-scroll {
-    overflow-x: auto;
-}
-
-.monitor-master-form {
-    margin-bottom: 14px;
-}
-
-.monitor-minutes-input {
-    width: 80px;
-}
-
-.range-summary {
-    margin-top: 10px;
-}
-
 @media (max-width: 1600px) {
     .grid {
         grid-template-columns: 1fr 1fr;
@@ -604,14 +496,6 @@ th {
 @media (max-width: 1400px) {
     .topbar {
         grid-template-columns: 1fr 1fr;
-    }
-}
-
-@media (max-width: 980px) {
-    .span-8,
-    .span-6,
-    .span-4 {
-        grid-column: span 12;
     }
 }
 
@@ -636,7 +520,8 @@ th {
         grid-template-columns: 1fr;
     }
 
-    .nozzle-panel {
+    .nozzle-panel,
+    .wide-panel {
         grid-column: auto;
     }
 
