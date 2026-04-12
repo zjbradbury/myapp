@@ -4,10 +4,6 @@ requireRole(["admin", "operator"]);
 
 $currentUser = $_SESSION['username'] ?? 'unknown';
 
-function h($value)
-{
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
 
 function getGasTestDevices(PDO $pdo): array
 {
