@@ -66,10 +66,10 @@ $uploadTables = [
     "sample_logs" => [
         "label" => "Sample Logs",
         "columns" => ["source_file", "sample_location", "log_date", "log_time", "nozzle", "flow", "mercury", "solids", "water", "wax", "operator", "comments"],
-        "required" => ["log_date", "log_time"],
+        "required" => ["sample_location", "log_date", "log_time"],
         "aliases" => [
             "source_file"     => ["source_file", "source file", "file", "filename"],
-            "sample_location" => ["sample_location", "sample location", "location"],
+            "sample_location" => ["sample_location", "sample location", "samplelocation", "location", "sample point", "point"],
             "log_date"        => ["log_date", "date", "log date"],
             "log_time"        => ["log_time", "time", "log time"],
             "nozzle"          => ["nozzle", "nozzle #", "nozzle number"],
@@ -101,7 +101,7 @@ $uploadTables = [
             "h2s"             => ["h2s"],
             "o2"              => ["o2", "oxygen"],
             "product_details" => ["product_details", "product details", "product"],
-            "action_taken"         => ["actions", "action", "action_taken"]
+            "action_taken"    => ["action_taken", "action taken", "actions", "action"]
         ]
     ]
 ];
@@ -111,8 +111,31 @@ $uploadTables = [
 | HELPERS
 |--------------------------------------------------------------------------
 */
+function normalizeNull($value)
+{
+    if ($value === null) {
+        return null;
+    }
+
+    $value = trim((string) $value);
+    $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
+
+    if ($value === '') {
+        return null;
+    }
+
+    $lower = strtolower($value);
+
+    if (in_array($lower, ['null', 'n/a', 'na', '-', '--'], true)) {
+        return null;
+    }
+
+    return $value;
+}
+
 function normalizeHeader(string $value): string
 {
+    $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
     $value = trim(strtolower($value));
     $value = str_replace(["-", "/", "\\", ".", "(", ")", "[", "]"], " ", $value);
     $value = preg_replace('/\s+/', ' ', $value);
@@ -121,9 +144,10 @@ function normalizeHeader(string $value): string
 
 function cleanNumeric($value)
 {
-    if ($value === null) return null;
-    $value = trim((string) $value);
-    if ($value === '') return null;
+    $value = normalizeNull($value);
+    if ($value === null) {
+        return null;
+    }
 
     $value = str_replace(",", "", $value);
     $value = preg_replace('/[^0-9.\-]/', '', $value);
@@ -133,11 +157,19 @@ function cleanNumeric($value)
 
 function parseDbDate(?string $value): ?string
 {
-    if ($value === null) return null;
-    $value = trim($value);
-    if ($value === '') return null;
+    $value = normalizeNull($value);
+    if ($value === null) {
+        return null;
+    }
 
+    $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
     $value = preg_replace('/\s+/', ' ', $value);
+
+    if (preg_match('/^(\d{4}[-\/]\d{1,2}[-\/]\d{1,2})\s+/', $value, $m)) {
+        $value = $m[1];
+    } elseif (preg_match('/^(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})\s+/', $value, $m)) {
+        $value = $m[1];
+    }
 
     $formats = [
         'Y-m-d',
@@ -145,14 +177,15 @@ function parseDbDate(?string $value): ?string
         'd/m/Y',
         'd-m-Y',
         'd.m.Y',
-        'm/d/Y',
-        'm-d-Y',
         'j/n/Y',
         'j-n-Y',
         'j/m/Y',
         'j-m-Y',
         'd/m/y',
         'd-m-y',
+        'd.m.y',
+        'm/d/Y',
+        'm-d-Y',
         'm/d/y',
         'm-d-y',
         'd M Y',
@@ -164,14 +197,15 @@ function parseDbDate(?string $value): ?string
 
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat('!' . $format, $value);
-        if ($dt && $dt->format($format) === $value) {
+        $errors = DateTime::getLastErrors();
+
+        if (
+            $dt &&
+            $errors['warning_count'] === 0 &&
+            $errors['error_count'] === 0
+        ) {
             return $dt->format('Y-m-d');
         }
-    }
-
-    $ts = strtotime($value);
-    if ($ts !== false) {
-        return date('Y-m-d', $ts);
     }
 
     return null;
@@ -179,12 +213,18 @@ function parseDbDate(?string $value): ?string
 
 function parseDbTime(?string $value): ?string
 {
-    if ($value === null) return null;
-    $value = trim($value);
-    if ($value === '') return null;
+    $value = normalizeNull($value);
+    if ($value === null) {
+        return null;
+    }
 
+    $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
     $value = strtoupper($value);
     $value = preg_replace('/\s+/', ' ', $value);
+
+    if (preg_match('/\b(\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM)?)\b/i', $value, $m)) {
+        $value = strtoupper(trim($m[1]));
+    }
 
     $formats = [
         'H:i:s',
@@ -202,14 +242,15 @@ function parseDbTime(?string $value): ?string
 
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat('!' . $format, $value);
-        if ($dt) {
+        $errors = DateTime::getLastErrors();
+
+        if (
+            $dt &&
+            $errors['warning_count'] === 0 &&
+            $errors['error_count'] === 0
+        ) {
             return $dt->format('H:i:s');
         }
-    }
-
-    $ts = strtotime($value);
-    if ($ts !== false) {
-        return date('H:i:s', $ts);
     }
 
     return null;
@@ -248,9 +289,20 @@ function buildInsertSql(string $table, array $columns): string
 
 function getRowValue(array $row, array $mappedHeaders, string $column)
 {
-    if (!isset($mappedHeaders[$column])) return null;
+    if (!isset($mappedHeaders[$column])) {
+        return null;
+    }
+
     $index = $mappedHeaders[$column];
-    return array_key_exists($index, $row) ? trim((string) $row[$index]) : null;
+
+    if (!array_key_exists($index, $row)) {
+        return null;
+    }
+
+    $value = (string) $row[$index];
+    $value = preg_replace('/^\xEF\xBB\xBF/', '', $value);
+
+    return trim($value);
 }
 
 /*
@@ -293,6 +345,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             rewind($handle);
 
             if ($firstLine !== false) {
+                $firstLine = preg_replace('/^\xEF\xBB\xBF/', '', $firstLine);
+
                 $commaCount = substr_count($firstLine, ",");
                 $semiCount  = substr_count($firstLine, ";");
                 if ($semiCount > $commaCount) {
@@ -301,88 +355,112 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
 
             $headers = fgetcsv($handle, 0, $delimiter);
+
+            if ($headers && isset($headers[0])) {
+                $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string) $headers[0]);
+            }
+
             if (!$headers || count($headers) === 0) {
                 $errors[] = "CSV appears to be empty.";
             } else {
                 $mappedHeaders = mapHeaders($headers, $tableDef["aliases"]);
-                $insertColumns = $tableDef["columns"];
-                $sql = buildInsertSql($selectedTable, $insertColumns);
-                $stmt = $pdo->prepare($sql);
 
-                $rowNumber = 1;
-                $pdo->beginTransaction();
-
-                try {
-                    while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
-                        $rowNumber++;
-
-                        if (count(array_filter($row, fn($v) => trim((string) $v) !== "")) === 0) {
-                            continue;
-                        }
-
-                        $data = [];
-                        $rowErrors = [];
-
-                        foreach ($insertColumns as $column) {
-                            if ($column === "source_file") {
-                                $data[$column] = $originalName;
-                                continue;
-                            }
-
-                            $value = getRowValue($row, $mappedHeaders, $column);
-
-                            if ($column === "log_date") {
-                                $parsed = parseDbDate($value);
-                                if ($value !== null && trim((string) $value) !== "" && $parsed === null) {
-                                    $rowErrors[] = "invalid date '{$value}'";
-                                }
-                                $data[$column] = $parsed;
-                                continue;
-                            }
-
-                            if ($column === "log_time") {
-                                $parsed = parseDbTime($value);
-                                if ($value !== null && trim((string) $value) !== "" && $parsed === null) {
-                                    $rowErrors[] = "invalid time '{$value}'";
-                                }
-                                $data[$column] = $parsed;
-                                continue;
-                            }
-
-                            if (in_array($column, [
-                                "amount", "flow", "pressure", "min_deg", "max_deg", "rpm",
-                                "bowl_speed", "screw_speed", "bowl_rpm", "screw_rpm", "impeller",
-                                "feed_rate", "torque", "temp", "mercury", "solids", "water",
-                                "wax", "benzene", "lel", "h2s", "o2"
-                            ], true)) {
-                                $data[$column] = cleanNumeric($value);
-                                continue;
-                            }
-
-                            $data[$column] = ($value === '' ? null : $value);
-                        }
-
-                        foreach ($tableDef["required"] as $requiredColumn) {
-                            if (!isset($data[$requiredColumn]) || $data[$requiredColumn] === null || $data[$requiredColumn] === '') {
-                                $rowErrors[] = "missing required field '{$requiredColumn}'";
-                            }
-                        }
-
-                        if ($rowErrors) {
-                            $failCount++;
-                            $report[] = "Row {$rowNumber}: " . implode(", ", $rowErrors);
-                            continue;
-                        }
-
-                        $stmt->execute(array_map(fn($c) => $data[$c] ?? null, $insertColumns));
-                        $successCount++;
+                $missingRequiredHeaders = [];
+                foreach ($tableDef["required"] as $requiredColumn) {
+                    if (!isset($mappedHeaders[$requiredColumn]) && $requiredColumn !== 'source_file') {
+                        $missingRequiredHeaders[] = $requiredColumn;
                     }
+                }
 
-                    $pdo->commit();
-                    $messages[] = "Upload complete. {$successCount} row(s) inserted, {$failCount} row(s) skipped.";
-                } catch (Throwable $e) {
-                    $pdo->rollBack();
-                    $errors[] = "Upload failed: " . $e->getMessage();
+                if ($missingRequiredHeaders) {
+                    $errors[] = "Missing required CSV header(s): " . implode(", ", $missingRequiredHeaders);
+                }
+
+                if (!$errors) {
+                    $insertColumns = $tableDef["columns"];
+                    $sql = buildInsertSql($selectedTable, $insertColumns);
+                    $stmt = $pdo->prepare($sql);
+
+                    $rowNumber = 1;
+                    $pdo->beginTransaction();
+
+                    try {
+                        while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+                            $rowNumber++;
+
+                            if (count(array_filter($row, fn($v) => trim((string) $v) !== "")) === 0) {
+                                continue;
+                            }
+
+                            $data = [];
+                            $rowErrors = [];
+
+                            foreach ($insertColumns as $column) {
+                                if ($column === "source_file") {
+                                    $data[$column] = $originalName;
+                                    continue;
+                                }
+
+                                $value = normalizeNull(getRowValue($row, $mappedHeaders, $column));
+
+                                if ($column === "sample_location") {
+                                    $data[$column] = $value;
+                                    continue;
+                                }
+
+                                if ($column === "log_date") {
+                                    $parsed = parseDbDate($value);
+                                    if ($value !== null && $parsed === null) {
+                                        $rowErrors[] = "invalid date '{$value}'";
+                                    }
+                                    $data[$column] = $parsed;
+                                    continue;
+                                }
+
+                                if ($column === "log_time") {
+                                    $parsed = parseDbTime($value);
+                                    if ($value !== null && $parsed === null) {
+                                        $rowErrors[] = "invalid time '{$value}'";
+                                    }
+                                    $data[$column] = $parsed;
+                                    continue;
+                                }
+
+                                if (in_array($column, [
+                                    "amount", "flow", "pressure", "min_deg", "max_deg", "rpm",
+                                    "bowl_speed", "screw_speed", "bowl_rpm", "screw_rpm", "impeller",
+                                    "feed_rate", "torque", "temp", "mercury", "solids", "water",
+                                    "wax", "benzene", "lel", "h2s", "o2"
+                                ], true)) {
+                                    $data[$column] = cleanNumeric($value);
+                                    continue;
+                                }
+
+                                $data[$column] = $value;
+                            }
+
+                            foreach ($tableDef["required"] as $requiredColumn) {
+                                if (!isset($data[$requiredColumn]) || $data[$requiredColumn] === null || $data[$requiredColumn] === '') {
+                                    $rowErrors[] = "missing required field '{$requiredColumn}'";
+                                }
+                            }
+
+                            if ($rowErrors) {
+                                $failCount++;
+                                $report[] = "Row {$rowNumber}: " . implode(", ", $rowErrors);
+                                continue;
+                            }
+
+                            $stmt->execute(array_map(fn($c) => $data[$c] ?? null, $insertColumns));
+                            $successCount++;
+                        }
+
+                        $pdo->commit();
+                        $messages[] = "Upload complete. {$successCount} row(s) inserted, {$failCount} row(s) skipped.";
+                    } catch (Throwable $e) {
+                        $pdo->rollBack();
+                        $errors[] = "Upload failed: " . $e->getMessage();
+                    }
                 }
             }
 
