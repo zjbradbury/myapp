@@ -197,12 +197,20 @@ function parseDbDate(?string $value): ?string
 
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat('!' . $format, $value);
+
+        if ($dt === false) {
+            continue;
+        }
+
         $errors = DateTime::getLastErrors();
 
         if (
-            $dt &&
-            $errors['warning_count'] === 0 &&
-            $errors['error_count'] === 0
+            $errors === false ||
+            (
+                isset($errors['warning_count'], $errors['error_count']) &&
+                $errors['warning_count'] === 0 &&
+                $errors['error_count'] === 0
+            )
         ) {
             return $dt->format('Y-m-d');
         }
@@ -242,12 +250,20 @@ function parseDbTime(?string $value): ?string
 
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat('!' . $format, $value);
+
+        if ($dt === false) {
+            continue;
+        }
+
         $errors = DateTime::getLastErrors();
 
         if (
-            $dt &&
-            $errors['warning_count'] === 0 &&
-            $errors['error_count'] === 0
+            $errors === false ||
+            (
+                isset($errors['warning_count'], $errors['error_count']) &&
+                $errors['warning_count'] === 0 &&
+                $errors['error_count'] === 0
+            )
         ) {
             return $dt->format('H:i:s');
         }
