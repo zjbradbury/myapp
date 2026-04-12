@@ -448,7 +448,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="kpi"><small>Location</small><b><?= h($latestSample['sample_location'] ?? '-') ?></b></div>
                 <div class="kpi"><small>Nozzle</small><b><?= h($latestSample['nozzle'] ?? '-') ?></b></div>
                 <div class="kpi"><small>Flow</small><b><?= fmt($latestSample['flow'] ?? null, 2) ?> M3/hr</b></div>
-                <div class="kpi"><small>Mercury</small><b><?= fmt($latestSample['mercury'] ?? null, 3) ?> ppm</b></div>
+                <div class="kpi"><small>Mercury</small><b><?= fmt($latestSample['mercury'] ?? null, 3) ?> %</b></div>
                 <div class="kpi"><small>Solids</small><b><?= fmt($latestSample['solids'] ?? null, 2) ?> %</b></div>
                 <div class="kpi"><small>Water</small><b><?= fmt($latestSample['water'] ?? null, 2) ?> %</b></div>
                 <div class="kpi"><small>Wax</small><b><?= fmt($latestSample['wax'] ?? null, 2) ?> %</b></div>
@@ -486,7 +486,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                                 <td><?= h($r['sample_location'] ?? '') ?></td>
                                 <td><?= h($r['nozzle'] ?? '') ?></td>
                                 <td><?= fmt($r['flow'] ?? null, 2) ?> M3/hr</td>
-                                <td><?= fmt($r['mercury'] ?? null, 3) ?> ppm</td>
+                                <td><?= fmt($r['mercury'] ?? null, 3) ?> %</td>
                                 <td><?= fmt($r['solids'] ?? null, 2) ?> %</td>
                                 <td><?= fmt($r['water'] ?? null, 2) ?> %</td>
                                 <td><?= fmt($r['wax'] ?? null, 2) ?> %</td>
@@ -505,11 +505,11 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="kpi"><small>Device</small><b><?= h($latestGasTest['device'] ?? '-') ?></b></div>
                 <div class="kpi"><small>Operator</small><b><?= h($latestGasTest['operator'] ?? '-') ?></b></div>
                 <div class="kpi"><small>Location</small><b><?= h($latestGasTest['location'] ?? '-') ?></b></div>
-                <div class="kpi"><small>Mercury</small><b><?= fmt($latestGasTest['mercury'] ?? null, 3) ?> ppm</b></div>
-                <div class="kpi"><small>Benzene</small><b><?= fmt($latestGasTest['benzene'] ?? null, 3) ?> ppm</b></div>
-                <div class="kpi"><small>LEL</small><b><?= fmt($latestGasTest['lel'] ?? null, 2) ?> %</b></div>
-                <div class="kpi"><small>H2S</small><b><?= fmt($latestGasTest['h2s'] ?? null, 2) ?> ppm</b></div>
-                <div class="kpi"><small>O2</small><b><?= fmt($latestGasTest['o2'] ?? null, 2) ?> %</b></div>
+                <div class="kpi"><small>Mercury</small><b><?= fmt($latestGasTest['mercury'] ?? null, 3) ?> µg/m³</b></div>
+                <div class="kpi"><small>Benzene</small><b><?= fmt($latestGasTest['benzene'] ?? null, 2) ?> ppm</b></div>
+                <div class="kpi"><small>LEL</small><b><?= fmt($latestGasTest['lel'] ?? null, 1) ?> %</b></div>
+                <div class="kpi"><small>H2S</small><b><?= fmt($latestGasTest['h2s'] ?? null, 1) ?> ppm</b></div>
+                <div class="kpi"><small>O2</small><b><?= fmt($latestGasTest['o2'] ?? null, 1) ?> %</b></div>
                 <div class="kpi"><small>Area</small><b><?= h($latestGasTest['area_details'] ?? '-') ?></b></div>
             </div>
 
@@ -548,11 +548,11 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                                 <td><?= h($r['operator'] ?? '') ?></td>
                                 <td><?= h($r['location'] ?? '') ?></td>
                                 <td><?= h($r['area_details'] ?? '') ?></td>
-                                <td><?= fmt($r['mercury'] ?? null, 3) ?> ppm</td>
-                                <td><?= fmt($r['benzene'] ?? null, 3) ?> ppm</td>
-                                <td><?= fmt($r['lel'] ?? null, 2) ?> %</td>
-                                <td><?= fmt($r['h2s'] ?? null, 2) ?> ppm</td>
-                                <td><?= fmt($r['o2'] ?? null, 2) ?> %</td>
+                                <td><?= fmt($r['mercury'] ?? null, 3) ?> µg/m³</td>
+                                <td><?= fmt($r['benzene'] ?? null, 2) ?> ppm</td>
+                              <td><?= fmt($r['lel'] ?? null, 1) ?> %</td>
+                                <td><?= fmt($r['h2s'] ?? null, 1) ?> ppm</td>
+                                <td><?= fmt($r['o2'] ?? null, 1) ?> %</td>
                                 <td><?= h($r['product_details'] ?? '') ?></td>
                                 <td><?= h($r['action_taken'] ?? '') ?></td>
                             </tr>
