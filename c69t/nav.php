@@ -152,6 +152,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
 <a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
 
+<a href=".php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
+
             <?php endif; ?>
 
             <div class="hamburger-divider"></div>
