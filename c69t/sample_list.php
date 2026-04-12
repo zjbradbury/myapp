@@ -83,10 +83,10 @@ $rows = fetch_log_rows($pdo, "sample_logs", $range, "log_date DESC, log_time DES
                         <?php if ($canEdit || $canDelete): ?>
                             <td>
                                 <?php if ($canEdit): ?>
-                                    <a href="sample_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>
+                                    <a class="btn small" href="sample_edit.php?id=<?= (int)$row["id"] ?>">Edit</a>
                                 <?php endif; ?>
                                 <?php if ($canDelete): ?>
-                                    <a href="sample_delete.php?id=<?= (int)$row["id"] ?>" onclick="return confirm('Delete this record?')">Delete</a>
+                                    <a class="btn small danger" href="sample_delete.php?id=<?= (int)$row["id"] ?>" onclick="return confirm('Delete this record?')">Delete</a>
                                 <?php endif; ?>
                             </td>
                         <?php endif; ?>
