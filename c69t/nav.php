@@ -152,7 +152,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
 <a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
 
-<a href=".php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
+<a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown Config</a>
 
             <?php endif; ?>
 
