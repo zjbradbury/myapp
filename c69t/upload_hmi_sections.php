@@ -19,7 +19,7 @@ function fail($msg, $code = 400)
 
 function parse_log_date($value)
 {
-    $value = trim((string) $value);
+    $value = trim((string)$value);
     if ($value === '') {
         return null;
     }
@@ -44,13 +44,13 @@ function parse_log_date($value)
 
 function parse_log_time($value)
 {
-    $value = trim((string) $value);
+    $value = trim((string)$value);
     if ($value === '') {
         return null;
     }
 
     if (is_numeric($value)) {
-        $seconds = (int) round(((float) $value) * 86400);
+        $seconds = (int) round(((float)$value) * 86400);
         $seconds = $seconds % 86400;
         return gmdate('H:i:s', $seconds);
     }
@@ -74,6 +74,41 @@ function parse_log_time($value)
     }
 
     return null;
+}
+
+function normalize_key($key)
+{
+    $key = trim((string)$key);
+    $key = str_replace([' ', '-'], '_', $key);
+    return $key;
+}
+
+function parse_number($value)
+{
+    if ($value === null) {
+        return null;
+    }
+
+    if (is_string($value)) {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        // remove commas and anything except digits, minus, decimal point
+        $value = str_replace(',', '', $value);
+        $value = preg_replace('/[^0-9.\-]/', '', $value);
+
+        if ($value === '' || $value === '-' || $value === '.' || $value === '-.') {
+            return null;
+        }
+    }
+
+    if (!is_numeric($value)) {
+        return null;
+    }
+
+    return (float)$value;
 }
 
 try {
@@ -100,8 +135,8 @@ try {
     }
 
     // Handle both:
-    // 1) a single object: {"table":"TRICANTER","data":{...}}
-    // 2) an array of objects: [{"table":"NOZZLE","data":{...}}, {...}]
+    // 1) single object: {"table":"TRICANTER","data":{...}}
+    // 2) array of objects: [{"table":"NOZZLE","data":{...}}, {...}]
     if (isset($records['table']) && isset($records['data'])) {
         $records = [$records];
     }
@@ -144,18 +179,27 @@ try {
                 'Pressure' => 'pressure',
                 'Comments' => 'comments'
             ]
+        ],
+        'SOLID_WASTE' => [
+            'table' => 'solid_waste_logs',
+            'columns' => [
+                'Date' => 'log_date',
+                'Time' => 'log_time',
+                'Amount' => 'amount',
+                'Comments' => 'comments'
+            ]
         ]
     ];
 
     $inserted = 0;
 
     foreach ($records as $record) {
-
         if (!isset($record['table']) || !isset($record['data']) || !is_array($record['data'])) {
             continue;
         }
 
-        $section = strtoupper(trim((string) $record['table']));
+        $section = strtoupper(trim((string)$record['table']));
+        $section = str_replace(' ', '_', $section);
 
         if (!isset($sectionMap[$section])) {
             continue;
@@ -168,19 +212,55 @@ try {
             'source_file' => $filename
         ];
 
+        $solidStart = null;
+        $solidStop = null;
+        $solidAmount = null;
+
         foreach ($record['data'] as $key => $value) {
+            $originalKey = trim((string)$key);
+            $normalizedKey = normalize_key($originalKey);
 
-            $key = trim((string) $key);
-
-            if (!isset($allowedColumns[$key])) {
-                continue;
-            }
-
-            $column = $allowedColumns[$key];
             $value = is_string($value) ? trim($value) : $value;
-
             if ($value === '') {
                 $value = null;
+            }
+
+            // Special handling for SOLID_WASTE start/stop style payloads
+            if ($section === 'SOLID_WASTE') {
+                if (in_array($normalizedKey, ['Start', 'START', 'start', 'Start_Value', 'START_VALUE', 'start_value'], true)) {
+                    $solidStart = parse_number($value);
+                    continue;
+                }
+
+                if (in_array($normalizedKey, ['Stop', 'STOP', 'stop', 'Stop_Value', 'STOP_VALUE', 'stop_value'], true)) {
+                    $solidStop = parse_number($value);
+                    continue;
+                }
+
+                if (in_array($normalizedKey, ['Amount', 'AMOUNT', 'amount'], true)) {
+                    $solidAmount = parse_number($value);
+                    $insertData['amount'] = $solidAmount;
+                    continue;
+                }
+            }
+
+            if (!isset($allowedColumns[$originalKey])) {
+                // also allow normalized match against configured keys
+                $matchedColumn = null;
+                foreach ($allowedColumns as $mapKey => $mapColumn) {
+                    if (normalize_key($mapKey) === $normalizedKey) {
+                        $matchedColumn = $mapColumn;
+                        break;
+                    }
+                }
+
+                if ($matchedColumn === null) {
+                    continue;
+                }
+
+                $column = $matchedColumn;
+            } else {
+                $column = $allowedColumns[$originalKey];
             }
 
             if ($column === 'log_date' && $value !== null) {
@@ -192,6 +272,13 @@ try {
             }
 
             $insertData[$column] = $value;
+        }
+
+        // Calculate solid waste amount from start/stop if amount not directly provided
+        if ($section === 'SOLID_WASTE' && !isset($insertData['amount'])) {
+            if ($solidStart !== null && $solidStop !== null) {
+                $insertData['amount'] = $solidStart - $solidStop;
+            }
         }
 
         // Skip if only source_file exists and no mapped section fields were found
