@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
     <div class="container">
         <h2>Login</h2>
-<img src="Contract69TanksLogoTransparent.png" alt="Contract69Tanks Logo" width="200" height="230">
+<img src="Contract69TanksLogoTransparent.png" alt="Contract69Tanks Logo" width="345" height="253">
 
         <?php if ($message !== ""): ?>
             <p class="message error"><?= h($message) ?></p>
