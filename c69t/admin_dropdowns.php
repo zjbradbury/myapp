@@ -2,11 +2,6 @@
 require_once "config.php";
 requireRole(["admin"]);
 
-function h($value)
-{
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
-
 $message = '';
 $error = '';
 
