@@ -5,6 +5,52 @@ requireRole(["admin", "operator"]);
 
 $currentUser = $_SESSION['username'] ?? 'unknown';
 
+if (!function_exists('getConfigNames')) {
+    function getConfigNames(PDO $pdo, string $tableName, bool $activeOnly = false): array
+    {
+        $allowedTables = [
+            'config_operators',
+            'config_sample_location',
+        ];
+
+        if (!in_array($tableName, $allowedTables, true)) {
+            return [];
+        }
+
+        $sql = "SELECT name FROM `$tableName`";
+
+        if ($activeOnly) {
+            $sql .= " WHERE active = 1";
+        }
+
+        $sql .= " ORDER BY name ASC";
+
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+}
+
+if (!function_exists('renderDatalistOptions')) {
+    function renderDatalistOptions(array $options): string
+    {
+        $html = '';
+
+        foreach ($options as $option) {
+            $value = trim((string)$option);
+            if ($value === '') {
+                continue;
+            }
+
+            $html .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">';
+        }
+
+        return $html;
+    }
+}
+
+$operatorOptions = getConfigNames($pdo, 'config_operators', true);
+$sampleLocationOptions = getConfigNames($pdo, 'config_sample_location');
+
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     $stmt = $pdo->prepare("
@@ -48,7 +94,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="date" name="log_date" id="log_date" required>
             <input type="time" name="log_time" id="log_time" step="1" required>
 
-            <input type="text" name="sample_location" placeholder="Sample Location" required>
+            <input type="text" name="sample_location" list="sample_location_list" placeholder="Sample Location" required>
+            <datalist id="sample_location_list">
+                <?= renderDatalistOptions($sampleLocationOptions) ?>
+            </datalist>
 
             <div class="input-unit-wrap">
                 <input type="text" name="nozzle" placeholder="Nozzle">
@@ -80,7 +129,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <span class="unit">%</span>
             </div>
 
-            <input type="text" name="operator" placeholder="Operator">
+            <input type="text" name="operator" list="operator_list" placeholder="Operator">
+            <datalist id="operator_list">
+                <?= renderDatalistOptions($operatorOptions) ?>
+            </datalist>
 
             <textarea name="comments" placeholder="Comments"></textarea>
 
