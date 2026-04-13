@@ -224,6 +224,60 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             $message = "Sample location deleted.";
         }
+
+        if ($action === "add_gas_test_location") {
+            $name = trim($_POST["name"] ?? '');
+
+            if ($name === '') {
+                throw new Exception("Gas test location name is required.");
+            }
+
+            $stmt = $pdo->prepare("
+                INSERT INTO config_gas_test_location (name)
+                VALUES (?)
+            ");
+            $stmt->execute([$name]);
+
+            $message = "Gas test location added.";
+        }
+
+        if ($action === "update_gas_test_location") {
+            $id = (int)($_POST["id"] ?? 0);
+            $name = trim($_POST["name"] ?? '');
+
+            if ($id <= 0) {
+                throw new Exception("Invalid gas test location ID.");
+            }
+
+            if ($name === '') {
+                throw new Exception("Gas test location name is required.");
+            }
+
+            $stmt = $pdo->prepare("
+                UPDATE config_gas_test_location
+                SET name = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $id]);
+
+            $message = "Gas test location updated.";
+        }
+
+        if ($action === "delete_gas_test_location") {
+            $id = (int)($_POST["id"] ?? 0);
+
+            if ($id <= 0) {
+                throw new Exception("Invalid gas test location ID.");
+            }
+
+            $stmt = $pdo->prepare("
+                DELETE FROM config_gas_test_location
+                WHERE id = ?
+            ");
+            $stmt->execute([$id]);
+
+            $message = "Gas test location deleted.";
+        }
     } catch (Throwable $e) {
         $error = $e->getMessage();
     }
@@ -246,6 +300,12 @@ $sampleLocations = $pdo->query("
     FROM config_sample_location
     ORDER BY name ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+$gasTestLocations = $pdo->query("
+    SELECT id, name
+    FROM config_gas_test_location
+    ORDER BY name ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
@@ -259,16 +319,30 @@ $sampleLocations = $pdo->query("
             gap: 20px;
         }
 
+        .stack-grid {
+            display: grid;
+            gap: 20px;
+        }
+
         .manage-card {
             background: #122c44;
             border-radius: 10px;
             padding: 15px;
+            min-width: 0;
+        }
+
+        .manage-card h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
         }
 
         .manage-list {
             display: grid;
             gap: 12px;
             margin-top: 15px;
+            max-height: 360px;
+            overflow-y: auto;
+            padding-right: 6px;
         }
 
         .manage-row {
@@ -282,6 +356,25 @@ $sampleLocations = $pdo->query("
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px 16px;
             margin-top: 10px;
+        }
+
+        .check-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1.2;
+            min-height: 26px;
+        }
+
+        .check-row input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+        }
+
+        .check-row span {
+            display: inline-block;
         }
 
         .msg-ok {
@@ -329,9 +422,18 @@ $sampleLocations = $pdo->query("
             margin: 0;
         }
 
-        .stack-grid {
-            display: grid;
-            gap: 20px;
+        .manage-list::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .manage-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.25);
+            border-radius: 999px;
+        }
+
+        .manage-list::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.06);
+            border-radius: 999px;
         }
 
         @media (max-width: 900px) {
@@ -368,13 +470,13 @@ $sampleLocations = $pdo->query("
                 <input type="text" name="name" placeholder="New device name" required>
 
                 <div class="device-form-grid">
-                    <label><input type="checkbox" name="allow_mercury" checked> Mercury</label>
-                    <label><input type="checkbox" name="allow_benzene" checked> Benzene</label>
-                    <label><input type="checkbox" name="allow_lel" checked> LEL</label>
-                    <label><input type="checkbox" name="allow_h2s" checked> H2S</label>
-                    <label><input type="checkbox" name="allow_o2" checked> O2</label>
-                    <label><input type="checkbox" name="allow_product_details" checked> Product Details</label>
-                    <label><input type="checkbox" name="allow_action_taken" checked> Actions Taken</label>
+                    <label class="check-row"><input type="checkbox" name="allow_mercury" checked><span>Mercury</span></label>
+                    <label class="check-row"><input type="checkbox" name="allow_benzene" checked><span>Benzene</span></label>
+                    <label class="check-row"><input type="checkbox" name="allow_lel" checked><span>LEL</span></label>
+                    <label class="check-row"><input type="checkbox" name="allow_h2s" checked><span>H2S</span></label>
+                    <label class="check-row"><input type="checkbox" name="allow_o2" checked><span>O2</span></label>
+                    <label class="check-row"><input type="checkbox" name="allow_product_details" checked><span>Product Details</span></label>
+                    <label class="check-row"><input type="checkbox" name="allow_action_taken" checked><span>Actions Taken</span></label>
                 </div>
 
                 <div class="row-actions">
@@ -396,13 +498,13 @@ $sampleLocations = $pdo->query("
                             <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
 
                             <div class="device-form-grid">
-                                <label><input type="checkbox" name="allow_mercury" <?= ((int)$row["allow_mercury"] === 1) ? 'checked' : '' ?>> Mercury</label>
-                                <label><input type="checkbox" name="allow_benzene" <?= ((int)$row["allow_benzene"] === 1) ? 'checked' : '' ?>> Benzene</label>
-                                <label><input type="checkbox" name="allow_lel" <?= ((int)$row["allow_lel"] === 1) ? 'checked' : '' ?>> LEL</label>
-                                <label><input type="checkbox" name="allow_h2s" <?= ((int)$row["allow_h2s"] === 1) ? 'checked' : '' ?>> H2S</label>
-                                <label><input type="checkbox" name="allow_o2" <?= ((int)$row["allow_o2"] === 1) ? 'checked' : '' ?>> O2</label>
-                                <label><input type="checkbox" name="allow_product_details" <?= ((int)$row["allow_product_details"] === 1) ? 'checked' : '' ?>> Product Details</label>
-                                <label><input type="checkbox" name="allow_action_taken" <?= ((int)$row["allow_action_taken"] === 1) ? 'checked' : '' ?>> Actions Taken</label>
+                                <label class="check-row"><input type="checkbox" name="allow_mercury" <?= ((int)$row["allow_mercury"] === 1) ? 'checked' : '' ?>><span>Mercury</span></label>
+                                <label class="check-row"><input type="checkbox" name="allow_benzene" <?= ((int)$row["allow_benzene"] === 1) ? 'checked' : '' ?>><span>Benzene</span></label>
+                                <label class="check-row"><input type="checkbox" name="allow_lel" <?= ((int)$row["allow_lel"] === 1) ? 'checked' : '' ?>><span>LEL</span></label>
+                                <label class="check-row"><input type="checkbox" name="allow_h2s" <?= ((int)$row["allow_h2s"] === 1) ? 'checked' : '' ?>><span>H2S</span></label>
+                                <label class="check-row"><input type="checkbox" name="allow_o2" <?= ((int)$row["allow_o2"] === 1) ? 'checked' : '' ?>><span>O2</span></label>
+                                <label class="check-row"><input type="checkbox" name="allow_product_details" <?= ((int)$row["allow_product_details"] === 1) ? 'checked' : '' ?>><span>Product Details</span></label>
+                                <label class="check-row"><input type="checkbox" name="allow_action_taken" <?= ((int)$row["allow_action_taken"] === 1) ? 'checked' : '' ?>><span>Actions Taken</span></label>
                             </div>
 
                             <div class="row-actions">
@@ -427,11 +529,15 @@ $sampleLocations = $pdo->query("
                 <form method="post">
                     <input type="hidden" name="action" value="add_operator">
                     <input type="text" name="name" placeholder="New operator name" required>
-                    <label style="display:block; margin:10px 0;">
+
+                    <label class="check-row" style="margin-top:10px;">
                         <input type="checkbox" name="active" checked>
-                        Active
+                        <span>Active</span>
                     </label>
-                    <button type="submit">Add Operator</button>
+
+                    <div class="row-actions">
+                        <button type="submit">Add Operator</button>
+                    </div>
                 </form>
 
                 <div class="manage-list">
@@ -447,9 +553,9 @@ $sampleLocations = $pdo->query("
 
                                 <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
 
-                                <label style="display:block; margin:10px 0;">
+                                <label class="check-row" style="margin-top:10px;">
                                     <input type="checkbox" name="active" <?= ((int)$row["active"] === 1) ? 'checked' : '' ?>>
-                                    Active
+                                    <span>Active</span>
                                 </label>
 
                                 <div style="margin-top:8px;">
@@ -487,7 +593,10 @@ $sampleLocations = $pdo->query("
                 <form method="post">
                     <input type="hidden" name="action" value="add_sample_location">
                     <input type="text" name="name" placeholder="New sample location" required>
-                    <button type="submit">Add Sample Location</button>
+
+                    <div class="row-actions">
+                        <button type="submit">Add Sample Location</button>
+                    </div>
                 </form>
 
                 <div class="manage-list">
@@ -510,6 +619,46 @@ $sampleLocations = $pdo->query("
 
                             <form method="post" class="inline-form" onsubmit="return confirm('Delete this sample location?');">
                                 <input type="hidden" name="action" value="delete_sample_location">
+                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                <button type="submit" class="btn danger">Delete</button>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="manage-card">
+                <h3>Gas Test Locations</h3>
+
+                <form method="post">
+                    <input type="hidden" name="action" value="add_gas_test_location">
+                    <input type="text" name="name" placeholder="New gas test location" required>
+
+                    <div class="row-actions">
+                        <button type="submit">Add Gas Test Location</button>
+                    </div>
+                </form>
+
+                <div class="manage-list">
+                    <?php if (!$gasTestLocations): ?>
+                        <div class="manage-row">No gas test locations found.</div>
+                    <?php endif; ?>
+
+                    <?php foreach ($gasTestLocations as $row): ?>
+                        <div class="manage-row">
+                            <form method="post">
+                                <input type="hidden" name="action" value="update_gas_test_location">
+                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+
+                                <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
+
+                                <div class="row-actions">
+                                    <button type="submit">Save Location</button>
+                                </div>
+                            </form>
+
+                            <form method="post" class="inline-form" onsubmit="return confirm('Delete this gas test location?');">
+                                <input type="hidden" name="action" value="delete_gas_test_location">
                                 <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
                                 <button type="submit" class="btn danger">Delete</button>
                             </form>
