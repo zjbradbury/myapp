@@ -140,7 +140,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 <body>
     <?php require_once "nav.php"; ?>
 
-<img src="Contract69TanksLogoTransparent.png" style="display: block; margin-left: auto; margin-right: auto; width: 50%;">
+<img src="Contract69TanksLogoTransparent.png" style="display: block; margin-left: auto; margin-right: auto; width: 20%;">
 
     <div class="monitor-shell">
         <div class="monitor-toolbar">
