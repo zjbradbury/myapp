@@ -2,6 +2,8 @@
 require_once "config.php";
 requireRole(['admin', 'operator', 'viewer']);
 
+$canEdit = in_array(currentRole(), ['admin', 'operator'], true);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
     $form = $_POST['monitor_form'] ?? '';
 
@@ -91,13 +93,6 @@ $tricanterLabels = label_series($tricanter);
 $solidWasteLabels = label_series($solidWaste);
 $solidWasteAmountSeries = numeric_series($solidWaste, 'amount');
 $solidWasteDiffSeries = solid_diff_series($solidWaste);
-
-$sampleFlowSeries = numeric_series($sample, 'flow');
-$sampleMercurySeries = numeric_series($sample, 'mercury');
-$sampleSolidsSeries = numeric_series($sample, 'solids');
-$sampleWaterSeries = numeric_series($sample, 'water');
-$sampleWaxSeries = numeric_series($sample, 'wax');
-$sampleLabels = label_series($sample);
 
 $gasMercurySeries = numeric_series($gasTest, 'mercury');
 $gasBenzeneSeries = numeric_series($gasTest, 'benzene');
@@ -289,7 +284,15 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
     <div class="grid">
 
         <div class="panel">
-            <h2>Tricanter</h2>
+            <div class="panel-head">
+                <h2>Tricanter</h2>
+                <div class="panel-actions">
+                    <a class="btn" href="tricanter_logs.php">View List</a>
+                    <?php if ($canEdit): ?>
+                        <a class="btn" href="tricanter_add.php">Add Record</a>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <div class="kpis">
                 <div class="kpi"><small>Bowl Speed</small><b><?= fmt($latestTricanter['bowl_speed'] ?? null, 0) ?> %</b></div>
@@ -349,7 +352,15 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         </div>
 
         <div class="panel">
-            <h2>Solid Waste</h2>
+            <div class="panel-head">
+                <h2>Solid Waste</h2>
+                <div class="panel-actions">
+                    <a class="btn" href="solid_waste_logs.php">View List</a>
+                    <?php if ($canEdit): ?>
+                        <a class="btn" href="solid_waste_add.php">Add Record</a>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <div class="kpis">
                 <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 0) ?> KG</b></div>
@@ -391,7 +402,15 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         </div>
 
         <div class="panel">
-            <h2>Nozzle</h2>
+            <div class="panel-head">
+                <h2>Nozzle</h2>
+                <div class="panel-actions">
+                    <a class="btn" href="nozzle_logs.php">View List</a>
+                    <?php if ($canEdit): ?>
+                        <a class="btn" href="nozzle_add.php">Add Record</a>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <div class="kpis">
                 <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?> M3/hr</b></div>
@@ -442,7 +461,15 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         </div>
 
         <div class="panel">
-            <h2>Sample</h2>
+            <div class="panel-head">
+                <h2>Sample</h2>
+                <div class="panel-actions">
+                    <a class="btn" href="sample_logs.php">View List</a>
+                    <?php if ($canEdit): ?>
+                        <a class="btn" href="sample_add.php">Add Record</a>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <div class="kpis">
                 <div class="kpi"><small>Location</small><b><?= h($latestSample['sample_location'] ?? '-') ?></b></div>
@@ -453,11 +480,6 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="kpi"><small>Water</small><b><?= fmt($latestSample['water'] ?? null, 2) ?> %</b></div>
                 <div class="kpi"><small>Wax</small><b><?= fmt($latestSample['wax'] ?? null, 2) ?> %</b></div>
                 <div class="kpi"><small>Operator</small><b><?= h($latestSample['operator'] ?? '-') ?></b></div>
-            </div>
-
-            <div class="chart-card">
-                <div class="chart-title">Sample Trends</div>
-                <div class="chart-wrap"><canvas id="sampleCombinedChart"></canvas></div>
             </div>
 
             <div class="table">
@@ -499,7 +521,15 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         </div>
 
         <div class="panel wide-panel">
-            <h2>Gas Test</h2>
+            <div class="panel-head">
+                <h2>Gas Test</h2>
+                <div class="panel-actions">
+                    <a class="btn" href="gas_test_logs.php">View List</a>
+                    <?php if ($canEdit): ?>
+                        <a class="btn" href="gas_test_add.php">Add Record</a>
+                    <?php endif; ?>
+                </div>
+            </div>
 
             <div class="kpis">
                 <div class="kpi"><small>Device</small><b><?= h($latestGasTest['device'] ?? '-') ?></b></div>
@@ -550,7 +580,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                                 <td><?= h($r['area_details'] ?? '') ?></td>
                                 <td><?= fmt($r['mercury'] ?? null, 3) ?> µg/m³</td>
                                 <td><?= fmt($r['benzene'] ?? null, 2) ?> ppm</td>
-                              <td><?= fmt($r['lel'] ?? null, 1) ?> %</td>
+                                <td><?= fmt($r['lel'] ?? null, 1) ?> %</td>
                                 <td><?= fmt($r['h2s'] ?? null, 1) ?> ppm</td>
                                 <td><?= fmt($r['o2'] ?? null, 1) ?> %</td>
                                 <td><?= h($r['product_details'] ?? '') ?></td>
@@ -671,14 +701,6 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [
             { label: 'Amount', data: <?= json_encode($solidWasteAmountSeries) ?>, color: '#00ff88', axis: 'y1' },
             { label: 'Diff (min)', data: <?= json_encode($solidWasteDiffSeries) ?>, color: '#ffd24d', axis: 'y2' }
-        ]);
-
-        makeCombinedChart('sampleCombinedChart', <?= json_encode($sampleLabels) ?>, [
-            { label: 'Flow', data: <?= json_encode($sampleFlowSeries) ?>, color: '#00ffff', axis: 'y1' },
-            { label: 'Mercury', data: <?= json_encode($sampleMercurySeries) ?>, color: '#ffd24d', axis: 'y2' },
-            { label: 'Solids', data: <?= json_encode($sampleSolidsSeries) ?>, color: '#6ee7a1', axis: 'y3' },
-            { label: 'Water', data: <?= json_encode($sampleWaterSeries) ?>, color: '#c8a7ff', axis: 'y4' },
-            { label: 'Wax', data: <?= json_encode($sampleWaxSeries) ?>, color: '#ff7e67', axis: 'y5' }
         ]);
 
         makeCombinedChart('gasTestCombinedChart', <?= json_encode($gasLabels) ?>, [
