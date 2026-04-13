@@ -80,7 +80,7 @@ function normalize_key($key)
 {
     $key = trim((string)$key);
     $key = str_replace([' ', '-'], '_', $key);
-    return $key;
+    return strtolower($key);
 }
 
 function parse_number($value)
@@ -95,7 +95,6 @@ function parse_number($value)
             return null;
         }
 
-        // remove commas and anything except digits, minus, decimal point
         $value = str_replace(',', '', $value);
         $value = preg_replace('/[^0-9.\-]/', '', $value);
 
@@ -134,9 +133,6 @@ try {
         fail("Invalid payload JSON");
     }
 
-    // Handle both:
-    // 1) single object: {"table":"TRICANTER","data":{...}}
-    // 2) array of objects: [{"table":"NOZZLE","data":{...}}, {...}]
     if (isset($records['table']) && isset($records['data'])) {
         $records = [$records];
     }
@@ -214,7 +210,6 @@ try {
 
         $solidStart = null;
         $solidStop = null;
-        $solidAmount = null;
 
         foreach ($record['data'] as $key => $value) {
             $originalKey = trim((string)$key);
@@ -225,28 +220,36 @@ try {
                 $value = null;
             }
 
-            // Special handling for SOLID_WASTE start/stop style payloads
             if ($section === 'SOLID_WASTE') {
-                if (in_array($normalizedKey, ['Start', 'START', 'start', 'Start_Value', 'START_VALUE', 'start_value'], true)) {
+                if (in_array($normalizedKey, [
+                    'start',
+                    'start_value',
+                    'start_level',
+                    'startlevel'
+                ], true)) {
                     $solidStart = parse_number($value);
                     continue;
                 }
 
-                if (in_array($normalizedKey, ['Stop', 'STOP', 'stop', 'Stop_Value', 'STOP_VALUE', 'stop_value'], true)) {
+                if (in_array($normalizedKey, [
+                    'stop',
+                    'stop_value',
+                    'stop_level',
+                    'stoplevel'
+                ], true)) {
                     $solidStop = parse_number($value);
                     continue;
                 }
 
-                if (in_array($normalizedKey, ['Amount', 'AMOUNT', 'amount'], true)) {
-                    $solidAmount = parse_number($value);
-                    $insertData['amount'] = $solidAmount;
+                if ($normalizedKey === 'amount') {
+                    $insertData['amount'] = parse_number($value);
                     continue;
                 }
             }
 
             if (!isset($allowedColumns[$originalKey])) {
-                // also allow normalized match against configured keys
                 $matchedColumn = null;
+
                 foreach ($allowedColumns as $mapKey => $mapColumn) {
                     if (normalize_key($mapKey) === $normalizedKey) {
                         $matchedColumn = $mapColumn;
@@ -274,14 +277,15 @@ try {
             $insertData[$column] = $value;
         }
 
-        // Calculate solid waste amount from start/stop if amount not directly provided
         if ($section === 'SOLID_WASTE' && !isset($insertData['amount'])) {
             if ($solidStart !== null && $solidStop !== null) {
                 $insertData['amount'] = $solidStart - $solidStop;
+
+                // Use this instead if you always want a positive amount:
+                // $insertData['amount'] = abs($solidStart - $solidStop);
             }
         }
 
-        // Skip if only source_file exists and no mapped section fields were found
         if (count($insertData) <= 1) {
             continue;
         }
