@@ -117,6 +117,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $message = "Operator added.";
         }
 
+        if ($action === "update_operator") {
+            $id = (int)($_POST["id"] ?? 0);
+            $name = trim($_POST["name"] ?? '');
+
+            if ($id <= 0) {
+                throw new Exception("Invalid operator ID.");
+            }
+
+            if ($name === '') {
+                throw new Exception("Operator name is required.");
+            }
+
+            $stmt = $pdo->prepare("
+                UPDATE config_operators
+                SET name = ?, active = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([
+                $name,
+                isset($_POST["active"]) ? 1 : 0,
+                $id
+            ]);
+
+            $message = "Operator updated.";
+        }
+
         if ($action === "toggle_operator") {
             $id = (int)($_POST["id"] ?? 0);
 
@@ -144,6 +170,60 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->execute([$id]);
             $message = "Operator deleted.";
         }
+
+        if ($action === "add_sample_location") {
+            $name = trim($_POST["name"] ?? '');
+
+            if ($name === '') {
+                throw new Exception("Sample location name is required.");
+            }
+
+            $stmt = $pdo->prepare("
+                INSERT INTO config_sample_location (name)
+                VALUES (?)
+            ");
+            $stmt->execute([$name]);
+
+            $message = "Sample location added.";
+        }
+
+        if ($action === "update_sample_location") {
+            $id = (int)($_POST["id"] ?? 0);
+            $name = trim($_POST["name"] ?? '');
+
+            if ($id <= 0) {
+                throw new Exception("Invalid sample location ID.");
+            }
+
+            if ($name === '') {
+                throw new Exception("Sample location name is required.");
+            }
+
+            $stmt = $pdo->prepare("
+                UPDATE config_sample_location
+                SET name = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $id]);
+
+            $message = "Sample location updated.";
+        }
+
+        if ($action === "delete_sample_location") {
+            $id = (int)($_POST["id"] ?? 0);
+
+            if ($id <= 0) {
+                throw new Exception("Invalid sample location ID.");
+            }
+
+            $stmt = $pdo->prepare("
+                DELETE FROM config_sample_location
+                WHERE id = ?
+            ");
+            $stmt->execute([$id]);
+
+            $message = "Sample location deleted.";
+        }
     } catch (Throwable $e) {
         $error = $e->getMessage();
     }
@@ -160,11 +240,17 @@ $operators = $pdo->query("
     FROM config_operators
     ORDER BY name ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+$sampleLocations = $pdo->query("
+    SELECT id, name
+    FROM config_sample_location
+    ORDER BY name ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Manage Gas Test Dropdowns</title>
+    <title>Manage Dropdowns</title>
     <link rel="stylesheet" href="style.css">
     <style>
         .manage-grid {
@@ -243,6 +329,11 @@ $operators = $pdo->query("
             margin: 0;
         }
 
+        .stack-grid {
+            display: grid;
+            gap: 20px;
+        }
+
         @media (max-width: 900px) {
             .manage-grid {
                 grid-template-columns: 1fr;
@@ -258,7 +349,7 @@ $operators = $pdo->query("
 <?php require_once "nav.php"; ?>
 
 <div class="container wide">
-    <h2>Manage Gas Test Dropdowns</h2>
+    <h2>Manage Dropdowns</h2>
 
     <?php if ($message !== ''): ?>
         <div class="msg-ok"><?= h($message) ?></div>
@@ -316,6 +407,7 @@ $operators = $pdo->query("
 
                             <div class="row-actions">
                                 <button type="submit">Save Device</button>
+                            </div>
                         </form>
 
                         <form method="post" class="inline-form" onsubmit="return confirm('Delete this device?');">
@@ -323,54 +415,107 @@ $operators = $pdo->query("
                             <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
                             <button type="submit" class="btn danger">Delete</button>
                         </form>
-                            </div>
                     </div>
                 <?php endforeach; ?>
             </div>
         </div>
 
-        <div class="manage-card">
-            <h3>Operators</h3>
+        <div class="stack-grid">
+            <div class="manage-card">
+                <h3>Operators</h3>
 
-            <form method="post">
-                <input type="hidden" name="action" value="add_operator">
-                <input type="text" name="name" placeholder="New operator name" required>
-                <label style="display:block; margin:10px 0;">
-                    <input type="checkbox" name="active" checked>
-                    Active
-                </label>
-                <button type="submit">Add Operator</button>
-            </form>
+                <form method="post">
+                    <input type="hidden" name="action" value="add_operator">
+                    <input type="text" name="name" placeholder="New operator name" required>
+                    <label style="display:block; margin:10px 0;">
+                        <input type="checkbox" name="active" checked>
+                        Active
+                    </label>
+                    <button type="submit">Add Operator</button>
+                </form>
 
-            <div class="manage-list">
-                <?php if (!$operators): ?>
-                    <div class="manage-row">No operators found.</div>
-                <?php endif; ?>
+                <div class="manage-list">
+                    <?php if (!$operators): ?>
+                        <div class="manage-row">No operators found.</div>
+                    <?php endif; ?>
 
-                <?php foreach ($operators as $row): ?>
-                    <div class="manage-row">
-                        <div><strong><?= h($row["name"]) ?></strong></div>
-                        <div style="margin-top:8px;">
-                            <span class="status-pill <?= ((int)$row["active"] === 1) ? 'active' : 'inactive' ?>">
-                                <?= ((int)$row["active"] === 1) ? 'Active' : 'Inactive' ?>
-                            </span>
-                        </div>
-
-                        <div class="row-actions">
-                            <form method="post" class="inline-form">
-                                <input type="hidden" name="action" value="toggle_operator">
+                    <?php foreach ($operators as $row): ?>
+                        <div class="manage-row">
+                            <form method="post">
+                                <input type="hidden" name="action" value="update_operator">
                                 <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                                <button type="submit"><?= ((int)$row["active"] === 1) ? 'Set Inactive' : 'Set Active' ?></button>
+
+                                <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
+
+                                <label style="display:block; margin:10px 0;">
+                                    <input type="checkbox" name="active" <?= ((int)$row["active"] === 1) ? 'checked' : '' ?>>
+                                    Active
+                                </label>
+
+                                <div style="margin-top:8px;">
+                                    <span class="status-pill <?= ((int)$row["active"] === 1) ? 'active' : 'inactive' ?>">
+                                        <?= ((int)$row["active"] === 1) ? 'Active' : 'Inactive' ?>
+                                    </span>
+                                </div>
+
+                                <div class="row-actions">
+                                    <button type="submit">Save Operator</button>
+                                </div>
                             </form>
 
-                            <form method="post" class="inline-form" onsubmit="return confirm('Delete this operator?');">
-                                <input type="hidden" name="action" value="delete_operator">
+                            <div class="row-actions">
+                                <form method="post" class="inline-form">
+                                    <input type="hidden" name="action" value="toggle_operator">
+                                    <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                    <button type="submit"><?= ((int)$row["active"] === 1) ? 'Set Inactive' : 'Set Active' ?></button>
+                                </form>
+
+                                <form method="post" class="inline-form" onsubmit="return confirm('Delete this operator?');">
+                                    <input type="hidden" name="action" value="delete_operator">
+                                    <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                    <button type="submit" class="btn danger">Delete</button>
+                                </form>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="manage-card">
+                <h3>Sample Locations</h3>
+
+                <form method="post">
+                    <input type="hidden" name="action" value="add_sample_location">
+                    <input type="text" name="name" placeholder="New sample location" required>
+                    <button type="submit">Add Sample Location</button>
+                </form>
+
+                <div class="manage-list">
+                    <?php if (!$sampleLocations): ?>
+                        <div class="manage-row">No sample locations found.</div>
+                    <?php endif; ?>
+
+                    <?php foreach ($sampleLocations as $row): ?>
+                        <div class="manage-row">
+                            <form method="post">
+                                <input type="hidden" name="action" value="update_sample_location">
+                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+
+                                <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
+
+                                <div class="row-actions">
+                                    <button type="submit">Save Location</button>
+                                </div>
+                            </form>
+
+                            <form method="post" class="inline-form" onsubmit="return confirm('Delete this sample location?');">
+                                <input type="hidden" name="action" value="delete_sample_location">
                                 <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
                                 <button type="submit" class="btn danger">Delete</button>
                             </form>
                         </div>
-                    </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
     </div>
