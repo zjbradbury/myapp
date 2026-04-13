@@ -4,7 +4,6 @@ requireRole(["admin", "operator"]);
 
 $currentUser = $_SESSION['username'] ?? 'unknown';
 
-
 function getGasTestDevices(PDO $pdo): array
 {
     $stmt = $pdo->query("
@@ -26,8 +25,19 @@ function getActiveOperators(PDO $pdo): array
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+function getGasTestLocations(PDO $pdo): array
+{
+    $stmt = $pdo->query("
+        SELECT name
+        FROM config_gas_test_location
+        ORDER BY name ASC
+    ");
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
 $deviceRows = getGasTestDevices($pdo);
 $operatorOptions = getActiveOperators($pdo);
+$locationOptions = getGasTestLocations($pdo);
 
 $deviceConfigMap = [];
 foreach ($deviceRows as $d) {
@@ -121,7 +131,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php endforeach; ?>
         </datalist>
 
-        <input type="text" name="location" placeholder="Location" required>
+        <input type="text" name="location" list="location_list" placeholder="Location" required>
+        <datalist id="location_list">
+            <?php foreach ($locationOptions as $option): ?>
+                <option value="<?= h($option) ?>">
+            <?php endforeach; ?>
+        </datalist>
+
         <input type="text" name="area_details" placeholder="Area Details">
 
         <div class="input-unit-wrap device-field" data-field="allow_mercury">
