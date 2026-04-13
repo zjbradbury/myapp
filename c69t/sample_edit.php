@@ -3,6 +3,49 @@ require_once "config.php";
 
 requireRole(["admin", "operator"]);
 
+if (!function_exists('getConfigNames')) {
+    function getConfigNames(PDO $pdo, string $tableName, bool $activeOnly = false): array
+    {
+        $allowedTables = [
+            'config_operators',
+            'config_sample_location',
+        ];
+
+        if (!in_array($tableName, $allowedTables, true)) {
+            return [];
+        }
+
+        $sql = "SELECT name FROM `$tableName`";
+
+        if ($activeOnly) {
+            $sql .= " WHERE active = 1";
+        }
+
+        $sql .= " ORDER BY name ASC";
+
+        $stmt = $pdo->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+}
+
+if (!function_exists('renderDatalistOptions')) {
+    function renderDatalistOptions(array $options): string
+    {
+        $html = '';
+
+        foreach ($options as $option) {
+            $value = trim((string)$option);
+            if ($value === '') {
+                continue;
+            }
+
+            $html .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">';
+        }
+
+        return $html;
+    }
+}
+
 $id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM sample_logs WHERE id = ?");
@@ -12,6 +55,9 @@ $row = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$row) {
     die("Record not found.");
 }
+
+$operatorOptions = getConfigNames($pdo, 'config_operators', true);
+$sampleLocationOptions = getConfigNames($pdo, 'config_sample_location');
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
@@ -57,7 +103,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <input type="date" name="log_date" value="<?= h($row["log_date"]) ?>" required>
             <input type="time" name="log_time" step="1" value="<?= h($row["log_time"]) ?>" required>
 
-            <input type="text" name="sample_location" value="<?= h($row["sample_location"]) ?>" placeholder="Sample Location" required>
+            <input
+                type="text"
+                name="sample_location"
+                list="sample_location_list"
+                value="<?= h($row["sample_location"]) ?>"
+                placeholder="Sample Location"
+                required
+            >
+            <datalist id="sample_location_list">
+                <?= renderDatalistOptions($sampleLocationOptions) ?>
+            </datalist>
 
             <div class="input-unit-wrap">
                 <input type="text" name="nozzle" value="<?= h($row["nozzle"]) ?>" placeholder="Nozzle">
@@ -89,7 +145,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <span class="unit">%</span>
             </div>
 
-            <input type="text" name="operator" value="<?= h($row["operator"]) ?>" placeholder="Operator">
+            <input
+                type="text"
+                name="operator"
+                list="operator_list"
+                value="<?= h($row["operator"]) ?>"
+                placeholder="Operator"
+            >
+            <datalist id="operator_list">
+                <?= renderDatalistOptions($operatorOptions) ?>
+            </datalist>
 
             <textarea name="comments" placeholder="Comments"><?= h($row["comments"]) ?></textarea>
 
