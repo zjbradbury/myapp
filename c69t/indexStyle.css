@@ -111,6 +111,7 @@ h1 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
     margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 .kpi {
