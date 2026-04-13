@@ -2,7 +2,6 @@
 require_once "config.php";
 requireRole(["admin", "operator"]);
 
-
 function getGasTestDevices(PDO $pdo): array
 {
     $stmt = $pdo->query("
@@ -24,6 +23,16 @@ function getActiveOperators(PDO $pdo): array
     return $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
+function getGasTestLocations(PDO $pdo): array
+{
+    $stmt = $pdo->query("
+        SELECT name
+        FROM config_gas_test_location
+        ORDER BY name ASC
+    ");
+    return $stmt->fetchAll(PDO::FETCH_COLUMN);
+}
+
 $id = isset($_GET["id"]) ? (int)$_GET["id"] : 0;
 
 $stmt = $pdo->prepare("SELECT * FROM gas_test_logs WHERE id = ?");
@@ -36,6 +45,7 @@ if (!$row) {
 
 $deviceRows = getGasTestDevices($pdo);
 $operatorOptions = getActiveOperators($pdo);
+$locationOptions = getGasTestLocations($pdo);
 
 $deviceConfigMap = [];
 foreach ($deviceRows as $d) {
@@ -129,7 +139,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <?php endforeach; ?>
         </datalist>
 
-        <input type="text" name="location" placeholder="Location" value="<?= h($row["location"]) ?>" required>
+        <input type="text" name="location" list="location_list" placeholder="Location" value="<?= h($row["location"]) ?>" required>
+        <datalist id="location_list">
+            <?php foreach ($locationOptions as $option): ?>
+                <option value="<?= h($option) ?>">
+            <?php endforeach; ?>
+        </datalist>
+
         <input type="text" name="area_details" placeholder="Area Details" value="<?= h($row["area_details"]) ?>">
 
         <div class="input-unit-wrap device-field" data-field="allow_mercury">
@@ -158,7 +174,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
 
         <input type="text" name="product_details" class="device-field" data-field="allow_product_details" placeholder="Product Details" value="<?= h($row["product_details"]) ?>">
-
         <textarea name="action_taken" class="device-field" data-field="allow_action_taken" placeholder="Actions Taken"><?= h($row["action_taken"]) ?></textarea>
 
         <button type="submit">Save Changes</button>
