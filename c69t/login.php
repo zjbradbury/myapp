@@ -43,7 +43,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
     <div class="container">
 
-  <img src="Contract69TanksLogoTransparent.png" style="display: block; margin-left: auto; margin-right: auto; width: 50%;">
+  <img src="Contract69TanksLogoTransparent.png" style="display: block; margin-left: auto; margin-right: auto; width: 25%;">
+
+<img src="Contract69TanksLogoTransparent.png" style="display: block; margin-left: auto; margin-right: auto; width: 25%;">
 
 <h2>Login</h2>
 
