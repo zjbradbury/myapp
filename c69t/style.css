@@ -293,11 +293,11 @@ th {
     }
 }
 
-.logo-row {
+.logo-row-login {
     display: flex;
     justify-content: center;
     gap: 20px;
 }
-.logo-row img {
-    width: 10%;
+.logo-row-login img {
+    width: 25%;
 }
