@@ -296,10 +296,12 @@ th {
 .logo-row-login {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 20px;
 }
 
 .logo-row-login img {
-    width: 350px;   /* control size here */
-    height: auto;
+    height: 320px;
+    width: auto;
+    max-width: 100%;
 }
