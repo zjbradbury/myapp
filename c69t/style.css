@@ -292,3 +292,12 @@ th {
         width: 100%;
     }
 }
+
+.logo-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+.logo-row img {
+    width: 10%;
+}
