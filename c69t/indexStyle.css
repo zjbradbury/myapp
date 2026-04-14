@@ -568,3 +568,12 @@ th {
     flex-wrap: wrap;
     margin-bottom: 10px;
 }
+
+.logo-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+.logo-row img {
+    width: 10%;
+}
