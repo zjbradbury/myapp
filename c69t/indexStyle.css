@@ -572,10 +572,12 @@ th {
 .logo-row {
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 20px;
 }
 
 .logo-row img {
-    width: 250px;   /* control size here */
-    height: auto;
+    height: 160px;
+    width: auto;
+    max-width: 100%;
 }
