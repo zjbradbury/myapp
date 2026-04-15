@@ -126,11 +126,14 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <a href="solid_waste_list.php" class="<?= $currentPage === 'solid_waste_list.php' ? 'active' : '' ?>">Solid
                 Waste Logs</a>
 
-<a href="sample_list.php" class="<?= $currentPage === 'sample_list.php' ? 'active' : '' ?>">Sample Logs</a>
+            <a href="sample_list.php" class="<?= $currentPage === 'sample_list.php' ? 'active' : '' ?>">Sample Logs</a>
 
-<a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test Logs</a>
+            <a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test
+                Logs</a>
 
-<div class="hamburger-divider"></div>
+            <a href="project_flow_list.php" class="<?= $currentPage === 'project_flow_list.php' ? 'active' : '' ?>">Project
+                Flow Logs</a>
+            <div class="hamburger-divider"></div>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
                 <a href="tricanter_add.php" class="<?= $currentPage === 'tricanter_add.php' ? 'active' : '' ?>">Add Tricanter
@@ -139,9 +142,13 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <a href="solid_waste_add.php" class="<?= $currentPage === 'solid_waste_add.php' ? 'active' : '' ?>">Add Solid
                     Waste Record</a>
 
-<a href="sample_add.php" class="<?= $currentPage === 'sample_add.php' ? 'active' : '' ?>">Add Sample Record</a>
+                <a href="sample_add.php" class="<?= $currentPage === 'sample_add.php' ? 'active' : '' ?>">Add Sample Record</a>
 
-<a href="gas_test_add.php" class="<?= $currentPage === 'gas_test_add.php' ? 'active' : '' ?>">Add Gas Test Record</a>
+                <a href="gas_test_add.php" class="<?= $currentPage === 'gas_test_add.php' ? 'active' : '' ?>">Add Gas Test
+                    Record</a>
+
+                <a href="project_flow_add.php" class="<?= $currentPage === 'project_flow_add.php' ? 'active' : '' ?>">Add
+                    Project Flow Record</a>
 
             <?php endif; ?>
 
@@ -150,9 +157,10 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <a href="users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">Manage Users</a>
                 <a href="user_create.php" class="<?= $currentPage === 'user_create.php' ? 'active' : '' ?>">Create User</a>
 
-<a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
+                <a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
 
-<a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown Config</a>
+                <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown
+                    Config</a>
 
             <?php endif; ?>
 
