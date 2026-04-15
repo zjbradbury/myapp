@@ -96,9 +96,16 @@ function parse_number($value)
         }
 
         $value = str_replace(',', '', $value);
-        $value = preg_replace('/[^0-9.\-]/', '', $value);
 
-        if ($value === '' || $value === '-' || $value === '.' || $value === '-.') {
+        // Allow normal numbers and scientific notation like 9.889203E-02
+        if (is_numeric($value)) {
+            return (float)$value;
+        }
+
+        // Fallback cleanup for values with units or stray characters
+        $value = preg_replace('/[^0-9eE+\-\.]/', '', $value);
+
+        if ($value === '' || $value === '-' || $value === '.' || $value === '-.' || !is_numeric($value)) {
             return null;
         }
     }
@@ -157,7 +164,8 @@ try {
                 'Max_Deg' => 'max_deg',
                 'RPM' => 'rpm',
                 'Comments' => 'comments'
-            ]
+            ],
+            'numeric_columns' => ['flow', 'pressure', 'min_deg', 'max_deg', 'rpm']
         ],
         'TRICANTER' => [
             'table' => 'tricanter_logs',
@@ -174,6 +182,17 @@ try {
                 'Temp' => 'temp',
                 'Pressure' => 'pressure',
                 'Comments' => 'comments'
+            ],
+            'numeric_columns' => [
+                'bowl_speed',
+                'screw_speed',
+                'bowl_rpm',
+                'screw_rpm',
+                'impeller',
+                'feed_rate',
+                'torque',
+                'temp',
+                'pressure'
             ]
         ],
         'SOLID_WASTE' => [
@@ -183,6 +202,27 @@ try {
                 'Time' => 'log_time',
                 'Amount' => 'amount',
                 'Comments' => 'comments'
+            ],
+            'numeric_columns' => ['amount']
+        ],
+        'PROJECTFLOW' => [
+            'table' => 'project_flow_logs',
+            'columns' => [
+                'Date' => 'log_date',
+                'Time' => 'log_time',
+                'Total_Recovered_Oil' => 'total_recovered_oil',
+                'Total_Recovered_Water' => 'total_recovered_water',
+                'Total_Solid_Waste' => 'total_solid_waste',
+                'Total_Tricanter' => 'total_tricanter',
+                'Total_Nozzle' => 'total_nozzle',
+                'Comments' => 'comments'
+            ],
+            'numeric_columns' => [
+                'total_recovered_oil',
+                'total_recovered_water',
+                'total_solid_waste',
+                'total_tricanter',
+                'total_nozzle'
             ]
         ]
     ];
@@ -203,6 +243,7 @@ try {
 
         $table = $sectionMap[$section]['table'];
         $allowedColumns = $sectionMap[$section]['columns'];
+        $numericColumns = $sectionMap[$section]['numeric_columns'] ?? [];
 
         $insertData = [
             'source_file' => $filename
@@ -221,22 +262,12 @@ try {
             }
 
             if ($section === 'SOLID_WASTE') {
-                if (in_array($normalizedKey, [
-                    'start',
-                    'start_value',
-                    'start_level',
-                    'startlevel'
-                ], true)) {
+                if (in_array($normalizedKey, ['start', 'start_value', 'start_level', 'startlevel'], true)) {
                     $solidStart = parse_number($value);
                     continue;
                 }
 
-                if (in_array($normalizedKey, [
-                    'stop',
-                    'stop_value',
-                    'stop_level',
-                    'stoplevel'
-                ], true)) {
+                if (in_array($normalizedKey, ['stop', 'stop_value', 'stop_level', 'stoplevel'], true)) {
                     $solidStop = parse_number($value);
                     continue;
                 }
@@ -268,10 +299,10 @@ try {
 
             if ($column === 'log_date' && $value !== null) {
                 $value = parse_log_date($value);
-            }
-
-            if ($column === 'log_time' && $value !== null) {
+            } elseif ($column === 'log_time' && $value !== null) {
                 $value = parse_log_time($value);
+            } elseif (in_array($column, $numericColumns, true) && $value !== null) {
+                $value = parse_number($value);
             }
 
             $insertData[$column] = $value;
@@ -280,9 +311,6 @@ try {
         if ($section === 'SOLID_WASTE' && !isset($insertData['amount'])) {
             if ($solidStart !== null && $solidStop !== null) {
                 $insertData['amount'] = $solidStart - $solidStop;
-
-                // Use this instead if you always want a positive amount:
-                // $insertData['amount'] = abs($solidStart - $solidStop);
             }
         }
 
