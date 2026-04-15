@@ -616,6 +616,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 </div>
             </div>
 
+            Totals for Selected Date Range
             <div class="kpis">
                 <div class="kpi"><small>Records</small><b><?= fmt($projectFlowKpis['count'] ?? 0, 0) ?></b></div>
                 <div class="kpi"><small>Recovered Oil</small><b><?= fmt($projectFlowKpis['oil'] ?? null, 4) ?></b></div>
