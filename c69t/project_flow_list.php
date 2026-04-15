@@ -1,101 +1,94 @@
 <?php
 require_once "config.php";
 requireLogin();
-requireRole(["admin", "operator", "viewer"]);
 
 $range = get_range_filter_state();
-
-$sql = "
-SELECT *
-FROM project_flow_logs
-WHERE 1=1
-";
-
-$params = [];
-
-if ($range['start_sql']) {
-    $sql .= " AND TIMESTAMP(log_date, log_time) >= ?";
-    $params[] = $range['start_sql'];
-}
-if ($range['end_sql']) {
-    $sql .= " AND TIMESTAMP(log_date, log_time) <= ?";
-    $params[] = $range['end_sql'];
-}
-
-$sql .= " ORDER BY log_date DESC, log_time DESC, id DESC";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+$rows = fetch_log_rows($pdo, 'project_flow_logs', $range);
 $canEdit = in_array(currentRole(), ["admin", "operator"], true);
 ?>
-
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Project Flow Logs</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+    <?php require_once "nav.php"; ?>
 
-<?php require_once "nav.php"; ?>
+    <div class="container wide">
+        <div class="topbar list-topbar">
+            <h2>Project Flow Logs</h2>
+            <div>
+                <?php if ($canEdit): ?>
+                    <a class="btn" href="project_flow_add.php">Add Record</a>
+                <?php endif; ?>
 
-<div class="container wide">
+                <a class="btn" href="csv_download.php?<?= http_build_query([
+                    'table' => 'project_flow_logs',
+                    'start' => $range['start'] ?? '',
+                    'end' => $range['end'] ?? '',
+                    'quick' => $range['quick'] ?? ''
+                ]) ?>">
+                    Download CSV
+                </a>
+            </div>
+        </div>
 
-    <div class="topbar">
-        <h2>Project Flow Logs</h2>
+        <?php render_range_filter($range, 'Filtering project flow table to selected range'); ?>
 
-        <div>
-            <?php if ($canEdit): ?>
-                <a class="btn" href="project_flow_add.php">Add Record</a>
-            <?php endif; ?>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Uploaded At</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Recovered Oil</th>
+                        <th>Recovered Water</th>
+                        <th>Solid Waste</th>
+                        <th>Tricanter</th>
+                        <th>Nozzle</th>
+                        <th>Comments</th>
+                        <?php if ($canEdit): ?>
+                            <th>Actions</th>
+                        <?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (!$rows): ?>
+                        <tr>
+                            <td colspan="<?= $canEdit ? 11 : 10; ?>">No records found in selected range.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($rows as $row): ?>
+                            <tr>
+                                <td><?= h($row["id"]) ?></td>
+                                <td><?= h($row["uploaded_at"]) ?></td>
+                                <td><?= h($row["log_date"]) ?></td>
+                                <td><?= h($row["log_time"]) ?></td>
+                                <td><?= fmt($row["total_recovered_oil"], 4) ?></td>
+                                <td><?= fmt($row["total_recovered_water"], 4) ?></td>
+                                <td><?= fmt($row["total_solid_waste"], 4) ?></td>
+                                <td><?= fmt($row["total_tricanter"], 4) ?></td>
+                                <td><?= fmt($row["total_nozzle"], 4) ?></td>
+                                <td><?= h($row["comments"]) ?></td>
+                                <?php if ($canEdit): ?>
+                                    <td>
+                                        <a class="btn small" href="project_flow_edit.php?id=<?= (int) $row["id"] ?>">Edit</a>
+                                        <a class="btn small danger" href="project_flow_delete.php?id=<?= (int) $row["id"] ?>"
+                                           onclick="return confirm('Delete this record?')">Delete</a>
+                                    </td>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
         </div>
     </div>
-
-    <?php render_range_filter(); ?>
-
-    <table class="data-table">
-        <thead>
-        <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Oil</th>
-            <th>Water</th>
-            <th>Solid Waste</th>
-            <th>Tricanter</th>
-            <th>Nozzle</th>
-            <th>Comments</th>
-            <?php if ($canEdit): ?>
-                <th></th>
-            <?php endif; ?>
-        </tr>
-        </thead>
-
-        <tbody>
-        <?php foreach ($rows as $r): ?>
-            <tr>
-                <td><?= h($r['log_date']) ?></td>
-                <td><?= h(substr($r['log_time'], 0, 5)) ?></td>
-
-                <td><?= number_format($r['total_recovered_oil'], 4) ?></td>
-                <td><?= number_format($r['total_recovered_water'], 4) ?></td>
-                <td><?= number_format($r['total_solid_waste'], 4) ?></td>
-                <td><?= number_format($r['total_tricanter'], 4) ?></td>
-                <td><?= number_format($r['total_nozzle'], 4) ?></td>
-
-                <td><?= h($r['comments']) ?></td>
-
-                <?php if ($canEdit): ?>
-                    <td>
-                        <a class="btn small" href="project_flow_edit.php?id=<?= $r['id'] ?>">Edit</a>
-                    </td>
-                <?php endif; ?>
-            </tr>
-        <?php endforeach; ?>
-        </tbody>
-    </table>
-
-</div>
 </body>
+
 </html>
