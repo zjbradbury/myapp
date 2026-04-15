@@ -616,14 +616,14 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 </div>
             </div>
 
-            Totals for Selected Date Range
+            Totals for Selected Date/Time Range
             <div class="kpis">
                 <div class="kpi"><small>Records</small><b><?= fmt($projectFlowKpis['count'] ?? 0, 0) ?></b></div>
-                <div class="kpi"><small>Recovered Oil</small><b><?= fmt($projectFlowKpis['oil'] ?? null, 4) ?></b></div>
-                <div class="kpi"><small>Recovered Water</small><b><?= fmt($projectFlowKpis['water'] ?? null, 4) ?></b></div>
-                <div class="kpi"><small>Solid Waste</small><b><?= fmt($projectFlowKpis['solid_waste'] ?? null, 4) ?></b></div>
-                <div class="kpi"><small>Tricanter</small><b><?= fmt($projectFlowKpis['tricanter'] ?? null, 4) ?></b></div>
-                <div class="kpi"><small>Nozzle</small><b><?= fmt($projectFlowKpis['nozzle'] ?? null, 4) ?></b></div>
+                <div class="kpi"><small>Recovered Oil</small><b><?= fmt($projectFlowKpis['oil'] ?? null, 4) ?> m³</b></div>
+                <div class="kpi"><small>Recovered Water</small><b><?= fmt($projectFlowKpis['water'] ?? null, 4) ?> m³</b></div>
+                <div class="kpi"><small>Solid Waste</small><b><?= fmt($projectFlowKpis['solid_waste'] ?? null, 4) ?> KG</b></div>
+                <div class="kpi"><small>Tricanter</small><b><?= fmt($projectFlowKpis['tricanter'] ?? null, 4) ?> m³</b></div>
+                <div class="kpi"><small>Nozzle</small><b><?= fmt($projectFlowKpis['nozzle'] ?? null, 4) ?> m³</b></div>
             </div>
 
             <div class="table">
@@ -647,11 +647,11 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                             <tr class="project-flow-row" data-id="<?= (int) $r['id'] ?>">
                                 <td><?= h($r['log_date']) ?></td>
                                 <td><?= h($r['log_time']) ?></td>
-                                <td><?= fmt($r['total_recovered_oil'] ?? null, 4) ?></td>
-                                <td><?= fmt($r['total_recovered_water'] ?? null, 4) ?></td>
-                                <td><?= fmt($r['total_solid_waste'] ?? null, 4) ?></td>
-                                <td><?= fmt($r['total_tricanter'] ?? null, 4) ?></td>
-                                <td><?= fmt($r['total_nozzle'] ?? null, 4) ?></td>
+                                <td><?= fmt($r['total_recovered_oil'] ?? null, 4) ?> m³</td>
+                                <td><?= fmt($r['total_recovered_water'] ?? null, 4) ?> m³</td>
+                                <td><?= fmt($r['total_solid_waste'] ?? null, 4) ?> KG</td>
+                                <td><?= fmt($r['total_tricanter'] ?? null, 4) ?> m³</td>
+                                <td><?= fmt($r['total_nozzle'] ?? null, 4) ?> m³</td>
                                 <td><?= h($r['comments'] ?? '') ?></td>
                             </tr>
                         <?php endforeach; ?>

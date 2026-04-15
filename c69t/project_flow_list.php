@@ -69,11 +69,11 @@ $canEdit = in_array(currentRole(), ["admin", "operator"], true);
                                 <td><?= h($row["uploaded_at"]) ?></td>
                                 <td><?= h($row["log_date"]) ?></td>
                                 <td><?= h($row["log_time"]) ?></td>
-                                <td><?= fmt($row["total_recovered_oil"], 4) ?></td>
-                                <td><?= fmt($row["total_recovered_water"], 4) ?></td>
-                                <td><?= fmt($row["total_solid_waste"], 4) ?></td>
-                                <td><?= fmt($row["total_tricanter"], 4) ?></td>
-                                <td><?= fmt($row["total_nozzle"], 4) ?></td>
+                                <td><?= fmt($row["total_recovered_oil"], 4) ?> m³</td>
+                                <td><?= fmt($row["total_recovered_water"], 4) ?> m³</td>
+                                <td><?= fmt($row["total_solid_waste"], 4) ?> KG</td>
+                                <td><?= fmt($row["total_tricanter"], 4) ?> m³</td>
+                                <td><?= fmt($row["total_nozzle"], 4) ?> m³</td>
                                 <td><?= h($row["comments"]) ?></td>
                                 <?php if ($canEdit): ?>
                                     <td>
