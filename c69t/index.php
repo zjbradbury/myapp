@@ -147,17 +147,16 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 <body>
     <?php require_once "nav.php"; ?>
 
-    <div class="logo-row">
-        <img src="MoombaTankCleaningLogoTransparent.PNG">
-        <img src="Contract69TanksLogoTransparent.png">
-    </div>
+<div class="logo-row">
+    <img src="MoombaTankCleaningLogoTransparent.PNG">
+    <img src="Contract69TanksLogoTransparent.png">
+</div>
 
     <div class="monitor-shell">
         <div class="monitor-toolbar">
             <div class="monitor-toolbar-left">
                 <div class="monitor-heading">Monitoring</div>
-                <div
-                    class="monitor-badge monitor-<?= strtolower(str_replace(' ', '-', $monitorData['master_state'])) ?>">
+                <div class="monitor-badge monitor-<?= strtolower(str_replace(' ', '-', $monitorData['master_state'])) ?>">
                     <?= h($monitorData['master_state']) ?>
                 </div>
             </div>
@@ -167,13 +166,20 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                 <label class="switch-row">
                     <span>Master</span>
-                    <input type="checkbox" name="monitor_master" <?= !empty($monitorData['master_enabled']) ? 'checked' : '' ?> onchange="this.form.submit()">
+                    <input type="checkbox"
+                        name="monitor_master"
+                        <?= !empty($monitorData['master_enabled']) ? 'checked' : '' ?>
+                        onchange="this.form.submit()">
                 </label>
 
                 <label class="timer-row">
                     <span>Refresh (sec)</span>
-                    <input type="number" name="monitor_refresh_seconds" min="5" max="300"
-                        value="<?= (int) $monitorData['refresh_seconds'] ?>" onchange="this.form.submit()"
+                    <input type="number"
+                        name="monitor_refresh_seconds"
+                        min="5"
+                        max="300"
+                        value="<?= (int) $monitorData['refresh_seconds'] ?>"
+                        onchange="this.form.submit()"
                         onblur="this.form.submit()">
                 </label>
             </form>
@@ -191,7 +197,10 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                             <label class="switch-row small">
                                 <span>On</span>
-                                <input type="checkbox" name="monitor_enabled" <?= !empty($item['enabled']) ? 'checked' : '' ?> onchange="this.form.submit()">
+                                <input type="checkbox"
+                                    name="monitor_enabled"
+                                    <?= !empty($item['enabled']) ? 'checked' : '' ?>
+                                    onchange="this.form.submit()">
                             </label>
                         </div>
 
@@ -210,8 +219,13 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                         <div class="monitor-line">
                             <span class="monitor-label">Timer (min)</span>
-                            <input type="number" class="monitor-minutes" name="monitor_minutes" min="1" max="1440"
-                                value="<?= (int) $item['minutes'] ?>" onchange="this.form.submit()"
+                            <input type="number"
+                                class="monitor-minutes"
+                                name="monitor_minutes"
+                                min="1"
+                                max="1440"
+                                value="<?= (int) $item['minutes'] ?>"
+                                onchange="this.form.submit()"
                                 onblur="this.form.submit()">
                         </div>
 
@@ -293,21 +307,15 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             </div>
 
             <div class="kpis">
-                <div class="kpi"><small>Bowl Speed</small><b><?= fmt($latestTricanter['bowl_speed'] ?? null, 0) ?> %</b>
-                </div>
-                <div class="kpi"><small>Screw Speed</small><b><?= fmt($latestTricanter['screw_speed'] ?? null, 2) ?>
-                        %</b></div>
-                <div class="kpi"><small>Bowl RPM</small><b><?= fmt($latestTricanter['bowl_rpm'] ?? null, 0) ?> RPM</b>
-                </div>
-                <div class="kpi"><small>Screw RPM</small><b><?= fmt($latestTricanter['screw_rpm'] ?? null, 2) ?> RPM</b>
-                </div>
+                <div class="kpi"><small>Bowl Speed</small><b><?= fmt($latestTricanter['bowl_speed'] ?? null, 0) ?> %</b></div>
+                <div class="kpi"><small>Screw Speed</small><b><?= fmt($latestTricanter['screw_speed'] ?? null, 2) ?> %</b></div>
+                <div class="kpi"><small>Bowl RPM</small><b><?= fmt($latestTricanter['bowl_rpm'] ?? null, 0) ?> RPM</b></div>
+                <div class="kpi"><small>Screw RPM</small><b><?= fmt($latestTricanter['screw_rpm'] ?? null, 2) ?> RPM</b></div>
                 <div class="kpi"><small>Impeller</small><b><?= fmt($latestTricanter['impeller'] ?? null, 0) ?></b></div>
-                <div class="kpi"><small>Feed Rate</small><b><?= fmt($latestTricanter['feed_rate'] ?? null, 2) ?>
-                        M3/hr</b></div>
+                <div class="kpi"><small>Feed Rate</small><b><?= fmt($latestTricanter['feed_rate'] ?? null, 2) ?> M3/hr</b></div>
                 <div class="kpi"><small>Torque</small><b><?= fmt($latestTricanter['torque'] ?? null, 1) ?> %</b></div>
                 <div class="kpi"><small>Temp</small><b><?= fmt($latestTricanter['temp'] ?? null, 1) ?> °C</b></div>
-                <div class="kpi"><small>Pressure</small><b><?= fmt($latestTricanter['pressure'] ?? null, 3) ?> BAR</b>
-                </div>
+                <div class="kpi"><small>Pressure</small><b><?= fmt($latestTricanter['pressure'] ?? null, 3) ?> BAR</b></div>
             </div>
 
             <div class="chart-card">
@@ -367,12 +375,9 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             </div>
 
             <div class="kpis">
-                <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 0) ?>
-                        KG</b></div>
+                <div class="kpi"><small>Latest Amount</small><b><?= fmt($latestSolidWaste['amount'] ?? null, 0) ?> KG</b></div>
                 <div class="kpi"><small>Total Amount</small><b><?= fmt($solidWasteTotalAmount, 0) ?> KG</b></div>
-                <div class="kpi"><small>Last
-                        Entry</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b>
-                </div>
+                <div class="kpi"><small>Last Entry</small><b><?= !empty($latestSolidWaste['log_time']) ? h(date('H:i', strtotime($latestSolidWaste['log_time']))) : '-' ?></b></div>
             </div>
 
             <div class="chart-card">
@@ -399,8 +404,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                                 <td><?= h($r['log_date']) ?></td>
                                 <td><?= h($r['log_time']) ?></td>
                                 <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
-                                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?>
-                                </td>
+                                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
                                 <td><?= h($r['comments'] ?? '') ?></td>
                             </tr>
                         <?php endforeach; ?>
@@ -422,8 +426,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
             <div class="kpis">
                 <div class="kpi"><small>Flow</small><b><?= fmt($latestNozzle['flow'] ?? null, 1) ?> M3/hr</b></div>
-                <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?> BAR</b>
-                </div>
+                <div class="kpi"><small>Pressure</small><b><?= fmt($latestNozzle['pressure'] ?? null, 2) ?> BAR</b></div>
                 <div class="kpi"><small>RPM</small><b><?= fmt($latestNozzle['rpm'] ?? null, 1) ?> RPM</b></div>
                 <div class="kpi"><small>Min Deg</small><b><?= fmt($latestNozzle['min_deg'] ?? null, 0) ?> °</b></div>
                 <div class="kpi"><small>Max Deg</small><b><?= fmt($latestNozzle['max_deg'] ?? null, 0) ?> °</b></div>
@@ -544,8 +547,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="kpi"><small>Device</small><b><?= h($latestGasTest['device'] ?? '-') ?></b></div>
                 <div class="kpi"><small>Operator</small><b><?= h($latestGasTest['operator'] ?? '-') ?></b></div>
                 <div class="kpi"><small>Location</small><b><?= h($latestGasTest['location'] ?? '-') ?></b></div>
-                <div class="kpi"><small>Mercury</small><b><?= fmt($latestGasTest['mercury'] ?? null, 3) ?> µg/m³</b>
-                </div>
+                <div class="kpi"><small>Mercury</small><b><?= fmt($latestGasTest['mercury'] ?? null, 3) ?> µg/m³</b></div>
                 <div class="kpi"><small>Benzene</small><b><?= fmt($latestGasTest['benzene'] ?? null, 2) ?> ppm</b></div>
                 <div class="kpi"><small>LEL</small><b><?= fmt($latestGasTest['lel'] ?? null, 1) ?> %</b></div>
                 <div class="kpi"><small>H2S</small><b><?= fmt($latestGasTest['h2s'] ?? null, 1) ?> ppm</b></div>
@@ -603,7 +605,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         </div>
 
 
-        <div class="panel">
+        <div class="panel wide-panel">
             <div class="panel-head">
                 <h2>Project Flow</h2>
                 <div class="panel-actions">
@@ -617,13 +619,43 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="kpis">
                 <div class="kpi"><small>Records</small><b><?= fmt($projectFlowKpis['count'] ?? 0, 0) ?></b></div>
                 <div class="kpi"><small>Recovered Oil</small><b><?= fmt($projectFlowKpis['oil'] ?? null, 4) ?></b></div>
-                <div class="kpi"><small>Recovered Water</small><b><?= fmt($projectFlowKpis['water'] ?? null, 4) ?></b>
-                </div>
-                <div class="kpi"><small>Solid Waste</small><b><?= fmt($projectFlowKpis['solid_waste'] ?? null, 4) ?></b>
-                </div>
-                <div class="kpi"><small>Tricanter</small><b><?= fmt($projectFlowKpis['tricanter'] ?? null, 4) ?></b>
-                </div>
+                <div class="kpi"><small>Recovered Water</small><b><?= fmt($projectFlowKpis['water'] ?? null, 4) ?></b></div>
+                <div class="kpi"><small>Solid Waste</small><b><?= fmt($projectFlowKpis['solid_waste'] ?? null, 4) ?></b></div>
+                <div class="kpi"><small>Tricanter</small><b><?= fmt($projectFlowKpis['tricanter'] ?? null, 4) ?></b></div>
                 <div class="kpi"><small>Nozzle</small><b><?= fmt($projectFlowKpis['nozzle'] ?? null, 4) ?></b></div>
+            </div>
+
+            <div class="table">
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Recovered Oil</th>
+                        <th>Recovered Water</th>
+                        <th>Solid Waste</th>
+                        <th>Tricanter</th>
+                        <th>Nozzle</th>
+                        <th>Comments</th>
+                    </tr>
+                    <?php if (!$projectFlow): ?>
+                        <tr>
+                            <td colspan="8">No project flow data in selected range.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($projectFlow as $r): ?>
+                            <tr class="project-flow-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= fmt($r['total_recovered_oil'] ?? null, 4) ?></td>
+                                <td><?= fmt($r['total_recovered_water'] ?? null, 4) ?></td>
+                                <td><?= fmt($r['total_solid_waste'] ?? null, 4) ?></td>
+                                <td><?= fmt($r['total_tricanter'] ?? null, 4) ?></td>
+                                <td><?= fmt($r['total_nozzle'] ?? null, 4) ?></td>
+                                <td><?= h($r['comments'] ?? '') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </table>
             </div>
         </div>
 
@@ -648,6 +680,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         flashRows('.solid-row', 'sLast');
         flashRows('.sample-row', 'sampleLast');
         flashRows('.gas-row', 'gasLast');
+        flashRows('.project-flow-row', 'projectFlowLast');
 
         function makeCombinedChart(canvasId, labels, datasets) {
             const canvas = document.getElementById(canvasId);
@@ -691,180 +724,59 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         tooltip: {
                             enabled: true,
                             callbacks: {
-                                title: function (context) {
+                                title: function(context) {
                                     return context[0]?.label || '';
                                 }
                             }
                         }
                     },
                     scales: {
-                        x: {
-                            display: false
-                        },
-                        y1: {
-                            display: false
-                        },
-                        y2: {
-                            display: false
-                        },
-                        y3: {
-                            display: false
-                        },
-                        y4: {
-                            display: false
-                        },
-                        y5: {
-                            display: false
-                        },
-                        y6: {
-                            display: false
-                        },
-                        y7: {
-                            display: false
-                        },
-                        y8: {
-                            display: false
-                        },
-                        y9: {
-                            display: false
-                        }
+                        x: { display: false },
+                        y1: { display: false },
+                        y2: { display: false },
+                        y3: { display: false },
+                        y4: { display: false },
+                        y5: { display: false },
+                        y6: { display: false },
+                        y7: { display: false },
+                        y8: { display: false },
+                        y9: { display: false }
                     }
                 }
             });
         }
 
-        makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [{
-            label: 'Flow',
-            data: <?= json_encode($nozzleFlowSeries) ?>,
-            color: '#00ffff',
-            axis: 'y1'
-        },
-        {
-            label: 'Pressure',
-            data: <?= json_encode($nozzlePressureSeries) ?>,
-            color: '#ffd24d',
-            axis: 'y2'
-        },
-        {
-            label: 'Min Deg',
-            data: <?= json_encode($nozzleMinDegSeries) ?>,
-            color: '#6ee7a1',
-            axis: 'y3'
-        },
-        {
-            label: 'Max Deg',
-            data: <?= json_encode($nozzleMaxDegSeries) ?>,
-            color: '#c8a7ff',
-            axis: 'y4'
-        },
-        {
-            label: 'RPM',
-            data: <?= json_encode($nozzleRpmSeries) ?>,
-            color: '#ff7e67',
-            axis: 'y5'
-        }
+        makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [
+            { label: 'Flow', data: <?= json_encode($nozzleFlowSeries) ?>, color: '#00ffff', axis: 'y1' },
+            { label: 'Pressure', data: <?= json_encode($nozzlePressureSeries) ?>, color: '#ffd24d', axis: 'y2' },
+            { label: 'Min Deg', data: <?= json_encode($nozzleMinDegSeries) ?>, color: '#6ee7a1', axis: 'y3' },
+            { label: 'Max Deg', data: <?= json_encode($nozzleMaxDegSeries) ?>, color: '#c8a7ff', axis: 'y4' },
+            { label: 'RPM', data: <?= json_encode($nozzleRpmSeries) ?>, color: '#ff7e67', axis: 'y5' }
         ]);
 
-        makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [{
-            label: 'Bowl Speed',
-            data: <?= json_encode($tricanterBowlSpeedSeries) ?>,
-            color: '#00ffff',
-            axis: 'y1'
-        },
-        {
-            label: 'Screw Speed',
-            data: <?= json_encode($tricanterScrewSpeedSeries) ?>,
-            color: '#ffd24d',
-            axis: 'y2'
-        },
-        {
-            label: 'Bowl RPM',
-            data: <?= json_encode($tricanterBowlRpmSeries) ?>,
-            color: '#c8a7ff',
-            axis: 'y3'
-        },
-        {
-            label: 'Screw RPM',
-            data: <?= json_encode($tricanterScrewRpmSeries) ?>,
-            color: '#ff9bd6',
-            axis: 'y4'
-        },
-        {
-            label: 'Impeller',
-            data: <?= json_encode($tricanterImpellerSeries) ?>,
-            color: '#b6ff7a',
-            axis: 'y5'
-        },
-        {
-            label: 'Feed Rate',
-            data: <?= json_encode($tricanterFeedRateSeries) ?>,
-            color: '#00ff88',
-            axis: 'y6'
-        },
-        {
-            label: 'Torque',
-            data: <?= json_encode($tricanterTorqueSeries) ?>,
-            color: '#ff7e67',
-            axis: 'y7'
-        },
-        {
-            label: 'Temp',
-            data: <?= json_encode($tricanterTempSeries) ?>,
-            color: '#ffb36b',
-            axis: 'y8'
-        },
-        {
-            label: 'Pressure',
-            data: <?= json_encode($tricanterPressureSeries) ?>,
-            color: '#8fd3ff',
-            axis: 'y9'
-        }
+        makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [
+            { label: 'Bowl Speed', data: <?= json_encode($tricanterBowlSpeedSeries) ?>, color: '#00ffff', axis: 'y1' },
+            { label: 'Screw Speed', data: <?= json_encode($tricanterScrewSpeedSeries) ?>, color: '#ffd24d', axis: 'y2' },
+            { label: 'Bowl RPM', data: <?= json_encode($tricanterBowlRpmSeries) ?>, color: '#c8a7ff', axis: 'y3' },
+            { label: 'Screw RPM', data: <?= json_encode($tricanterScrewRpmSeries) ?>, color: '#ff9bd6', axis: 'y4' },
+            { label: 'Impeller', data: <?= json_encode($tricanterImpellerSeries) ?>, color: '#b6ff7a', axis: 'y5' },
+            { label: 'Feed Rate', data: <?= json_encode($tricanterFeedRateSeries) ?>, color: '#00ff88', axis: 'y6' },
+            { label: 'Torque', data: <?= json_encode($tricanterTorqueSeries) ?>, color: '#ff7e67', axis: 'y7' },
+            { label: 'Temp', data: <?= json_encode($tricanterTempSeries) ?>, color: '#ffb36b', axis: 'y8' },
+            { label: 'Pressure', data: <?= json_encode($tricanterPressureSeries) ?>, color: '#8fd3ff', axis: 'y9' }
         ]);
 
-        makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [{
-            label: 'Amount',
-            data: <?= json_encode($solidWasteAmountSeries) ?>,
-            color: '#00ff88',
-            axis: 'y1'
-        },
-        {
-            label: 'Diff (min)',
-            data: <?= json_encode($solidWasteDiffSeries) ?>,
-            color: '#ffd24d',
-            axis: 'y2'
-        }
+        makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [
+            { label: 'Amount', data: <?= json_encode($solidWasteAmountSeries) ?>, color: '#00ff88', axis: 'y1' },
+            { label: 'Diff (min)', data: <?= json_encode($solidWasteDiffSeries) ?>, color: '#ffd24d', axis: 'y2' }
         ]);
 
-        makeCombinedChart('gasTestCombinedChart', <?= json_encode($gasLabels) ?>, [{
-            label: 'Mercury',
-            data: <?= json_encode($gasMercurySeries) ?>,
-            color: '#00ffff',
-            axis: 'y1'
-        },
-        {
-            label: 'Benzene',
-            data: <?= json_encode($gasBenzeneSeries) ?>,
-            color: '#ffd24d',
-            axis: 'y2'
-        },
-        {
-            label: 'LEL',
-            data: <?= json_encode($gasLelSeries) ?>,
-            color: '#6ee7a1',
-            axis: 'y3'
-        },
-        {
-            label: 'H2S',
-            data: <?= json_encode($gasH2sSeries) ?>,
-            color: '#c8a7ff',
-            axis: 'y4'
-        },
-        {
-            label: 'O2',
-            data: <?= json_encode($gasO2Series) ?>,
-            color: '#ff7e67',
-            axis: 'y5'
-        }
+        makeCombinedChart('gasTestCombinedChart', <?= json_encode($gasLabels) ?>, [
+            { label: 'Mercury', data: <?= json_encode($gasMercurySeries) ?>, color: '#00ffff', axis: 'y1' },
+            { label: 'Benzene', data: <?= json_encode($gasBenzeneSeries) ?>, color: '#ffd24d', axis: 'y2' },
+            { label: 'LEL', data: <?= json_encode($gasLelSeries) ?>, color: '#6ee7a1', axis: 'y3' },
+            { label: 'H2S', data: <?= json_encode($gasH2sSeries) ?>, color: '#c8a7ff', axis: 'y4' },
+            { label: 'O2', data: <?= json_encode($gasO2Series) ?>, color: '#ff7e67', axis: 'y5' }
         ]);
 
         function formatSince(seconds) {

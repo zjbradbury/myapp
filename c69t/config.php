@@ -392,10 +392,8 @@ function render_range_filter(array $range, string $message = 'Filtering table to
                     </div>
 
                     <div class="list-quick-actions">
-                        <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current
-                            Shift</button>
-                        <button type="submit" name="quick" value="previous_shift" class="btn btn-quick">Previous
-                            Shift</button>
+                        <button type="submit" name="quick" value="current_shift" class="btn btn-quick">Current Shift</button>
+                        <button type="submit" name="quick" value="previous_shift" class="btn btn-quick">Previous Shift</button>
                         <button type="submit" name="quick" value="today" class="btn btn-quick">Today</button>
                         <button type="submit" name="quick" value="24h" class="btn btn-quick">Last 24 Hours</button>
                         <button type="submit" name="quick" value="7d" class="btn btn-quick">Last 7 Days</button>
@@ -416,6 +414,7 @@ function render_range_filter(array $range, string $message = 'Filtering table to
     </div>
     <?php
 }
+
 
 
 function get_project_flow_kpis(PDO $pdo, array $range): array
@@ -521,7 +520,7 @@ function tableExists(PDO $pdo, string $table): bool
     ");
     $stmt->execute([$table]);
 
-    $cache[$table] = ((int) $stmt->fetchColumn() > 0);
+    $cache[$table] = ((int)$stmt->fetchColumn() > 0);
     return $cache[$table];
 }
 
@@ -590,45 +589,45 @@ function getLastLogDateTime(PDO $pdo, string $table): ?string
 
 function buildMonitoringData(PDO $pdo): array
 {
-    $masterEnabled = (int) getSetting($pdo, 'monitor_master', '1') === 1;
-    $refreshSeconds = max(5, (int) getSetting($pdo, 'monitor_refresh_seconds', '30'));
+    $masterEnabled = (int)getSetting($pdo, 'monitor_master', '1') === 1;
+    $refreshSeconds = max(5, (int)getSetting($pdo, 'monitor_refresh_seconds', '30'));
 
     $items = [
         'nozzle' => [
             'label' => 'Nozzle',
             'table' => 'nozzle_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_nozzle_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_nozzle_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_nozzle_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_nozzle_minutes', '60')),
         ],
         'tricanter' => [
             'label' => 'Tricanter',
             'table' => 'tricanter_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_tricanter_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_tricanter_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_tricanter_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_tricanter_minutes', '60')),
         ],
         'solid_waste' => [
             'label' => 'Solid Waste',
             'table' => 'solid_waste_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_solid_waste_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_solid_waste_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_solid_waste_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_solid_waste_minutes', '60')),
         ],
         'sample' => [
             'label' => 'Sample',
             'table' => 'sample_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_sample_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_sample_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_sample_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_sample_minutes', '60')),
         ],
         'gas_test' => [
             'label' => 'Gas Test',
             'table' => 'gas_test_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_gas_test_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_gas_test_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_gas_test_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_gas_test_minutes', '60')),
         ],
         'project_flow' => [
             'label' => 'Project Flow',
             'table' => 'project_flow_logs',
-            'enabled' => (int) getSetting($pdo, 'monitor_project_flow_enabled', '1') === 1,
-            'minutes' => max(1, (int) getSetting($pdo, 'monitor_project_flow_minutes', '60')),
+            'enabled' => (int)getSetting($pdo, 'monitor_project_flow_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_project_flow_minutes', '60')),
         ],
     ];
 
