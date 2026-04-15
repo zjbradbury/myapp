@@ -167,8 +167,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
                 <label class="switch-row">
                     <span>Master</span>
-                    <input type="checkbox" name="monitor_master"
-                        <?= !empty($monitorData['master_enabled']) ? 'checked' : '' ?> onchange="this.form.submit()">
+                    <input type="checkbox" name="monitor_master" <?= !empty($monitorData['master_enabled']) ? 'checked' : '' ?> onchange="this.form.submit()">
                 </label>
 
                 <label class="timer-row">
@@ -182,57 +181,56 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
         <div class="monitor-grid">
             <?php foreach ($monitorData['items'] as $key => $item): ?>
-            <div class="monitor-item monitor-state-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
-                <form method="post">
-                    <input type="hidden" name="monitor_form" value="item">
-                    <input type="hidden" name="monitor_key" value="<?= h($key) ?>">
+                <div class="monitor-item monitor-state-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
+                    <form method="post">
+                        <input type="hidden" name="monitor_form" value="item">
+                        <input type="hidden" name="monitor_key" value="<?= h($key) ?>">
 
-                    <div class="monitor-item-top">
-                        <strong><?= h($item['label']) ?></strong>
+                        <div class="monitor-item-top">
+                            <strong><?= h($item['label']) ?></strong>
 
-                        <label class="switch-row small">
-                            <span>On</span>
-                            <input type="checkbox" name="monitor_enabled"
-                                <?= !empty($item['enabled']) ? 'checked' : '' ?> onchange="this.form.submit()">
-                        </label>
-                    </div>
+                            <label class="switch-row small">
+                                <span>On</span>
+                                <input type="checkbox" name="monitor_enabled" <?= !empty($item['enabled']) ? 'checked' : '' ?> onchange="this.form.submit()">
+                            </label>
+                        </div>
 
-                    <div class="monitor-line">
-                        <span class="monitor-label">Last Entry</span>
-                        <span class="monitor-last-entry"><?= h($item['last_entry_display']) ?></span>
-                    </div>
+                        <div class="monitor-line">
+                            <span class="monitor-label">Last Entry</span>
+                            <span class="monitor-last-entry"><?= h($item['last_entry_display']) ?></span>
+                        </div>
 
-                    <div class="monitor-line">
-                        <span class="monitor-label">Since Last</span>
-                        <span class="monitor-since"
-                            data-since-seconds="<?= $item['since_seconds'] === null ? '' : (int) $item['since_seconds'] ?>">
-                            <?= h($item['since_text']) ?>
-                        </span>
-                    </div>
+                        <div class="monitor-line">
+                            <span class="monitor-label">Since Last</span>
+                            <span class="monitor-since"
+                                data-since-seconds="<?= $item['since_seconds'] === null ? '' : (int) $item['since_seconds'] ?>">
+                                <?= h($item['since_text']) ?>
+                            </span>
+                        </div>
 
-                    <div class="monitor-line">
-                        <span class="monitor-label">Timer (min)</span>
-                        <input type="number" class="monitor-minutes" name="monitor_minutes" min="1" max="1440"
-                            value="<?= (int) $item['minutes'] ?>" onchange="this.form.submit()"
-                            onblur="this.form.submit()">
-                    </div>
+                        <div class="monitor-line">
+                            <span class="monitor-label">Timer (min)</span>
+                            <input type="number" class="monitor-minutes" name="monitor_minutes" min="1" max="1440"
+                                value="<?= (int) $item['minutes'] ?>" onchange="this.form.submit()"
+                                onblur="this.form.submit()">
+                        </div>
 
-                    <div class="monitor-line">
-                        <span class="monitor-label">Countdown</span>
-                        <span class="monitor-countdown"
-                            data-remaining-seconds="<?= $item['remaining_seconds'] === null ? '' : (int) $item['remaining_seconds'] ?>">
-                            <?= h($item['countdown']) ?>
-                        </span>
-                    </div>
+                        <div class="monitor-line">
+                            <span class="monitor-label">Countdown</span>
+                            <span class="monitor-countdown"
+                                data-remaining-seconds="<?= $item['remaining_seconds'] === null ? '' : (int) $item['remaining_seconds'] ?>">
+                                <?= h($item['countdown']) ?>
+                            </span>
+                        </div>
 
-                    <div class="monitor-line">
-                        <span class="monitor-label">Status</span>
-                        <span class="monitor-status monitor-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
-                            <?= h($item['status']) ?>
-                        </span>
-                    </div>
-                </form>
-            </div>
+                        <div class="monitor-line">
+                            <span class="monitor-label">Status</span>
+                            <span class="monitor-status monitor-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
+                                <?= h($item['status']) ?>
+                            </span>
+                        </div>
+                    </form>
+                </div>
             <?php endforeach; ?>
         </div>
     </div>
@@ -270,13 +268,13 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <?php render_dashboard_range_filter($range); ?>
 
             <?php if (($range['error'] ?? '') !== ''): ?>
-            <div class="range-error"><?= h($range['error'] ?? '') ?></div>
+                <div class="range-error"><?= h($range['error'] ?? '') ?></div>
             <?php elseif (!empty($range['used_default_shift'])): ?>
-            <div class="range-active">Showing current 12 hour shift block</div>
+                <div class="range-active">Showing current 12 hour shift block</div>
             <?php elseif (!empty($range['active'])): ?>
-            <div class="range-active">Filtering graphs and tables to selected range</div>
+                <div class="range-active">Filtering graphs and tables to selected range</div>
             <?php else: ?>
-            <div class="range-active">Showing all available records</div>
+                <div class="range-active">Showing all available records</div>
             <?php endif; ?>
         </div>
     </div>
@@ -289,7 +287,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="panel-actions">
                     <a class="btn" href="tricanter_list.php">View List</a>
                     <?php if ($canEdit): ?>
-                    <a class="btn" href="tricanter_add.php">Add Record</a>
+                        <a class="btn" href="tricanter_add.php">Add Record</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -333,25 +331,25 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         <th>Pressure</th>
                     </tr>
                     <?php if (!$tricanter): ?>
-                    <tr>
-                        <td colspan="11">No tricanter data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="11">No tricanter data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($tricanter as $r): ?>
-                    <tr class="tri-row" data-id="<?= (int) $r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
-                        <td><?= fmt($r['screw_speed'] ?? null, 2) ?> %</td>
-                        <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?> RPM</td>
-                        <td><?= fmt($r['screw_rpm'] ?? null, 2) ?> RPM</td>
-                        <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
-                        <td><?= fmt($r['feed_rate'] ?? null, 2) ?> M3/hr</td>
-                        <td><?= fmt($r['torque'] ?? null, 1) ?> %</td>
-                        <td><?= fmt($r['temp'] ?? null, 1) ?> °C</td>
-                        <td><?= fmt($r['pressure'] ?? null, 3) ?> BAR</td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($tricanter as $r): ?>
+                            <tr class="tri-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
+                                <td><?= fmt($r['screw_speed'] ?? null, 2) ?> %</td>
+                                <td><?= fmt($r['bowl_rpm'] ?? null, 0) ?> RPM</td>
+                                <td><?= fmt($r['screw_rpm'] ?? null, 2) ?> RPM</td>
+                                <td><?= fmt($r['impeller'] ?? null, 0) ?></td>
+                                <td><?= fmt($r['feed_rate'] ?? null, 2) ?> M3/hr</td>
+                                <td><?= fmt($r['torque'] ?? null, 1) ?> %</td>
+                                <td><?= fmt($r['temp'] ?? null, 1) ?> °C</td>
+                                <td><?= fmt($r['pressure'] ?? null, 3) ?> BAR</td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -363,7 +361,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="panel-actions">
                     <a class="btn" href="solid_waste_list.php">View List</a>
                     <?php if ($canEdit): ?>
-                    <a class="btn" href="solid_waste_add.php">Add Record</a>
+                        <a class="btn" href="solid_waste_add.php">Add Record</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -392,20 +390,20 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         <th>Comments</th>
                     </tr>
                     <?php if (!$solidWaste): ?>
-                    <tr>
-                        <td colspan="5">No solid waste data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="5">No solid waste data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($solidWaste as $r): ?>
-                    <tr class="solid-row" data-id="<?= (int) $r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
-                        <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?>
-                        </td>
-                        <td><?= h($r['comments'] ?? '') ?></td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($solidWaste as $r): ?>
+                            <tr class="solid-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
+                                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?>
+                                </td>
+                                <td><?= h($r['comments'] ?? '') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -417,7 +415,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="panel-actions">
                     <a class="btn" href="nozzle_list.php">View List</a>
                     <?php if ($canEdit): ?>
-                    <a class="btn" href="nozzle_add.php">Add Record</a>
+                        <a class="btn" href="nozzle_add.php">Add Record</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -450,22 +448,22 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         <th>RPM</th>
                     </tr>
                     <?php if (!$nozzle): ?>
-                    <tr>
-                        <td colspan="8">No nozzle data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="8">No nozzle data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($nozzle as $r): ?>
-                    <tr class="nozzle-row" data-id="<?= (int) $r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td>N<?= h($r['nozzle']) ?></td>
-                        <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
-                        <td><?= fmt($r['pressure'] ?? null, 2) ?> BAR</td>
-                        <td><?= fmt($r['min_deg'] ?? null, 0) ?> °</td>
-                        <td><?= fmt($r['max_deg'] ?? null, 0) ?> °</td>
-                        <td><?= fmt($r['rpm'] ?? null, 1) ?> RPM</td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($nozzle as $r): ?>
+                            <tr class="nozzle-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td>N<?= h($r['nozzle']) ?></td>
+                                <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
+                                <td><?= fmt($r['pressure'] ?? null, 2) ?> BAR</td>
+                                <td><?= fmt($r['min_deg'] ?? null, 0) ?> °</td>
+                                <td><?= fmt($r['max_deg'] ?? null, 0) ?> °</td>
+                                <td><?= fmt($r['rpm'] ?? null, 1) ?> RPM</td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -477,7 +475,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="panel-actions">
                     <a class="btn" href="sample_list.php">View List</a>
                     <?php if ($canEdit): ?>
-                    <a class="btn" href="sample_add.php">Add Record</a>
+                        <a class="btn" href="sample_add.php">Add Record</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -508,24 +506,24 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         <th>Operator</th>
                     </tr>
                     <?php if (!$sample): ?>
-                    <tr>
-                        <td colspan="10">No sample data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="10">No sample data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($sample as $r): ?>
-                    <tr class="sample-row" data-id="<?= (int) $r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td><?= h($r['sample_location'] ?? '') ?></td>
-                        <td><?= h($r['nozzle'] ?? '') ?></td>
-                        <td><?= fmt($r['flow'] ?? null, 2) ?> M3/hr</td>
-                        <td><?= fmt($r['mercury'] ?? null, 3) ?> %</td>
-                        <td><?= fmt($r['solids'] ?? null, 2) ?> %</td>
-                        <td><?= fmt($r['water'] ?? null, 2) ?> %</td>
-                        <td><?= fmt($r['wax'] ?? null, 2) ?> %</td>
-                        <td><?= h($r['operator'] ?? '') ?></td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($sample as $r): ?>
+                            <tr class="sample-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= h($r['sample_location'] ?? '') ?></td>
+                                <td><?= h($r['nozzle'] ?? '') ?></td>
+                                <td><?= fmt($r['flow'] ?? null, 2) ?> M3/hr</td>
+                                <td><?= fmt($r['mercury'] ?? null, 3) ?> %</td>
+                                <td><?= fmt($r['solids'] ?? null, 2) ?> %</td>
+                                <td><?= fmt($r['water'] ?? null, 2) ?> %</td>
+                                <td><?= fmt($r['wax'] ?? null, 2) ?> %</td>
+                                <td><?= h($r['operator'] ?? '') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -537,7 +535,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="panel-actions">
                     <a class="btn" href="gas_test_list.php">View List</a>
                     <?php if ($canEdit): ?>
-                    <a class="btn" href="gas_test_add.php">Add Record</a>
+                        <a class="btn" href="gas_test_add.php">Add Record</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -578,27 +576,27 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                         <th>Actions Taken</th>
                     </tr>
                     <?php if (!$gasTest): ?>
-                    <tr>
-                        <td colspan="13">No gas test data in selected range.</td>
-                    </tr>
+                        <tr>
+                            <td colspan="13">No gas test data in selected range.</td>
+                        </tr>
                     <?php else: ?>
-                    <?php foreach ($gasTest as $r): ?>
-                    <tr class="gas-row" data-id="<?= (int) $r['id'] ?>">
-                        <td><?= h($r['log_date']) ?></td>
-                        <td><?= h($r['log_time']) ?></td>
-                        <td><?= h($r['device'] ?? '') ?></td>
-                        <td><?= h($r['operator'] ?? '') ?></td>
-                        <td><?= h($r['location'] ?? '') ?></td>
-                        <td><?= h($r['area_details'] ?? '') ?></td>
-                        <td><?= fmt($r['mercury'] ?? null, 3) ?> µg/m³</td>
-                        <td><?= fmt($r['benzene'] ?? null, 2) ?> ppm</td>
-                        <td><?= fmt($r['lel'] ?? null, 1) ?> %</td>
-                        <td><?= fmt($r['h2s'] ?? null, 1) ?> ppm</td>
-                        <td><?= fmt($r['o2'] ?? null, 1) ?> %</td>
-                        <td><?= h($r['product_details'] ?? '') ?></td>
-                        <td><?= h($r['action_taken'] ?? '') ?></td>
-                    </tr>
-                    <?php endforeach; ?>
+                        <?php foreach ($gasTest as $r): ?>
+                            <tr class="gas-row" data-id="<?= (int) $r['id'] ?>">
+                                <td><?= h($r['log_date']) ?></td>
+                                <td><?= h($r['log_time']) ?></td>
+                                <td><?= h($r['device'] ?? '') ?></td>
+                                <td><?= h($r['operator'] ?? '') ?></td>
+                                <td><?= h($r['location'] ?? '') ?></td>
+                                <td><?= h($r['area_details'] ?? '') ?></td>
+                                <td><?= fmt($r['mercury'] ?? null, 3) ?> µg/m³</td>
+                                <td><?= fmt($r['benzene'] ?? null, 2) ?> ppm</td>
+                                <td><?= fmt($r['lel'] ?? null, 1) ?> %</td>
+                                <td><?= fmt($r['h2s'] ?? null, 1) ?> ppm</td>
+                                <td><?= fmt($r['o2'] ?? null, 1) ?> %</td>
+                                <td><?= h($r['product_details'] ?? '') ?></td>
+                                <td><?= h($r['action_taken'] ?? '') ?></td>
+                            </tr>
+                        <?php endforeach; ?>
                     <?php endif; ?>
                 </table>
             </div>
@@ -611,7 +609,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
                 <div class="panel-actions">
                     <a class="btn" href="project_flow_list.php">View List</a>
                     <?php if ($canEdit): ?>
-                    <a class="btn" href="project_flow_add.php">Add Record</a>
+                        <a class="btn" href="project_flow_add.php">Add Record</a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -632,110 +630,110 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
     </div>
 
     <script>
-    function flashRows(selector, storageKey) {
-        let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
-        let max = last;
+        function flashRows(selector, storageKey) {
+            let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
+            let max = last;
 
-        document.querySelectorAll(selector).forEach(row => {
-            const id = parseInt(row.dataset.id || '0', 10);
-            if (id > last) row.classList.add('flash');
-            if (id > max) max = id;
-        });
+            document.querySelectorAll(selector).forEach(row => {
+                const id = parseInt(row.dataset.id || '0', 10);
+                if (id > last) row.classList.add('flash');
+                if (id > max) max = id;
+            });
 
-        localStorage.setItem(storageKey, String(max));
-    }
+            localStorage.setItem(storageKey, String(max));
+        }
 
-    flashRows('.nozzle-row', 'nLast');
-    flashRows('.tri-row', 'tLast');
-    flashRows('.solid-row', 'sLast');
-    flashRows('.sample-row', 'sampleLast');
-    flashRows('.gas-row', 'gasLast');
+        flashRows('.nozzle-row', 'nLast');
+        flashRows('.tri-row', 'tLast');
+        flashRows('.solid-row', 'sLast');
+        flashRows('.sample-row', 'sampleLast');
+        flashRows('.gas-row', 'gasLast');
 
-    function makeCombinedChart(canvasId, labels, datasets) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
+        function makeCombinedChart(canvasId, labels, datasets) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
 
-        const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
-        if (valid.length === 0) return;
+            const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
+            if (valid.length === 0) return;
 
-        new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: valid.map(ds => ({
-                    label: ds.label,
-                    data: ds.data,
-                    borderColor: ds.color,
-                    backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    tension: 0.25,
-                    pointRadius: 0,
-                    spanGaps: true,
-                    yAxisID: ds.axis
-                }))
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                plugins: {
-                    legend: {
-                        display: true,
-                        labels: {
-                            color: '#dcecff',
-                            boxWidth: 10,
-                            padding: 10,
-                            font: {
-                                size: 11
-                            }
-                        }
-                    },
-                    tooltip: {
-                        enabled: true,
-                        callbacks: {
-                            title: function(context) {
-                                return context[0]?.label || '';
-                            }
-                        }
-                    }
+            new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: valid.map(ds => ({
+                        label: ds.label,
+                        data: ds.data,
+                        borderColor: ds.color,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        tension: 0.25,
+                        pointRadius: 0,
+                        spanGaps: true,
+                        yAxisID: ds.axis
+                    }))
                 },
-                scales: {
-                    x: {
-                        display: false
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#dcecff',
+                                boxWidth: 10,
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                title: function (context) {
+                                    return context[0]?.label || '';
+                                }
+                            }
+                        }
                     },
-                    y1: {
-                        display: false
-                    },
-                    y2: {
-                        display: false
-                    },
-                    y3: {
-                        display: false
-                    },
-                    y4: {
-                        display: false
-                    },
-                    y5: {
-                        display: false
-                    },
-                    y6: {
-                        display: false
-                    },
-                    y7: {
-                        display: false
-                    },
-                    y8: {
-                        display: false
-                    },
-                    y9: {
-                        display: false
+                    scales: {
+                        x: {
+                            display: false
+                        },
+                        y1: {
+                            display: false
+                        },
+                        y2: {
+                            display: false
+                        },
+                        y3: {
+                            display: false
+                        },
+                        y4: {
+                            display: false
+                        },
+                        y5: {
+                            display: false
+                        },
+                        y6: {
+                            display: false
+                        },
+                        y7: {
+                            display: false
+                        },
+                        y8: {
+                            display: false
+                        },
+                        y9: {
+                            display: false
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [{
+        makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [{
             label: 'Flow',
             data: <?= json_encode($nozzleFlowSeries) ?>,
             color: '#00ffff',
@@ -765,9 +763,9 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             color: '#ff7e67',
             axis: 'y5'
         }
-    ]);
+        ]);
 
-    makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [{
+        makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [{
             label: 'Bowl Speed',
             data: <?= json_encode($tricanterBowlSpeedSeries) ?>,
             color: '#00ffff',
@@ -821,9 +819,9 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             color: '#8fd3ff',
             axis: 'y9'
         }
-    ]);
+        ]);
 
-    makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [{
+        makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [{
             label: 'Amount',
             data: <?= json_encode($solidWasteAmountSeries) ?>,
             color: '#00ff88',
@@ -835,9 +833,9 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             color: '#ffd24d',
             axis: 'y2'
         }
-    ]);
+        ]);
 
-    makeCombinedChart('gasTestCombinedChart', <?= json_encode($gasLabels) ?>, [{
+        makeCombinedChart('gasTestCombinedChart', <?= json_encode($gasLabels) ?>, [{
             label: 'Mercury',
             data: <?= json_encode($gasMercurySeries) ?>,
             color: '#00ffff',
@@ -867,127 +865,127 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             color: '#ff7e67',
             axis: 'y5'
         }
-    ]);
+        ]);
 
-    function formatSince(seconds) {
-        if (seconds === '' || seconds === null || isNaN(seconds)) return 'No data';
-        seconds = parseInt(seconds, 10);
+        function formatSince(seconds) {
+            if (seconds === '' || seconds === null || isNaN(seconds)) return 'No data';
+            seconds = parseInt(seconds, 10);
 
-        if (seconds < 60) return seconds + 's ago';
+            if (seconds < 60) return seconds + 's ago';
 
-        if (seconds < 3600) {
-            const mins = Math.floor(seconds / 60);
+            if (seconds < 3600) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return mins + 'm ' + secs + 's ago';
+            }
+
+            if (seconds < 86400) {
+                const hrs = Math.floor(seconds / 3600);
+                const mins = Math.floor((seconds % 3600) / 60);
+                return hrs + 'h ' + mins + 'm ago';
+            }
+
+            const days = Math.floor(seconds / 86400);
+            const hrs = Math.floor((seconds % 86400) / 3600);
+            return days + 'd ' + hrs + 'h ago';
+        }
+
+        function formatCountdown(seconds) {
+            if (seconds === '' || seconds === null || isNaN(seconds)) return '--';
+            seconds = parseInt(seconds, 10);
+
+            if (seconds <= 0) return 'OVERDUE';
+
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
             const secs = seconds % 60;
-            return mins + 'm ' + secs + 's ago';
-        }
 
-        if (seconds < 86400) {
-            const hrs = Math.floor(seconds / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
-            return hrs + 'h ' + mins + 'm ago';
-        }
+            if (hours > 0) {
+                return String(hours).padStart(2, '0') + ':' +
+                    String(minutes).padStart(2, '0') + ':' +
+                    String(secs).padStart(2, '0');
+            }
 
-        const days = Math.floor(seconds / 86400);
-        const hrs = Math.floor((seconds % 86400) / 3600);
-        return days + 'd ' + hrs + 'h ago';
-    }
-
-    function formatCountdown(seconds) {
-        if (seconds === '' || seconds === null || isNaN(seconds)) return '--';
-        seconds = parseInt(seconds, 10);
-
-        if (seconds <= 0) return 'OVERDUE';
-
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = seconds % 60;
-
-        if (hours > 0) {
-            return String(hours).padStart(2, '0') + ':' +
-                String(minutes).padStart(2, '0') + ':' +
+            return String(minutes).padStart(2, '0') + ':' +
                 String(secs).padStart(2, '0');
         }
 
-        return String(minutes).padStart(2, '0') + ':' +
-            String(secs).padStart(2, '0');
-    }
+        function clearMonitorStateClasses(card) {
+            card.classList.remove(
+                'monitor-state-ok',
+                'monitor-state-warning',
+                'monitor-state-overdue',
+                'monitor-state-alarm',
+                'flash-yellow',
+                'flash-red'
+            );
+        }
 
-    function clearMonitorStateClasses(card) {
-        card.classList.remove(
-            'monitor-state-ok',
-            'monitor-state-warning',
-            'monitor-state-overdue',
-            'monitor-state-alarm',
-            'flash-yellow',
-            'flash-red'
-        );
-    }
+        function updateMonitorCardState(card, remaining) {
+            const statusEl = card.querySelector('.monitor-status');
+            if (!statusEl) return;
 
-    function updateMonitorCardState(card, remaining) {
-        const statusEl = card.querySelector('.monitor-status');
-        if (!statusEl) return;
+            const fixedStates = ['MASTER OFF', 'OFF', 'NO DATA', 'NOT SET UP'];
+            const currentText = statusEl.textContent.trim();
 
-        const fixedStates = ['MASTER OFF', 'OFF', 'NO DATA', 'NOT SET UP'];
-        const currentText = statusEl.textContent.trim();
+            clearMonitorStateClasses(card);
 
-        clearMonitorStateClasses(card);
+            if (fixedStates.includes(currentText)) {
+                if (currentText === 'NO DATA') {
+                    card.classList.add('monitor-state-warning', 'flash-yellow');
+                }
+                return;
+            }
 
-        if (fixedStates.includes(currentText)) {
-            if (currentText === 'NO DATA') {
+            let status = 'OK';
+            let statusClass = 'monitor-ok';
+
+            if (remaining <= 0) {
+                status = 'OVERDUE';
+                statusClass = 'monitor-overdue';
+                card.classList.add('monitor-state-overdue', 'flash-red');
+            } else if (remaining <= 300) {
+                status = 'WARNING';
+                statusClass = 'monitor-warning';
                 card.classList.add('monitor-state-warning', 'flash-yellow');
-            }
-            return;
-        }
-
-        let status = 'OK';
-        let statusClass = 'monitor-ok';
-
-        if (remaining <= 0) {
-            status = 'OVERDUE';
-            statusClass = 'monitor-overdue';
-            card.classList.add('monitor-state-overdue', 'flash-red');
-        } else if (remaining <= 300) {
-            status = 'WARNING';
-            statusClass = 'monitor-warning';
-            card.classList.add('monitor-state-warning', 'flash-yellow');
-        } else {
-            card.classList.add('monitor-state-ok');
-        }
-
-        statusEl.textContent = status;
-        statusEl.className = 'monitor-status ' + statusClass;
-    }
-
-    function updateMonitorTimers() {
-        document.querySelectorAll('.monitor-item').forEach(card => {
-            const sinceEl = card.querySelector('.monitor-since');
-            const countdownEl = card.querySelector('.monitor-countdown');
-
-            if (sinceEl && sinceEl.dataset.sinceSeconds !== '') {
-                let since = parseInt(sinceEl.dataset.sinceSeconds, 10);
-                if (!isNaN(since)) {
-                    since++;
-                    sinceEl.dataset.sinceSeconds = since;
-                    sinceEl.textContent = formatSince(since);
-                }
-            }
-
-            if (countdownEl && countdownEl.dataset.remainingSeconds !== '') {
-                let remaining = parseInt(countdownEl.dataset.remainingSeconds, 10);
-                if (!isNaN(remaining)) {
-                    remaining--;
-                    countdownEl.dataset.remainingSeconds = remaining;
-                    countdownEl.textContent = formatCountdown(remaining);
-                    updateMonitorCardState(card, remaining);
-                }
             } else {
-                updateMonitorCardState(card, null);
+                card.classList.add('monitor-state-ok');
             }
-        });
-    }
 
-    updateMonitorTimers();
-    setInterval(updateMonitorTimers, 1000);
+            statusEl.textContent = status;
+            statusEl.className = 'monitor-status ' + statusClass;
+        }
+
+        function updateMonitorTimers() {
+            document.querySelectorAll('.monitor-item').forEach(card => {
+                const sinceEl = card.querySelector('.monitor-since');
+                const countdownEl = card.querySelector('.monitor-countdown');
+
+                if (sinceEl && sinceEl.dataset.sinceSeconds !== '') {
+                    let since = parseInt(sinceEl.dataset.sinceSeconds, 10);
+                    if (!isNaN(since)) {
+                        since++;
+                        sinceEl.dataset.sinceSeconds = since;
+                        sinceEl.textContent = formatSince(since);
+                    }
+                }
+
+                if (countdownEl && countdownEl.dataset.remainingSeconds !== '') {
+                    let remaining = parseInt(countdownEl.dataset.remainingSeconds, 10);
+                    if (!isNaN(remaining)) {
+                        remaining--;
+                        countdownEl.dataset.remainingSeconds = remaining;
+                        countdownEl.textContent = formatCountdown(remaining);
+                        updateMonitorCardState(card, remaining);
+                    }
+                } else {
+                    updateMonitorCardState(card, null);
+                }
+            });
+        }
+
+        updateMonitorTimers();
+        setInterval(updateMonitorTimers, 1000);
     </script>
 
 </body>
