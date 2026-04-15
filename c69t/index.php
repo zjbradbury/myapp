@@ -299,7 +299,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="panel-head">
                 <h2>Tricanter</h2>
                 <div class="panel-actions">
-                    <a class="btn" href="tricanter_list.php">View List</a>
+                    <a class="btn" href="tricanter_list.php">View Logs</a>
                     <?php if ($canEdit): ?>
                         <a class="btn" href="tricanter_add.php">Add Record</a>
                     <?php endif; ?>
@@ -367,7 +367,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="panel-head">
                 <h2>Solid Waste</h2>
                 <div class="panel-actions">
-                    <a class="btn" href="solid_waste_list.php">View List</a>
+                    <a class="btn" href="solid_waste_list.php">View Logs</a>
                     <?php if ($canEdit): ?>
                         <a class="btn" href="solid_waste_add.php">Add Record</a>
                     <?php endif; ?>
@@ -417,7 +417,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="panel-head">
                 <h2>Nozzle</h2>
                 <div class="panel-actions">
-                    <a class="btn" href="nozzle_list.php">View List</a>
+                    <a class="btn" href="nozzle_list.php">View Logs</a>
                     <?php if ($canEdit): ?>
                         <a class="btn" href="nozzle_add.php">Add Record</a>
                     <?php endif; ?>
@@ -476,7 +476,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="panel-head">
                 <h2>Sample</h2>
                 <div class="panel-actions">
-                    <a class="btn" href="sample_list.php">View List</a>
+                    <a class="btn" href="sample_list.php">View Logs</a>
                     <?php if ($canEdit): ?>
                         <a class="btn" href="sample_add.php">Add Record</a>
                     <?php endif; ?>
@@ -536,7 +536,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="panel-head">
                 <h2>Gas Test</h2>
                 <div class="panel-actions">
-                    <a class="btn" href="gas_test_list.php">View List</a>
+                    <a class="btn" href="gas_test_list.php">View Logs</a>
                     <?php if ($canEdit): ?>
                         <a class="btn" href="gas_test_add.php">Add Record</a>
                     <?php endif; ?>
@@ -609,7 +609,7 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
             <div class="panel-head">
                 <h2>Project Flow</h2>
                 <div class="panel-actions">
-                    <a class="btn" href="project_flow_list.php">View List</a>
+                    <a class="btn" href="project_flow_list.php">View Logs</a>
                     <?php if ($canEdit): ?>
                         <a class="btn" href="project_flow_add.php">Add Record</a>
                     <?php endif; ?>
