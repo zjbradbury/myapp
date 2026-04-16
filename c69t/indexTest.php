@@ -178,33 +178,6 @@ function render_topbar(array $dashboard): string
                     </div>
                 </div>
             </div>
-
-            <div class="last-entry-grid">
-                <div class="last-entry-tile">
-                    <small>Nozzle</small>
-                    <b><?= h($dashboard['last_stamps']['nozzle']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Tricanter</small>
-                    <b><?= h($dashboard['last_stamps']['tricanter']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Solid Waste</small>
-                    <b><?= h($dashboard['last_stamps']['solid_waste']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Sample</small>
-                    <b><?= h($dashboard['last_stamps']['sample']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Gas Test</small>
-                    <b><?= h($dashboard['last_stamps']['gas_test']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Project Flow</small>
-                    <b><?= h($dashboard['last_stamps']['project_flow']) ?></b>
-                </div>
-            </div>
         </div>
 
         <div class="info-card range-card">
@@ -477,13 +450,6 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $sample = tableExists($pdo, 'sample_logs') ? fetch_log_rows($pdo, 'sample_logs', $range, 'id DESC') : [];
         $gasTest = tableExists($pdo, 'gas_test_logs') ? fetch_log_rows($pdo, 'gas_test_logs', $range, 'id DESC') : [];
         $projectFlow = tableExists($pdo, 'project_flow_logs') ? fetch_log_rows($pdo, 'project_flow_logs', $range, 'id DESC') : [];
-
-        $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
-        $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
-        $latestSolidWasteOverall = fetch_latest_row($pdo, 'solid_waste_logs') ?: [];
-        $latestSampleOverall = tableExists($pdo, 'sample_logs') ? (fetch_latest_row($pdo, 'sample_logs') ?: []) : [];
-        $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
-        $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
     } catch (Throwable $e) {
         die("DB Error: " . h($e->getMessage()));
     }
@@ -503,6 +469,13 @@ function build_dashboard_data(PDO $pdo, array $range): array
             $solidWasteTotalAmount += (float)$r['amount'];
         }
     }
+
+    $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
+    $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
+    $latestSolidWasteOverall = fetch_latest_row($pdo, 'solid_waste_logs') ?: [];
+    $latestSampleOverall = tableExists($pdo, 'sample_logs') ? (fetch_latest_row($pdo, 'sample_logs') ?: []) : [];
+    $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
+    $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
 
     $systemStatus = (
         !empty($latestNozzleOverall) ||
@@ -680,7 +653,7 @@ $dashboard = build_dashboard_data($pdo, $range);
             justify-content:space-between;
             gap:16px;
             align-items:flex-start;
-            margin-bottom:14px;
+            margin-bottom:0;
         }
 
         .hero-status{
@@ -717,34 +690,6 @@ $dashboard = build_dashboard_data($pdo, $range);
             display:block;
             font-size:14px;
             color:#fff;
-            word-break:break-word;
-        }
-
-        .last-entry-grid{
-            display:grid;
-            grid-template-columns:repeat(3,minmax(0,1fr));
-            gap:10px;
-        }
-
-        .last-entry-tile{
-            background:rgba(255,255,255,.035);
-            border:1px solid rgba(255,255,255,.06);
-            border-radius:12px;
-            padding:10px 12px;
-        }
-
-        .last-entry-tile small{
-            display:block;
-            color:var(--muted);
-            text-transform:uppercase;
-            letter-spacing:.7px;
-            margin-bottom:5px;
-        }
-
-        .last-entry-tile b{
-            font-size:13px;
-            color:#fff;
-            font-weight:700;
             word-break:break-word;
         }
 
@@ -916,15 +861,13 @@ $dashboard = build_dashboard_data($pdo, $range);
                 flex-direction:column;
             }
 
-            .hero-stats,
-            .last-entry-grid{
+            .hero-stats{
                 grid-template-columns:1fr 1fr;
                 width:100%;
             }
         }
 
         @media (max-width:700px){
-            .last-entry-grid,
             .hero-stats{
                 grid-template-columns:1fr;
             }
@@ -1206,16 +1149,41 @@ function validDatasets(datasets) {
     return (datasets || []).filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
 }
 
+function normaliseSeries(data) {
+    const numeric = data.filter(v => v !== null && v !== '' && !Number.isNaN(Number(v))).map(Number);
+
+    if (!numeric.length) {
+        return data.map(() => null);
+    }
+
+    const min = Math.min(...numeric);
+    const max = Math.max(...numeric);
+
+    if (max === min) {
+        return data.map(v => {
+            if (v === null || v === '' || Number.isNaN(Number(v))) return null;
+            return 50;
+        });
+    }
+
+    return data.map(v => {
+        if (v === null || v === '' || Number.isNaN(Number(v))) return null;
+        return ((Number(v) - min) / (max - min)) * 100;
+    });
+}
+
 function chartDatasetObject(ds) {
     return {
         label: ds.label,
-        data: ds.data,
+        data: normaliseSeries(ds.data),
+        rawData: ds.data,
         borderColor: chartPalette[ds.label] || '#8fd3ff',
         backgroundColor: 'transparent',
         borderWidth: 2,
         tension: 0.25,
         pointRadius: 0,
-        pointHoverRadius: 3,
+        pointHoverRadius: 4,
+        pointHitRadius: 12,
         spanGaps: true
     };
 }
@@ -1252,7 +1220,21 @@ function makeChart(canvasId, config) {
                     }
                 },
                 tooltip: {
-                    enabled: true
+                    enabled: true,
+                    callbacks: {
+                        label: function(context) {
+                            const ds = context.dataset || {};
+                            const rawData = ds.rawData || [];
+                            const idx = context.dataIndex;
+                            const rawValue = rawData[idx];
+
+                            if (rawValue === null || rawValue === '' || typeof rawValue === 'undefined') {
+                                return ds.label + ': -';
+                            }
+
+                            return ds.label + ': ' + rawValue;
+                        }
+                    }
                 }
             },
             scales: {
@@ -1262,6 +1244,8 @@ function makeChart(canvasId, config) {
                 },
                 y: {
                     display: false,
+                    min: 0,
+                    max: 100,
                     grid: { display: false }
                 }
             }
