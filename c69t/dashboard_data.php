@@ -148,33 +148,6 @@ function render_topbar(array $dashboard): string
                     </div>
                 </div>
             </div>
-
-            <div class="last-entry-grid">
-                <div class="last-entry-tile">
-                    <small>Nozzle</small>
-                    <b><?= h($dashboard['last_stamps']['nozzle']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Tricanter</small>
-                    <b><?= h($dashboard['last_stamps']['tricanter']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Solid Waste</small>
-                    <b><?= h($dashboard['last_stamps']['solid_waste']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Sample</small>
-                    <b><?= h($dashboard['last_stamps']['sample']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Gas Test</small>
-                    <b><?= h($dashboard['last_stamps']['gas_test']) ?></b>
-                </div>
-                <div class="last-entry-tile">
-                    <small>Project Flow</small>
-                    <b><?= h($dashboard['last_stamps']['project_flow']) ?></b>
-                </div>
-            </div>
         </div>
 
         <div class="info-card range-card">
