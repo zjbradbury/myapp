@@ -319,7 +319,16 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
             <div class="chart-card">
                 <div class="chart-title">Tricanter Trends</div>
-                <div class="chart-wrap"><canvas id="tricanterCombinedChart"></canvas></div>
+                <div class="chart-wrap"><canvas id="tricanterCombinedChart"
+    data-labels='<?= json_encode($tricanterLabels) ?>'
+    data-datasets='<?= json_encode([
+        ['label'=>'Bowl Speed','data'=>$tricanterBowlSpeedSeries,'color'=>'#00ffff','axis'=>'y1'],
+        ['label'=>'Screw Speed','data'=>$tricanterScrewSpeedSeries,'color'=>'#ffd24d','axis'=>'y2'],
+        ['label'=>'Bowl RPM','data'=>$tricanterBowlRpmSeries,'color'=>'#6ee7a1','axis'=>'y3'],
+        ['label'=>'Screw RPM','data'=>$tricanterScrewRpmSeries,'color'=>'#c8a7ff','axis'=>'y4'],
+        ['label'=>'Torque','data'=>$tricanterTorqueSeries,'color'=>'#ff7e67','axis'=>'y5']
+    ]) ?>'>
+</canvas></div>
             </div>
 
             <div class="table">
@@ -381,7 +390,13 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
             <div class="chart-card">
                 <div class="chart-title">Solid Waste Trends</div>
-                <div class="chart-wrap"><canvas id="solidWasteCombinedChart"></canvas></div>
+                <div class="chart-wrap"><canvas id="solidWasteCombinedChart"
+    data-labels='<?= json_encode($solidWasteLabels) ?>'
+    data-datasets='<?= json_encode([
+        ['label'=>'Amount','data'=>$solidWasteAmountSeries,'color'=>'#00ffff','axis'=>'y1'],
+        ['label'=>'Diff','data'=>$solidWasteDiffSeries,'color'=>'#ffd24d','axis'=>'y2']
+    ]) ?>'>
+</canvas></div>
             </div>
 
             <div class="table">
@@ -434,7 +449,16 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
             <div class="chart-card">
                 <div class="chart-title">Nozzle Trends</div>
-                <div class="chart-wrap"><canvas id="nozzleCombinedChart"></canvas></div>
+                <div class="chart-wrap"><canvas id="nozzleCombinedChart"
+    data-labels='<?= json_encode($nozzleLabels) ?>'
+    data-datasets='<?= json_encode([
+        ['label'=>'Flow','data'=>$nozzleFlowSeries,'color'=>'#00ffff','axis'=>'y1'],
+        ['label'=>'Pressure','data'=>$nozzlePressureSeries,'color'=>'#ffd24d','axis'=>'y2'],
+        ['label'=>'Min Deg','data'=>$nozzleMinDegSeries,'color'=>'#6ee7a1','axis'=>'y3'],
+        ['label'=>'Max Deg','data'=>$nozzleMaxDegSeries,'color'=>'#c8a7ff','axis'=>'y4'],
+        ['label'=>'RPM','data'=>$nozzleRpmSeries,'color'=>'#ff7e67','axis'=>'y5']
+    ]) ?>'>
+</canvas></div>
             </div>
 
             <div class="table">
@@ -556,7 +580,16 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
             <div class="chart-card">
                 <div class="chart-title">Gas Test Trends</div>
-                <div class="chart-wrap"><canvas id="gasTestCombinedChart"></canvas></div>
+                <div class="chart-wrap"><canvas id="gasTestCombinedChart"
+    data-labels='<?= json_encode($gasLabels) ?>'
+    data-datasets='<?= json_encode([
+        ['label'=>'Mercury','data'=>$gasMercurySeries,'color'=>'#00ffff','axis'=>'y1'],
+        ['label'=>'Benzene','data'=>$gasBenzeneSeries,'color'=>'#ffd24d','axis'=>'y2'],
+        ['label'=>'LEL','data'=>$gasLelSeries,'color'=>'#6ee7a1','axis'=>'y3'],
+        ['label'=>'H2S','data'=>$gasH2sSeries,'color'=>'#c8a7ff','axis'=>'y4'],
+        ['label'=>'O2','data'=>$gasO2Series,'color'=>'#ff7e67','axis'=>'y5']
+    ]) ?>'>
+</canvas></div>
             </div>
 
             <div class="table">
@@ -661,341 +694,134 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
     </div>
 
     <script>
-        const dashboardCharts = {};
+const dashboardCharts = {};
 
-        function flashRows(selector, storageKey) {
+/* =============================
+   FLASH NEW ROWS
+============================= */
+function flashRows(selector, storageKey) {
     let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
     let max = last;
 
-    const rows = Array.from(document.querySelectorAll(selector));
-
-    // detect scroll container
-    const table = rows[0]?.closest('.table');
-    const container = table || null;
-    const userAtTop = container ? container.scrollTop < 10 : true;
-
-    rows.forEach(row => {
+    document.querySelectorAll(selector).forEach(row => {
         const id = parseInt(row.dataset.id || '0', 10);
-
-        if (id > last) {
-
-            // 🔥 APPLY NEW ANIMATION
-            row.classList.add('row-new');
-
-            requestAnimationFrame(() => {
-                row.classList.add('expand');
-            });
-        }
-
+        if (id > last) row.classList.add('flash');
         if (id > max) max = id;
     });
-
-    // 🔥 AUTO SCROLL ONLY IF USER IS AT TOP
-    if (container && userAtTop) {
-        container.scrollTop = 0;
-    }
 
     localStorage.setItem(storageKey, String(max));
 }
 
-        function runFlashers() {
-            flashRows('.nozzle-row', 'nLast');
-            flashRows('.tri-row', 'tLast');
-            flashRows('.solid-row', 'sLast');
-            flashRows('.sample-row', 'sampleLast');
-            flashRows('.gas-row', 'gasLast');
-            flashRows('.project-flow-row', 'projectFlowLast');
-        }
+function runFlashers() {
+    flashRows('.nozzle-row', 'nLast');
+    flashRows('.tri-row', 'tLast');
+    flashRows('.solid-row', 'sLast');
+    flashRows('.sample-row', 'sampleLast');
+    flashRows('.gas-row', 'gasLast');
+    flashRows('.project-flow-row', 'projectFlowLast');
+}
 
-        function destroyExistingCharts() {
-            Object.keys(dashboardCharts).forEach(key => {
-                if (dashboardCharts[key]) {
-                    dashboardCharts[key].destroy();
-                    dashboardCharts[key] = null;
-                }
-            });
-        }
+/* =============================
+   CHART BUILDER
+============================= */
+function makeCombinedChart(canvasId, labels, datasets) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
 
-        function makeCombinedChart(canvasId, labels, datasets) {
-            const canvas = document.getElementById(canvasId);
-            if (!canvas) return;
+    if (dashboardCharts[canvasId]) {
+        dashboardCharts[canvasId].destroy();
+    }
 
-            const valid = datasets.filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
-            if (valid.length === 0) return;
+    const valid = datasets.filter(ds => ds.data && ds.data.length);
 
-            if (dashboardCharts[canvasId]) {
-                dashboardCharts[canvasId].destroy();
-            }
-
-            dashboardCharts[canvasId] = new Chart(canvas, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: valid.map(ds => ({
-                        label: ds.label,
-                        data: ds.data,
-                        borderColor: ds.color,
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        tension: 0.25,
-                        pointRadius: 0,
-                        spanGaps: true,
-                        yAxisID: ds.axis
-                    }))
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                color: '#dcecff',
-                                boxWidth: 10,
-                                padding: 10,
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        },
-                        tooltip: {
-                            enabled: true,
-                            callbacks: {
-                                title: function(context) {
-                                    return context[0]?.label || '';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: { display: false },
-                        y1: { display: false },
-                        y2: { display: false },
-                        y3: { display: false },
-                        y4: { display: false },
-                        y5: { display: false },
-                        y6: { display: false },
-                        y7: { display: false },
-                        y8: { display: false },
-                        y9: { display: false }
-                    }
-                }
-            });
-        }
-
-        function initCharts() {
-            makeCombinedChart('nozzleCombinedChart', <?= json_encode($nozzleLabels) ?>, [
-                { label: 'Flow', data: <?= json_encode($nozzleFlowSeries) ?>, color: '#00ffff', axis: 'y1' },
-                { label: 'Pressure', data: <?= json_encode($nozzlePressureSeries) ?>, color: '#ffd24d', axis: 'y2' },
-                { label: 'Min Deg', data: <?= json_encode($nozzleMinDegSeries) ?>, color: '#6ee7a1', axis: 'y3' },
-                { label: 'Max Deg', data: <?= json_encode($nozzleMaxDegSeries) ?>, color: '#c8a7ff', axis: 'y4' },
-                { label: 'RPM', data: <?= json_encode($nozzleRpmSeries) ?>, color: '#ff7e67', axis: 'y5' }
-            ]);
-
-            makeCombinedChart('tricanterCombinedChart', <?= json_encode($tricanterLabels) ?>, [
-                { label: 'Bowl Speed', data: <?= json_encode($tricanterBowlSpeedSeries) ?>, color: '#00ffff', axis: 'y1' },
-                { label: 'Screw Speed', data: <?= json_encode($tricanterScrewSpeedSeries) ?>, color: '#ffd24d', axis: 'y2' },
-                { label: 'Bowl RPM', data: <?= json_encode($tricanterBowlRpmSeries) ?>, color: '#c8a7ff', axis: 'y3' },
-                { label: 'Screw RPM', data: <?= json_encode($tricanterScrewRpmSeries) ?>, color: '#ff9bd6', axis: 'y4' },
-                { label: 'Impeller', data: <?= json_encode($tricanterImpellerSeries) ?>, color: '#b6ff7a', axis: 'y5' },
-                { label: 'Feed Rate', data: <?= json_encode($tricanterFeedRateSeries) ?>, color: '#00ff88', axis: 'y6' },
-                { label: 'Torque', data: <?= json_encode($tricanterTorqueSeries) ?>, color: '#ff7e67', axis: 'y7' },
-                { label: 'Temp', data: <?= json_encode($tricanterTempSeries) ?>, color: '#ffb36b', axis: 'y8' },
-                { label: 'Pressure', data: <?= json_encode($tricanterPressureSeries) ?>, color: '#8fd3ff', axis: 'y9' }
-            ]);
-
-            makeCombinedChart('solidWasteCombinedChart', <?= json_encode($solidWasteLabels) ?>, [
-                { label: 'Amount', data: <?= json_encode($solidWasteAmountSeries) ?>, color: '#00ff88', axis: 'y1' },
-                { label: 'Diff (min)', data: <?= json_encode($solidWasteDiffSeries) ?>, color: '#ffd24d', axis: 'y2' }
-            ]);
-
-            makeCombinedChart('gasTestCombinedChart', <?= json_encode($gasLabels) ?>, [
-                { label: 'Mercury', data: <?= json_encode($gasMercurySeries) ?>, color: '#00ffff', axis: 'y1' },
-                { label: 'Benzene', data: <?= json_encode($gasBenzeneSeries) ?>, color: '#ffd24d', axis: 'y2' },
-                { label: 'LEL', data: <?= json_encode($gasLelSeries) ?>, color: '#6ee7a1', axis: 'y3' },
-                { label: 'H2S', data: <?= json_encode($gasH2sSeries) ?>, color: '#c8a7ff', axis: 'y4' },
-                { label: 'O2', data: <?= json_encode($gasO2Series) ?>, color: '#ff7e67', axis: 'y5' }
-            ]);
-        }
-
-        function formatSince(seconds) {
-            if (seconds === '' || seconds === null || isNaN(seconds)) return 'No data';
-            seconds = parseInt(seconds, 10);
-
-            if (seconds < 60) return seconds + 's ago';
-
-            if (seconds < 3600) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return mins + 'm ' + secs + 's ago';
-            }
-
-            if (seconds < 86400) {
-                const hrs = Math.floor(seconds / 3600);
-                const mins = Math.floor((seconds % 3600) / 60);
-                return hrs + 'h ' + mins + 'm ago';
-            }
-
-            const days = Math.floor(seconds / 86400);
-            const hrs = Math.floor((seconds % 86400) / 3600);
-            return days + 'd ' + hrs + 'h ago';
-        }
-
-        function formatCountdown(seconds) {
-            if (seconds === '' || seconds === null || isNaN(seconds)) return '--';
-            seconds = parseInt(seconds, 10);
-
-            if (seconds <= 0) return 'OVERDUE';
-
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-
-            if (hours > 0) {
-                return String(hours).padStart(2, '0') + ':' +
-                    String(minutes).padStart(2, '0') + ':' +
-                    String(secs).padStart(2, '0');
-            }
-
-            return String(minutes).padStart(2, '0') + ':' +
-                String(secs).padStart(2, '0');
-        }
-
-        function clearMonitorStateClasses(card) {
-            card.classList.remove(
-                'monitor-state-ok',
-                'monitor-state-warning',
-                'monitor-state-overdue',
-                'monitor-state-alarm',
-                'flash-yellow',
-                'flash-red'
-            );
-        }
-
-        function updateMonitorCardState(card, remaining) {
-            const statusEl = card.querySelector('.monitor-status');
-            if (!statusEl) return;
-
-            const fixedStates = ['MASTER OFF', 'OFF', 'NO DATA', 'NOT SET UP'];
-            const currentText = statusEl.textContent.trim();
-
-            clearMonitorStateClasses(card);
-
-            if (fixedStates.includes(currentText)) {
-                if (currentText === 'NO DATA') {
-                    card.classList.add('monitor-state-warning', 'flash-yellow');
-                }
-                return;
-            }
-
-            let status = 'OK';
-            let statusClass = 'monitor-ok';
-
-            if (remaining <= 0) {
-                status = 'OVERDUE';
-                statusClass = 'monitor-overdue';
-                card.classList.add('monitor-state-overdue', 'flash-red');
-            } else if (remaining <= 300) {
-                status = 'WARNING';
-                statusClass = 'monitor-warning';
-                card.classList.add('monitor-state-warning', 'flash-yellow');
-            } else {
-                card.classList.add('monitor-state-ok');
-            }
-
-            statusEl.textContent = status;
-            statusEl.className = 'monitor-status ' + statusClass;
-        }
-
-        function updateMonitorTimers() {
-            document.querySelectorAll('.monitor-item').forEach(card => {
-                const sinceEl = card.querySelector('.monitor-since');
-                const countdownEl = card.querySelector('.monitor-countdown');
-
-                if (sinceEl && sinceEl.dataset.sinceSeconds !== '') {
-                    let since = parseInt(sinceEl.dataset.sinceSeconds, 10);
-                    if (!isNaN(since)) {
-                        since++;
-                        sinceEl.dataset.sinceSeconds = since;
-                        sinceEl.textContent = formatSince(since);
-                    }
-                }
-
-                if (countdownEl && countdownEl.dataset.remainingSeconds !== '') {
-                    let remaining = parseInt(countdownEl.dataset.remainingSeconds, 10);
-                    if (!isNaN(remaining)) {
-                        remaining--;
-                        countdownEl.dataset.remainingSeconds = remaining;
-                        countdownEl.textContent = formatCountdown(remaining);
-                        updateMonitorCardState(card, remaining);
-                    }
-                } else {
-                    updateMonitorCardState(card, null);
-                }
-            });
-        }
-
-        let liveRefreshInFlight = false;
-
-        async function refreshDashboardLive() {
-            if (liveRefreshInFlight) return;
-            liveRefreshInFlight = true;
-
-            try {
-                const url = new URL(window.location.href);
-                url.searchParams.set('_live_refresh', Date.now().toString());
-
-                const response = await fetch(url.toString(), {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Cache-Control': 'no-cache'
-                    },
-                    cache: 'no-store'
-                });
-
-                if (!response.ok) {
-                    throw new Error('Refresh failed');
-                }
-
-                const html = await response.text();
-                const parser = new DOMParser();
-                const nextDoc = parser.parseFromString(html, 'text/html');
-
-                const nextMonitor = nextDoc.querySelector('.monitor-shell');
-                const nextTopbar = nextDoc.querySelector('.topbar');
-                const nextGrid = nextDoc.querySelector('.grid');
-
-                const currentMonitor = document.querySelector('.monitor-shell');
-                const currentTopbar = document.querySelector('.topbar');
-                const currentGrid = document.querySelector('.grid');
-
-                if (!nextMonitor || !nextTopbar || !nextGrid || !currentMonitor || !currentTopbar || !currentGrid) {
-                    throw new Error('Live refresh selectors missing');
-                }
-
-                currentMonitor.replaceWith(nextMonitor);
-                currentTopbar.replaceWith(nextTopbar);
-
-                destroyExistingCharts();
-                currentGrid.replaceWith(nextGrid);
-
-                initCharts();
-                runFlashers();
-                updateMonitorTimers();
-            } catch (error) {
-                console.error(error);
-            } finally {
-                liveRefreshInFlight = false;
+    dashboardCharts[canvasId] = new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: valid.map(ds => ({
+                label: ds.label,
+                data: ds.data,
+                borderColor: ds.color,
+                backgroundColor: 'transparent',
+                borderWidth: 2,
+                tension: 0.25,
+                pointRadius: 0
+            }))
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: { display: false },
+                y: { display: false }
             }
         }
+    });
+}
 
-        runFlashers();
-        initCharts();
-        updateMonitorTimers();
-        setInterval(updateMonitorTimers, 1000);
-        setInterval(refreshDashboardLive, 30000);
-    </script>
+/* =============================
+   INIT FROM DOM (KEY FIX)
+============================= */
+function initChartsFromDoc(doc) {
+    function get(id, key) {
+        const el = doc.getElementById(id);
+        return el ? JSON.parse(el.dataset[key] || '[]') : [];
+    }
+
+    makeCombinedChart('nozzleCombinedChart',
+        get('nozzleCombinedChart','labels'),
+        get('nozzleCombinedChart','datasets')
+    );
+
+    makeCombinedChart('tricanterCombinedChart',
+        get('tricanterCombinedChart','labels'),
+        get('tricanterCombinedChart','datasets')
+    );
+
+    makeCombinedChart('solidWasteCombinedChart',
+        get('solidWasteCombinedChart','labels'),
+        get('solidWasteCombinedChart','datasets')
+    );
+
+    makeCombinedChart('gasTestCombinedChart',
+        get('gasTestCombinedChart','labels'),
+        get('gasTestCombinedChart','datasets')
+    );
+}
+
+/* =============================
+   LIVE REFRESH (NO RELOAD)
+============================= */
+async function refreshDashboardLive() {
+    const res = await fetch(window.location.href, { cache: 'no-store' });
+    const text = await res.text();
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, 'text/html');
+
+    const nextGrid = doc.querySelector('.grid');
+    const currentGrid = document.querySelector('.grid');
+
+    if (!nextGrid || !currentGrid) return;
+
+    currentGrid.replaceWith(nextGrid);
+
+    runFlashers();
+    initChartsFromDoc(doc);
+}
+
+/* =============================
+   START
+============================= */
+runFlashers();
+initChartsFromDoc(document);
+
+setInterval(refreshDashboardLive, 30000);
+</script>
 
 </body>
 
