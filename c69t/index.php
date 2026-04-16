@@ -938,57 +938,66 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
 
         let liveRefreshInFlight = false;
 
-        async function refreshDashboardLive() {
-            if (liveRefreshInFlight) return;
-            liveRefreshInFlight = true;
+async function refreshDashboardLive() {
+    if (liveRefreshInFlight) return;
+    liveRefreshInFlight = true;
 
-            try {
-                const url = new URL(window.location.href);
-                url.searchParams.set('_live_refresh', Date.now().toString());
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('_live_refresh', Date.now().toString());
 
-                const response = await fetch(url.toString(), {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Cache-Control': 'no-cache'
-                    },
-                    cache: 'no-store'
-                });
+        const response = await fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Cache-Control': 'no-cache'
+            },
+            cache: 'no-store'
+        });
 
-                if (!response.ok) {
-                    throw new Error('Refresh failed');
-                }
-
-                const html = await response.text();
-                const parser = new DOMParser();
-                const nextDoc = parser.parseFromString(html, 'text/html');
-
-                const nextMonitor = nextDoc.querySelector('.monitor-shell');
-                const nextTopbar = nextDoc.querySelector('.topbar');
-                const nextGrid = nextDoc.querySelector('.grid');
-
-                const currentMonitor = document.querySelector('.monitor-shell');
-                const currentTopbar = document.querySelector('.topbar');
-                const currentGrid = document.querySelector('.grid');
-
-                if (!nextMonitor || !nextTopbar || !nextGrid || !currentMonitor || !currentTopbar || !currentGrid) {
-                    throw new Error('Live refresh selectors missing');
-                }
-
-                currentMonitor.replaceWith(nextMonitor);
-                currentTopbar.replaceWith(nextTopbar);
-
-                destroyExistingCharts();
-                currentGrid.replaceWith(nextGrid);
-
-                initCharts();
-                runFlashers();
-                updateMonitorTimers();
-            } catch (error) {
-                console.error(error);
-            } finally {
-                liveRefreshInFlight = false;
-            }
+        if (!response.ok) {
+            throw new Error('Refresh failed');
         }
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const nextDoc = parser.parseFromString(html, 'text/html');
+
+        const nextMonitor = nextDoc.querySelector('.monitor-shell');
+        const nextTopbar = nextDoc.querySelector('.topbar');
+        const nextGrid = nextDoc.querySelector('.grid');
+
+        const currentMonitor = document.querySelector('.monitor-shell');
+        const currentTopbar = document.querySelector('.topbar');
+        const currentGrid = document.querySelector('.grid');
+
+        if (!nextMonitor || !nextTopbar || !nextGrid) {
+            throw new Error('Live refresh selectors missing');
+        }
+
+        // CHECK IF RANGE CHANGED (SHIFT CHANGE)
+        const oldRange = currentTopbar?.querySelector('.info-sub')?.textContent?.trim() || '';
+        const newRange = nextTopbar?.querySelector('.info-sub')?.textContent?.trim() || '';
+
+        if (oldRange !== newRange) {
+            // FULL reload only when shift/range changes
+            window.location.reload();
+            return;
+        }
+
+        // NORMAL LIVE UPDATE (NO CHART REBUILD)
+        currentMonitor.replaceWith(nextMonitor);
+        currentTopbar.replaceWith(nextTopbar);
+        currentGrid.replaceWith(nextGrid);
+
+        runFlashers();
+        updateMonitorTimers();
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        liveRefreshInFlight = false;
+    }
+}
 
         runFlashers();
         initCharts();
