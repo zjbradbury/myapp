@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
         }
     }
 
-    header("Location: " . strtok($_SERVER['REQUEST_URI'], '?') . (!empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : ''));
+    header("Location: " . $_SERVER['REQUEST_URI']);
     exit;
 }
 
@@ -152,6 +152,7 @@ function render_monitor_shell(array $monitorData): string
 function render_topbar(array $dashboard): string
 {
     $range = $dashboard['range'];
+
     ob_start();
     ?>
     <div class="topbar refined-topbar">
@@ -223,6 +224,7 @@ function render_topbar(array $dashboard): string
         </div>
     </div>
     <?php
+
     return ob_get_clean();
 }
 
@@ -246,6 +248,7 @@ function render_tricanter_kpis(array $row): string
 function render_tricanter_rows(array $rows): string
 {
     ob_start();
+
     if (!$rows): ?>
         <tr><td colspan="11">No tricanter data in selected range.</td></tr>
     <?php else:
@@ -265,6 +268,7 @@ function render_tricanter_rows(array $rows): string
             </tr>
         <?php endforeach;
     endif;
+
     return ob_get_clean();
 }
 
@@ -282,6 +286,7 @@ function render_solid_waste_kpis(array $latestRow, float $totalAmount): string
 function render_solid_waste_rows(array $rows): string
 {
     ob_start();
+
     if (!$rows): ?>
         <tr><td colspan="5">No solid waste data in selected range.</td></tr>
     <?php else:
@@ -295,6 +300,7 @@ function render_solid_waste_rows(array $rows): string
             </tr>
         <?php endforeach;
     endif;
+
     return ob_get_clean();
 }
 
@@ -315,6 +321,7 @@ function render_nozzle_kpis(array $row): string
 function render_nozzle_rows(array $rows): string
 {
     ob_start();
+
     if (!$rows): ?>
         <tr><td colspan="8">No nozzle data in selected range.</td></tr>
     <?php else:
@@ -331,6 +338,7 @@ function render_nozzle_rows(array $rows): string
             </tr>
         <?php endforeach;
     endif;
+
     return ob_get_clean();
 }
 
@@ -353,6 +361,7 @@ function render_sample_kpis(array $row): string
 function render_sample_rows(array $rows): string
 {
     ob_start();
+
     if (!$rows): ?>
         <tr><td colspan="10">No sample data in selected range.</td></tr>
     <?php else:
@@ -371,6 +380,7 @@ function render_sample_rows(array $rows): string
             </tr>
         <?php endforeach;
     endif;
+
     return ob_get_clean();
 }
 
@@ -394,6 +404,7 @@ function render_gas_test_kpis(array $row): string
 function render_gas_test_rows(array $rows): string
 {
     ob_start();
+
     if (!$rows): ?>
         <tr><td colspan="13">No gas test data in selected range.</td></tr>
     <?php else:
@@ -415,6 +426,7 @@ function render_gas_test_rows(array $rows): string
             </tr>
         <?php endforeach;
     endif;
+
     return ob_get_clean();
 }
 
@@ -435,6 +447,7 @@ function render_project_flow_kpis(array $kpi): string
 function render_project_flow_rows(array $rows): string
 {
     ob_start();
+
     if (!$rows): ?>
         <tr><td colspan="8">No project flow data in selected range.</td></tr>
     <?php else:
@@ -451,6 +464,7 @@ function render_project_flow_rows(array $rows): string
             </tr>
         <?php endforeach;
     endif;
+
     return ob_get_clean();
 }
 
@@ -500,7 +514,6 @@ function build_dashboard_data(PDO $pdo, array $range): array
     ) ? 'ONLINE' : 'NO DATA';
 
     $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow);
-
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -590,17 +603,6 @@ function build_dashboard_data(PDO $pdo, array $range): array
 
 $range = get_range_filter_state();
 $dashboard = build_dashboard_data($pdo, $range);
-
-if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
-    header('Content-Type: application/json');
-    echo json_encode([
-        'ok' => true,
-        'monitor_html' => render_monitor_shell($dashboard['monitor']),
-        'topbar_html' => render_topbar($dashboard),
-        'panels' => $dashboard['panels'],
-    ]);
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -892,12 +894,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         .comment-cell{
             white-space:normal;
             min-width:220px;
-        }
-
-        .soft-note{
-            color:var(--muted);
-            font-size:12px;
-            margin-bottom:10px;
         }
 
         .row-new{
@@ -1274,7 +1270,7 @@ function makeChart(canvasId, config) {
 }
 
 function updateChart(chart, config) {
-    if (!chart) return;
+    if (!chart || !config) return;
     const usable = validDatasets(config.datasets || []);
     chart.data.labels = config.labels || [];
     chart.data.datasets = usable.map(chartDatasetObject);
@@ -1328,6 +1324,7 @@ function formatSince(seconds) {
 function formatCountdown(seconds) {
     if (seconds === '' || seconds === null || Number.isNaN(Number(seconds))) return '--';
     seconds = parseInt(seconds, 10);
+
     if (seconds <= 0) return 'OVERDUE';
 
     const hours = Math.floor(seconds / 3600);
@@ -1418,8 +1415,17 @@ function tickMonitorTimers() {
 }
 
 function buildAjaxUrl() {
-    const url = new URL(window.location.href);
-    url.searchParams.set('ajax', '1');
+    const current = new URL(window.location.href);
+    const url = new URL('dashboard_data.php', current.origin + current.pathname.replace(/[^/]*$/, ''));
+
+    const start = current.searchParams.get('start');
+    const end = current.searchParams.get('end');
+    const quick = current.searchParams.get('quick');
+
+    if (start !== null && start !== '') url.searchParams.set('start', start);
+    if (end !== null && end !== '') url.searchParams.set('end', end);
+    if (quick !== null && quick !== '') url.searchParams.set('quick', quick);
+
     return url.toString();
 }
 
@@ -1489,6 +1495,8 @@ function schedulePolling() {
         clearInterval(refreshTimer);
     }
 
+    const ms = getRefreshSeconds() * 1000;
+
     refreshTimer = setInterval(async () => {
         if (refreshInFlight) return;
         refreshInFlight = true;
@@ -1500,14 +1508,8 @@ function schedulePolling() {
             console.error(err);
         } finally {
             refreshInFlight = false;
-            const desired = getRefreshSeconds() * 1000;
-            if (!refreshTimer || refreshTimer._interval !== desired) {
-                schedulePolling();
-            }
         }
-    }, getRefreshSeconds() * 1000);
-
-    refreshTimer._interval = getRefreshSeconds() * 1000;
+    }, ms);
 }
 
 charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle.chart);
