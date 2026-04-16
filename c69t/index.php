@@ -664,17 +664,39 @@ $rangeSummary = range_summary_text($range, 'Current shift block');
         const dashboardCharts = {};
 
         function flashRows(selector, storageKey) {
-            let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
-            let max = last;
+    let last = parseInt(localStorage.getItem(storageKey) || '0', 10);
+    let max = last;
 
-            document.querySelectorAll(selector).forEach(row => {
-                const id = parseInt(row.dataset.id || '0', 10);
-                if (id > last) row.classList.add('flash');
-                if (id > max) max = id;
+    const rows = Array.from(document.querySelectorAll(selector));
+
+    // detect scroll container
+    const table = rows[0]?.closest('.table');
+    const container = table || null;
+    const userAtTop = container ? container.scrollTop < 10 : true;
+
+    rows.forEach(row => {
+        const id = parseInt(row.dataset.id || '0', 10);
+
+        if (id > last) {
+
+            // 🔥 APPLY NEW ANIMATION
+            row.classList.add('row-new');
+
+            requestAnimationFrame(() => {
+                row.classList.add('expand');
             });
-
-            localStorage.setItem(storageKey, String(max));
         }
+
+        if (id > max) max = id;
+    });
+
+    // 🔥 AUTO SCROLL ONLY IF USER IS AT TOP
+    if (container && userAtTop) {
+        container.scrollTop = 0;
+    }
+
+    localStorage.setItem(storageKey, String(max));
+}
 
         function runFlashers() {
             flashRows('.nozzle-row', 'nLast');
