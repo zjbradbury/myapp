@@ -1,7 +1,7 @@
 <?php
 require_once "config.php";
 
-requireRole(["admin"]);
+requireRole(["admin", "operator"]);
 
 $id = isset($_GET["id"]) ? (int) $_GET["id"] : 0;
 
