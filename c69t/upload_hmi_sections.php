@@ -19,7 +19,7 @@ function fail($msg, $code = 400)
 
 function parse_log_date($value)
 {
-    $value = trim((string)$value);
+    $value = trim((string) $value);
     if ($value === '') {
         return null;
     }
@@ -44,13 +44,13 @@ function parse_log_date($value)
 
 function parse_log_time($value)
 {
-    $value = trim((string)$value);
+    $value = trim((string) $value);
     if ($value === '') {
         return null;
     }
 
     if (is_numeric($value)) {
-        $seconds = (int) round(((float)$value) * 86400);
+        $seconds = (int) round(((float) $value) * 86400);
         $seconds = $seconds % 86400;
         return gmdate('H:i:s', $seconds);
     }
@@ -78,7 +78,7 @@ function parse_log_time($value)
 
 function normalize_key($key)
 {
-    $key = trim((string)$key);
+    $key = trim((string) $key);
     $key = str_replace([' ', '-'], '_', $key);
     return strtolower($key);
 }
@@ -97,12 +97,10 @@ function parse_number($value)
 
         $value = str_replace(',', '', $value);
 
-        // Allow normal numbers and scientific notation like 9.889203E-02
         if (is_numeric($value)) {
-            return (float)$value;
+            return (float) $value;
         }
 
-        // Fallback cleanup for values with units or stray characters
         $value = preg_replace('/[^0-9eE+\-\.]/', '', $value);
 
         if ($value === '' || $value === '-' || $value === '.' || $value === '-.' || !is_numeric($value)) {
@@ -114,7 +112,7 @@ function parse_number($value)
         return null;
     }
 
-    return (float)$value;
+    return (float) $value;
 }
 
 try {
@@ -224,6 +222,54 @@ try {
                 'total_tricanter',
                 'total_nozzle'
             ]
+        ],
+        'PUMPVALUES' => [
+            'table' => 'pump_values_logs',
+            'columns' => [
+                'Date' => 'log_date',
+                'Time' => 'log_time',
+
+                'Suction Pump 1 Status' => 'suction_pump_1_status',
+                'Suction Pump 2 Status' => 'suction_pump_2_status',
+                'Suction Pump 2 Speed Out' => 'suction_pump_2_speed_out',
+                'Suction Pump 2 Feedback' => 'suction_pump_2_feedback',
+                'Suction Pump 2 Inlet Pressure' => 'suction_pump_2_inlet_pressure',
+                'Suction Pump 2 Outlet Pressure' => 'suction_pump_2_outlet_pressure',
+
+                'Feed Pump Status' => 'feed_pump_status',
+                'Feed Pump Speed Out' => 'feed_pump_speed_out',
+                'Feed Pump Feedback' => 'feed_pump_feedback',
+                'Feed Pump Inlet Pressure' => 'feed_pump_inlet_pressure',
+                'Feed Pump Outlet Pressure' => 'feed_pump_outlet_pressure',
+
+                'Booster Pump Status' => 'booster_pump_status',
+                'Booster Pump Speed Out' => 'booster_pump_speed_out',
+                'Booster Pump Feedback' => 'booster_pump_feedback',
+                'Booster Pump Inlet Pressure' => 'booster_pump_inlet_pressure',
+                'Booster Pump Outlet Pressure' => 'booster_pump_outlet_pressure',
+
+                'Comments' => 'comments'
+            ],
+            'numeric_columns' => [
+                'suction_pump_1_status',
+                'suction_pump_2_status',
+                'suction_pump_2_speed_out',
+                'suction_pump_2_feedback',
+                'suction_pump_2_inlet_pressure',
+                'suction_pump_2_outlet_pressure',
+
+                'feed_pump_status',
+                'feed_pump_speed_out',
+                'feed_pump_feedback',
+                'feed_pump_inlet_pressure',
+                'feed_pump_outlet_pressure',
+
+                'booster_pump_status',
+                'booster_pump_speed_out',
+                'booster_pump_feedback',
+                'booster_pump_inlet_pressure',
+                'booster_pump_outlet_pressure'
+            ]
         ]
     ];
 
@@ -234,7 +280,7 @@ try {
             continue;
         }
 
-        $section = strtoupper(trim((string)$record['table']));
+        $section = strtoupper(trim((string) $record['table']));
         $section = str_replace(' ', '_', $section);
 
         if (!isset($sectionMap[$section])) {
@@ -253,7 +299,7 @@ try {
         $solidStop = null;
 
         foreach ($record['data'] as $key => $value) {
-            $originalKey = trim((string)$key);
+            $originalKey = trim((string) $key);
             $normalizedKey = normalize_key($originalKey);
 
             $value = is_string($value) ? trim($value) : $value;
