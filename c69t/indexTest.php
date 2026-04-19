@@ -1,5 +1,5 @@
 <?php
-require_once "config.php";
+require_once "config_test.php";
 requireRole(['admin', 'operator', 'viewer']);
 
 $canEdit = in_array(currentRole(), ['admin', 'operator'], true);
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
 
     if ($form === 'item') {
         $key = trim($_POST['monitor_key'] ?? '');
-        $allowed = ['nozzle', 'tricanter', 'solid_waste', 'sample', 'gas_test', 'project_flow'];
+        $allowed = ['nozzle', 'tricanter', 'solid_waste', 'sample', 'gas_test', 'project_flow', 'pump_values'];
 
         if (in_array($key, $allowed, true)) {
             setSetting($pdo, 'monitor_' . $key . '_enabled', isset($_POST['monitor_enabled']) ? '1' : '0');
@@ -441,6 +441,95 @@ function render_project_flow_rows(array $rows): string
     return ob_get_clean();
 }
 
+function pump_status_text($value): string
+{
+    if ($value === null || $value === '' || !is_numeric($value)) {
+        return '-';
+    }
+
+    $value = (int)$value;
+
+    if ($value === 0) {
+        return 'OFF';
+    }
+
+    if ($value === 1) {
+        return 'ON';
+    }
+
+    if ($value === 2) {
+        return 'ERROR';
+    }
+
+    return (string)$value;
+}
+
+function pump_feedback_display($value, int $decimals = 2): string
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    if (!is_numeric($value)) {
+        return h($value);
+    }
+
+    if ((float)$value < 0) {
+        return '###';
+    }
+
+    return fmt($value, $decimals);
+}
+
+function render_pump_values_kpis(array $row): string
+{
+    ob_start();
+    ?>
+    <div class="kpi"><small>Suction Pump 1</small><b><?= h(pump_status_text($row['suction_pump_1_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Suction Pump 2</small><b><?= h(pump_status_text($row['suction_pump_2_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Feed Pump</small><b><?= h(pump_status_text($row['feed_pump_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Booster Pump</small><b><?= h(pump_status_text($row['booster_pump_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Suction Inlet</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Suction Outlet</small><b><?= fmt($row['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Feed Inlet</small><b><?= fmt($row['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Feed Outlet</small><b><?= fmt($row['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Booster Inlet</small><b><?= fmt($row['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Booster Outlet</small><b><?= fmt($row['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <?php
+    return ob_get_clean();
+}
+
+function render_pump_values_rows(array $rows): string
+{
+    ob_start();
+
+    if (!$rows): ?>
+        <tr><td colspan="15">No pump values data in selected range.</td></tr>
+    <?php else:
+        foreach ($rows as $r): ?>
+            <tr class="pump-values-row" data-id="<?= (int)$r['id'] ?>">
+                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h($r['log_time'] ?? '') ?></td>
+                <td><?= h(pump_status_text($r['suction_pump_1_status'] ?? null)) ?></td>
+                <td><?= h(pump_status_text($r['suction_pump_2_status'] ?? null)) ?></td>
+                <td><?= pump_feedback_display($r['suction_pump_2_feedback'] ?? null, 2) ?></td>
+                <td><?= fmt($r['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= h(pump_status_text($r['feed_pump_status'] ?? null)) ?></td>
+                <td><?= pump_feedback_display($r['feed_pump_feedback'] ?? null, 2) ?></td>
+                <td><?= fmt($r['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= h(pump_status_text($r['booster_pump_status'] ?? null)) ?></td>
+                <td><?= pump_feedback_display($r['booster_pump_feedback'] ?? null, 2) ?></td>
+                <td><?= fmt($r['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
+            </tr>
+        <?php endforeach;
+    endif;
+
+    return ob_get_clean();
+}
+
 function build_dashboard_data(PDO $pdo, array $range): array
 {
     try {
@@ -450,6 +539,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $sample = tableExists($pdo, 'sample_logs') ? fetch_log_rows($pdo, 'sample_logs', $range, 'id DESC') : [];
         $gasTest = tableExists($pdo, 'gas_test_logs') ? fetch_log_rows($pdo, 'gas_test_logs', $range, 'id DESC') : [];
         $projectFlow = tableExists($pdo, 'project_flow_logs') ? fetch_log_rows($pdo, 'project_flow_logs', $range, 'id DESC') : [];
+        $pumpValues = tableExists($pdo, 'pump_values_logs') ? fetch_log_rows($pdo, 'pump_values_logs', $range, 'id DESC') : [];
     } catch (Throwable $e) {
         die("DB Error: " . h($e->getMessage()));
     }
@@ -462,6 +552,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestSample = $sample[0] ?? [];
     $latestGasTest = $gasTest[0] ?? [];
     $latestProjectFlow = $projectFlow[0] ?? [];
+    $latestPumpValues = $pumpValues[0] ?? [];
 
     $solidWasteTotalAmount = 0.0;
     foreach ($solidWaste as $r) {
@@ -476,6 +567,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestSampleOverall = tableExists($pdo, 'sample_logs') ? (fetch_latest_row($pdo, 'sample_logs') ?: []) : [];
     $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
     $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
+    $latestPumpValuesOverall = tableExists($pdo, 'pump_values_logs') ? (fetch_latest_row($pdo, 'pump_values_logs') ?: []) : [];
 
     $systemStatus = (
         !empty($latestNozzleOverall) ||
@@ -483,10 +575,11 @@ function build_dashboard_data(PDO $pdo, array $range): array
         !empty($latestSolidWasteOverall) ||
         !empty($latestSampleOverall) ||
         !empty($latestGasTestOverall) ||
-        !empty($latestProjectFlowOverall)
+        !empty($latestProjectFlowOverall) ||
+        !empty($latestPumpValuesOverall)
     ) ? 'ONLINE' : 'NO DATA';
 
-    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow);
+    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -503,6 +596,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'sample' => row_stamp($latestSampleOverall),
             'gas_test' => row_stamp($latestGasTestOverall),
             'project_flow' => row_stamp($latestProjectFlowOverall),
+            'pump_values' => row_stamp($latestPumpValuesOverall),
         ],
         'panels' => [
             'tricanter' => [
@@ -569,6 +663,21 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'project_flow' => [
                 'kpis_html' => render_project_flow_kpis($projectFlowKpis),
                 'rows_html' => render_project_flow_rows($projectFlow),
+            ],
+            'pump_values' => [
+                'kpis_html' => render_pump_values_kpis($latestPumpValues),
+                'rows_html' => render_pump_values_rows($pumpValues),
+                'chart' => [
+                    'labels' => label_series($pumpValues),
+                    'datasets' => [
+                        ['label' => 'Suction Inlet Pressure', 'data' => numeric_series($pumpValues, 'suction_pump_2_inlet_pressure')],
+                        ['label' => 'Suction Outlet Pressure', 'data' => numeric_series($pumpValues, 'suction_pump_2_outlet_pressure')],
+                        ['label' => 'Feed Inlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_inlet_pressure')],
+                        ['label' => 'Feed Outlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_outlet_pressure')],
+                        ['label' => 'Booster Inlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_inlet_pressure')],
+                        ['label' => 'Booster Outlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_outlet_pressure')],
+                    ],
+                ],
             ],
         ],
     ];
@@ -1115,6 +1224,51 @@ $dashboard = build_dashboard_data($pdo, $range);
                 </table>
             </div>
         </div>
+
+        <div class="panel wide-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>Pump Values</h2>
+                    <div class="panel-sub">Pump statuses, feedback, and live pressure trends</div>
+                </div>
+                <div class="panel-actions">
+                    <a class="btn" href="pump_values_list.php">View Logs</a>
+                    <?php if ($canEdit): ?><a class="btn" href="pump_values_add.php">Add Record</a><?php endif; ?>
+                </div>
+            </div>
+
+            <div id="pump-values-kpis" class="kpis"><?= $dashboard['panels']['pump_values']['kpis_html'] ?></div>
+
+            <div class="chart-card">
+                <div class="chart-title">Pump Pressure Trends</div>
+                <div class="chart-wrap"><canvas id="pumpValuesPressureChart"></canvas></div>
+            </div>
+
+            <div class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Suction Pump 1</th>
+                            <th>Suction Pump 2</th>
+                            <th>Suction Feedback</th>
+                            <th>Suction Inlet</th>
+                            <th>Suction Outlet</th>
+                            <th>Feed Pump</th>
+                            <th>Feed Feedback</th>
+                            <th>Feed Inlet</th>
+                            <th>Feed Outlet</th>
+                            <th>Booster Pump</th>
+                            <th>Booster Feedback</th>
+                            <th>Booster Inlet</th>
+                            <th>Booster Outlet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pump-values-tbody"><?= $dashboard['panels']['pump_values']['rows_html'] ?></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -1139,7 +1293,13 @@ const chartPalette = {
     'Benzene': '#ffd24d',
     'LEL': '#6ee7a1',
     'H2S': '#c8a7ff',
-    'O2': '#ff7e67'
+    'O2': '#ff7e67',
+    'Suction Inlet Pressure': '#00e5ff',
+    'Suction Outlet Pressure': '#7dd3fc',
+    'Feed Inlet Pressure': '#ffd24d',
+    'Feed Outlet Pressure': '#f59e0b',
+    'Booster Inlet Pressure': '#6ee7a1',
+    'Booster Outlet Pressure': '#22c55e'
 };
 
 const initialPanels = <?= json_encode($dashboard['panels'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
@@ -1400,7 +1560,7 @@ function tickMonitorTimers() {
 
 function buildAjaxUrl() {
     const current = new URL(window.location.href);
-    const url = new URL('dashboard_data.php', current.origin + current.pathname.replace(/[^/]*$/, ''));
+    const url = new URL('dashboard_data_test.php', current.origin + current.pathname.replace(/[^/]*$/, ''));
 
     const start = current.searchParams.get('start');
     const end = current.searchParams.get('end');
@@ -1463,6 +1623,12 @@ function applyPayload(payload) {
         updateContainer('project-flow-kpis', payload.panels.project_flow.kpis_html);
         updateTbody('project-flow-tbody', payload.panels.project_flow.rows_html, 'projectFlowLastSeen');
     }
+
+    if (payload.panels?.pump_values) {
+        updateContainer('pump-values-kpis', payload.panels.pump_values.kpis_html);
+        updateTbody('pump-values-tbody', payload.panels.pump_values.rows_html, 'pumpValuesLastSeen');
+        updateChart(charts.pumpValues, payload.panels.pump_values.chart);
+    }
 }
 
 let refreshTimer = null;
@@ -1500,6 +1666,7 @@ charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle.chart);
 charts.tricanter = makeChart('tricanterCombinedChart', initialPanels.tricanter.chart);
 charts.solidWaste = makeChart('solidWasteCombinedChart', initialPanels.solid_waste.chart);
 charts.gasTest = makeChart('gasTestCombinedChart', initialPanels.gas_test.chart);
+charts.pumpValues = makeChart('pumpValuesPressureChart', initialPanels.pump_values.chart);
 
 markNewRows('tricanter-tbody', 'triLastSeen');
 markNewRows('solid-waste-tbody', 'solidLastSeen');
@@ -1507,6 +1674,7 @@ markNewRows('nozzle-tbody', 'nozzleLastSeen');
 markNewRows('sample-tbody', 'sampleLastSeen');
 markNewRows('gas-test-tbody', 'gasLastSeen');
 markNewRows('project-flow-tbody', 'projectFlowLastSeen');
+markNewRows('pump-values-tbody', 'pumpValuesLastSeen');
 
 tickMonitorTimers();
 setInterval(tickMonitorTimers, 1000);
