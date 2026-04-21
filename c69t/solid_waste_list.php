@@ -173,7 +173,7 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
                                     }
                                 }
 
-                                $isDiffWarning = ($diffMinutes !== null && $diffMinutes < 5);
+                                $isDiffWarning = ($diffMinutes !== null && $diffMinutes < 10);
                                 ?>
                                 <tr>
                                     <?php if ($canEdit): ?>
