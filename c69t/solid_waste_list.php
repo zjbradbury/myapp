@@ -135,8 +135,8 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
                             <?php endif; ?>
                             <th>Date</th>
                             <th>Time</th>
-                            <th>Diff (min)</th>
-                            <th>Amount</th>
+                            <th>Amount</th> 
+                            <th>Diff (min)</th> 
                             <th>Comments</th>
                             <?php if ($canEdit): ?>
                                 <th>Actions</th>
@@ -149,42 +149,51 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
                                 <td colspan="<?= $canEdit ? 7 : 5; ?>">No records found in selected range.</td>
                             </tr>
                         <?php else: ?>
-                            <?php $prevDateTime = null; ?>
+                            <?php
+                            $rowCount = count($rows);
 
-                            <?php foreach ($rows as $row): ?>
-                                <?php
+                            for ($i = 0; $i < $rowCount; $i++):
+                                $row = $rows[$i];
+
                                 $currentDateTime = null;
                                 if (!empty($row["log_date"]) && !empty($row["log_time"])) {
                                     $currentDateTime = strtotime($row["log_date"] . ' ' . $row["log_time"]);
                                 }
 
+                                $nextDateTime = null;
+                                if (isset($rows[$i + 1]) && !empty($rows[$i + 1]["log_date"]) && !empty($rows[$i + 1]["log_time"])) {
+                                    $nextDateTime = strtotime($rows[$i + 1]["log_date"] . ' ' . $rows[$i + 1]["log_time"]);
+                                }
+
                                 $diffMinutes = null;
-                                if ($prevDateTime !== null && $currentDateTime !== null) {
-                                    $diffMinutes = ($currentDateTime - $prevDateTime) / 60;
+                                if ($currentDateTime !== null && $nextDateTime !== null) {
+                                    $diffMinutes = ($currentDateTime - $nextDateTime) / 60;
                                     if ($diffMinutes < 0) {
-                                        $diffMinutes = 0;
+                                        $diffMinutes = null;
                                     }
                                 }
 
                                 $isDiffWarning = ($diffMinutes !== null && $diffMinutes < 5);
-                                $prevDateTime = $currentDateTime;
                                 ?>
                                 <tr>
                                     <?php if ($canEdit): ?>
                                         <td class="checkbox-cell">
-                                            <input type="checkbox" name="selected_ids[]" value="<?= (int) $row["id"] ?>" class="row-checkbox">
+                                            <input type="checkbox" name="selected_ids[]" value="<?= (int) $row["id"] ?>"
+                                                class="row-checkbox">
                                         </td>
                                     <?php endif; ?>
 
                                     <td><?= h($row["log_date"]) ?></td>
                                     <td><?= h($row["log_time"]) ?></td>
 
-                                    <td class="<?= $isDiffWarning ? 'diff-warning' : '' ?>">
-                                        <?= $diffMinutes !== null ? fmt($diffMinutes, 0) : '' ?>
-                                    </td>
-
+                                    <!-- AMOUNT FIRST -->
                                     <td>
                                         <?= $row["amount"] !== null && $row["amount"] !== "" ? fmt($row["amount"], 0) . ' kg' : '' ?>
+                                    </td>
+
+                                    <!-- DIFF SECOND -->
+                                    <td class="<?= $isDiffWarning ? 'diff-warning' : '' ?>">
+                                        <?= $diffMinutes !== null ? fmt($diffMinutes, 0) : '' ?>
                                     </td>
 
                                     <td><?= nl2br(h($row["comments"] ?? "")) ?></td>
@@ -197,7 +206,7 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
                                         </td>
                                     <?php endif; ?>
                                 </tr>
-                            <?php endforeach; ?>
+                            <?php endfor; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
