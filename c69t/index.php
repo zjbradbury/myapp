@@ -1466,10 +1466,10 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <h2>Pump Values</h2>
                     <div class="panel-sub">Pump statuses, feedback, and live pressure trends</div>
                 </div>
-                <div class="panel-actions">
+                <!-- <div class="panel-actions">
                     <a class="btn" href="pump_values_list.php">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="pump_values_add.php">Add Record</a><?php endif; ?>
-                </div>
+                </div> -->
             </div>
 
             <div id="pump-values-kpis" class="kpis"><?= $dashboard['panels']['pump_values']['kpis_html'] ?></div>
