@@ -13,7 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_delete']) && $ca
         $error = 'No records were selected.';
     } else {
         $ids = array_values(array_unique(array_map('intval', $selectedIds)));
-        $ids = array_filter($ids, fn($id) => $id > 0);
+        $ids = array_filter($ids, function ($id) {
+            return $id > 0;
+        });
 
         if (!$ids) {
             $error = 'No valid records were selected.';
@@ -24,26 +26,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_delete']) && $ca
 
             $deletedCount = $stmt->rowCount();
 
-            $redirectParams = [];
-            if (isset($_GET['start'])) {
-                $redirectParams['start'] = $_GET['start'];
-            }
-            if (isset($_GET['end'])) {
-                $redirectParams['end'] = $_GET['end'];
-            }
-            if (isset($_GET['quick'])) {
-                $redirectParams['quick'] = $_GET['quick'];
-            }
-            $redirectParams['msg'] = $deletedCount . ' record(s) deleted';
-
-            header('Location: solid_waste_logs.php?' . http_build_query($redirectParams));
+            header('Location: solid_waste_logs.php?msg=' . urlencode($deletedCount . ' record(s) deleted'));
             exit;
         }
     }
 }
 
 if (isset($_GET['msg']) && $_GET['msg'] !== '') {
-    $message = trim((string) $_GET['msg']);
+    $message = (string) $_GET['msg'];
 }
 
 $range = get_range_filter_state();
