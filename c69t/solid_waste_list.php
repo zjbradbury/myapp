@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_delete']) && $ca
 
             $deletedCount = $stmt->rowCount();
 
-            header('Location: solid_waste_logs.php?msg=' . urlencode($deletedCount . ' record(s) deleted'));
+            header('Location: solid_waste_list.php?msg=' . urlencode($deletedCount . ' record(s) deleted'));
             exit;
         }
     }
