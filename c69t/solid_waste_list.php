@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['bulk_delete']) && $ca
 
             $deletedCount = $stmt->rowCount();
 
-            header('Location: solid_waste_list.php?msg=' . urlencode($deletedCount . ' record(s) deleted'));
+            header('Location: ' . $_SERVER['PHP_SELF'] . '?msg=' . urlencode($deletedCount . ' record(s) deleted'));
             exit;
         }
     }
@@ -41,6 +41,7 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Solid Waste Logs</title>
     <link rel="stylesheet" href="style.css">
@@ -80,6 +81,12 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
             background: rgba(220, 53, 69, 0.18);
             border: 1px solid rgba(220, 53, 69, 0.45);
             color: #ffd9de;
+        }
+
+        .diff-warning {
+            background: rgba(255, 193, 7, 0.22);
+            color: #ffe08a;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -128,6 +135,7 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
                             <?php endif; ?>
                             <th>Date</th>
                             <th>Time</th>
+                            <th>Diff (min)</th>
                             <th>Amount</th>
                             <th>Comments</th>
                             <?php if ($canEdit): ?>
@@ -138,10 +146,29 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
                     <tbody>
                         <?php if (!$rows): ?>
                             <tr>
-                                <td colspan="<?= $canEdit ? 6 : 4; ?>">No records found in selected range.</td>
+                                <td colspan="<?= $canEdit ? 7 : 5; ?>">No records found in selected range.</td>
                             </tr>
                         <?php else: ?>
+                            <?php $prevDateTime = null; ?>
+
                             <?php foreach ($rows as $row): ?>
+                                <?php
+                                $currentDateTime = null;
+                                if (!empty($row["log_date"]) && !empty($row["log_time"])) {
+                                    $currentDateTime = strtotime($row["log_date"] . ' ' . $row["log_time"]);
+                                }
+
+                                $diffMinutes = null;
+                                if ($prevDateTime !== null && $currentDateTime !== null) {
+                                    $diffMinutes = ($currentDateTime - $prevDateTime) / 60;
+                                    if ($diffMinutes < 0) {
+                                        $diffMinutes = 0;
+                                    }
+                                }
+
+                                $isDiffWarning = ($diffMinutes !== null && $diffMinutes < 5);
+                                $prevDateTime = $currentDateTime;
+                                ?>
                                 <tr>
                                     <?php if ($canEdit): ?>
                                         <td class="checkbox-cell">
@@ -151,16 +178,22 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
 
                                     <td><?= h($row["log_date"]) ?></td>
                                     <td><?= h($row["log_time"]) ?></td>
+
+                                    <td class="<?= $isDiffWarning ? 'diff-warning' : '' ?>">
+                                        <?= $diffMinutes !== null ? fmt($diffMinutes, 0) : '' ?>
+                                    </td>
+
                                     <td>
                                         <?= $row["amount"] !== null && $row["amount"] !== "" ? fmt($row["amount"], 0) . ' kg' : '' ?>
                                     </td>
+
                                     <td><?= nl2br(h($row["comments"] ?? "")) ?></td>
 
                                     <?php if ($canEdit): ?>
                                         <td>
                                             <a class="btn small" href="solid_waste_edit.php?id=<?= (int) $row["id"] ?>">Edit</a>
                                             <a class="btn small danger" href="solid_waste_delete.php?id=<?= (int) $row["id"] ?>"
-                                               onclick="return confirm('Delete this record?')">Delete</a>
+                                                onclick="return confirm('Delete this record?')">Delete</a>
                                         </td>
                                     <?php endif; ?>
                                 </tr>
@@ -189,6 +222,7 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
 
             function updateSelectedCount() {
                 const checked = document.querySelectorAll('.row-checkbox:checked').length;
+
                 if (selectedCount) {
                     selectedCount.textContent = checked + ' selected';
                 }
@@ -201,14 +235,14 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
 
             if (selectAll) {
                 selectAll.addEventListener('change', function () {
-                    rowCheckboxes.forEach(cb => {
+                    rowCheckboxes.forEach(function (cb) {
                         cb.checked = selectAll.checked;
                     });
                     updateSelectedCount();
                 });
             }
 
-            rowCheckboxes.forEach(cb => {
+            rowCheckboxes.forEach(function (cb) {
                 cb.addEventListener('change', updateSelectedCount);
             });
 
@@ -227,4 +261,5 @@ $rows = fetch_log_rows($pdo, 'solid_waste_logs', $range);
         </script>
     <?php endif; ?>
 </body>
+
 </html>
