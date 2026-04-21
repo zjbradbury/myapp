@@ -9,8 +9,130 @@ function row_stamp(array $row): string
     return trim($date . ' ' . $time) ?: '-';
 }
 
+function monitor_status_slug(string $status): string
+{
+    return strtolower(str_replace(' ', '-', trim($status)));
+}
+
+function monitor_status_rank(string $status): int
+{
+    $map = [
+        'OK' => 0,
+        'MASTER OFF' => 0,
+        'OFF' => 0,
+        'DISABLED' => 0,
+        'NOT SET UP' => 1,
+        'NO DATA' => 2,
+        'WARNING' => 3,
+        'OVERDUE' => 4,
+    ];
+
+    return $map[trim($status)] ?? 0;
+}
+
+function monitor_has_issue(array $item): bool
+{
+    $status = strtoupper(trim((string)($item['status'] ?? '')));
+    return in_array($status, ['WARNING', 'OVERDUE', 'NO DATA', 'NOT SET UP'], true);
+}
+
+function render_single_monitor_item(string $key, array $item): string
+{
+    ob_start();
+    ?>
+    <div class="monitor-item monitor-state-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+        <form method="post">
+            <input type="hidden" name="monitor_form" value="item">
+            <input type="hidden" name="monitor_key" value="<?= h($key) ?>">
+
+            <div class="monitor-item-top">
+                <strong><?= h($item['label'] ?? $key) ?></strong>
+
+                <label class="switch-row small">
+                    <span>On</span>
+                    <input type="checkbox"
+                        name="monitor_enabled"
+                        <?= !empty($item['enabled']) ? 'checked' : '' ?>
+                        onchange="this.form.submit()">
+                </label>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Last Entry</span>
+                <span class="monitor-last-entry"><?= h($item['last_entry_display'] ?? '-') ?></span>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Since Last</span>
+                <span class="monitor-since"
+                    data-since-seconds="<?= ($item['since_seconds'] ?? null) === null ? '' : (int)$item['since_seconds'] ?>">
+                    <?= h($item['since_text'] ?? 'No data') ?>
+                </span>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Timer (min)</span>
+                <input type="number"
+                    class="monitor-minutes"
+                    name="monitor_minutes"
+                    min="1"
+                    max="1440"
+                    value="<?= (int)($item['minutes'] ?? 60) ?>"
+                    onchange="this.form.submit()"
+                    onblur="this.form.submit()">
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Countdown</span>
+                <span class="monitor-countdown"
+                    data-remaining-seconds="<?= ($item['remaining_seconds'] ?? null) === null ? '' : (int)$item['remaining_seconds'] ?>">
+                    <?= h($item['countdown'] ?? '--') ?>
+                </span>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Status</span>
+                <span class="monitor-status monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                    <?= h($item['status'] ?? 'OK') ?>
+                </span>
+            </div>
+        </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 function render_monitor_shell(array $monitorData): string
 {
+    $combinedKeys = ['nozzle', 'tricanter', 'project_flow', 'pump_values'];
+    $combinedItems = [];
+    $otherItems = [];
+    $combinedIssueCount = 0;
+    $combinedHighestRank = 0;
+
+    foreach (($monitorData['items'] ?? []) as $key => $item) {
+        if (in_array($key, $combinedKeys, true)) {
+            $combinedItems[$key] = $item;
+            $combinedHighestRank = max($combinedHighestRank, monitor_status_rank((string)($item['status'] ?? 'OK')));
+            if (monitor_has_issue($item)) {
+                $combinedIssueCount++;
+            }
+        } else {
+            $otherItems[$key] = $item;
+        }
+    }
+
+    $combinedOverall = 'OK';
+    if ($combinedHighestRank >= 4) {
+        $combinedOverall = 'OVERDUE';
+    } elseif ($combinedHighestRank >= 3) {
+        $combinedOverall = 'WARNING';
+    } elseif ($combinedHighestRank >= 2) {
+        $combinedOverall = 'NO DATA';
+    } elseif ($combinedHighestRank >= 1) {
+        $combinedOverall = 'NOT SET UP';
+    }
+
     ob_start();
     ?>
     <div class="monitor-shell-shell" data-refresh-seconds="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>">
@@ -21,8 +143,8 @@ function render_monitor_shell(array $monitorData): string
                         <div class="section-kicker">system supervision</div>
                         <div class="monitor-heading">Monitoring</div>
                     </div>
-                    <div class="monitor-badge monitor-<?= strtolower(str_replace(' ', '-', $monitorData['master_state'])) ?>">
-                        <?= h($monitorData['master_state']) ?>
+                    <div class="monitor-badge monitor-<?= h(monitor_status_slug((string)($monitorData['master_state'] ?? 'OK'))) ?>">
+                        <?= h($monitorData['master_state'] ?? 'OK') ?>
                     </div>
                 </div>
 
@@ -43,7 +165,7 @@ function render_monitor_shell(array $monitorData): string
                             name="monitor_refresh_seconds"
                             min="5"
                             max="300"
-                            value="<?= (int)$monitorData['refresh_seconds'] ?>"
+                            value="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>"
                             onchange="this.form.submit()"
                             onblur="this.form.submit()">
                         <small>sec</small>
@@ -52,65 +174,47 @@ function render_monitor_shell(array $monitorData): string
             </div>
 
             <div class="monitor-grid refined-monitor-grid">
-                <?php foreach ($monitorData['items'] as $key => $item): ?>
-                    <div class="monitor-item monitor-state-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
-                        <form method="post">
-                            <input type="hidden" name="monitor_form" value="item">
-                            <input type="hidden" name="monitor_key" value="<?= h($key) ?>">
+                <?php if ($combinedIssueCount > 0): ?>
+                    <div class="monitor-group-card monitor-state-<?= h(monitor_status_slug($combinedOverall)) ?>">
+                        <details class="monitor-group-details">
+                            <summary class="monitor-group-summary">
+                                <div class="monitor-group-main">
+                                    <div class="monitor-group-title-wrap">
+                                        <strong class="monitor-group-title">Process Streams</strong>
+                                        <span class="monitor-group-badge monitor-status monitor-<?= h(monitor_status_slug($combinedOverall)) ?>">
+                                            <?= h($combinedOverall) ?>
+                                        </span>
+                                    </div>
+                                    <div class="monitor-group-meta">
+                                        <?= (int)$combinedIssueCount ?> issue<?= $combinedIssueCount === 1 ? '' : 's' ?> in nozzle, tricanter, project flow, or pump values
+                                    </div>
+                                </div>
 
-                            <div class="monitor-item-top">
-                                <strong><?= h($item['label']) ?></strong>
+                                <div class="monitor-group-preview">
+                                    <?php foreach ($combinedItems as $key => $item): ?>
+                                        <?php if (!monitor_has_issue($item)) continue; ?>
+                                        <span class="monitor-group-chip monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                                            <?= h($item['label'] ?? $key) ?>: <?= h($item['status'] ?? 'OK') ?>
+                                        </span>
+                                    <?php endforeach; ?>
+                                </div>
 
-                                <label class="switch-row small">
-                                    <span>On</span>
-                                    <input type="checkbox"
-                                        name="monitor_enabled"
-                                        <?= !empty($item['enabled']) ? 'checked' : '' ?>
-                                        onchange="this.form.submit()">
-                                </label>
+                                <div class="monitor-group-expand">Expand</div>
+                            </summary>
+
+                            <div class="monitor-group-body">
+                                <div class="monitor-group-grid">
+                                    <?php foreach ($combinedItems as $key => $item): ?>
+                                        <?= render_single_monitor_item($key, $item) ?>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Last Entry</span>
-                                <span class="monitor-last-entry"><?= h($item['last_entry_display']) ?></span>
-                            </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Since Last</span>
-                                <span class="monitor-since"
-                                    data-since-seconds="<?= $item['since_seconds'] === null ? '' : (int)$item['since_seconds'] ?>">
-                                    <?= h($item['since_text']) ?>
-                                </span>
-                            </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Timer (min)</span>
-                                <input type="number"
-                                    class="monitor-minutes"
-                                    name="monitor_minutes"
-                                    min="1"
-                                    max="1440"
-                                    value="<?= (int)$item['minutes'] ?>"
-                                    onchange="this.form.submit()"
-                                    onblur="this.form.submit()">
-                            </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Countdown</span>
-                                <span class="monitor-countdown"
-                                    data-remaining-seconds="<?= $item['remaining_seconds'] === null ? '' : (int)$item['remaining_seconds'] ?>">
-                                    <?= h($item['countdown']) ?>
-                                </span>
-                            </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Status</span>
-                                <span class="monitor-status monitor-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
-                                    <?= h($item['status']) ?>
-                                </span>
-                            </div>
-                        </form>
+                        </details>
                     </div>
+                <?php endif; ?>
+
+                <?php foreach ($otherItems as $key => $item): ?>
+                    <?= render_single_monitor_item($key, $item) ?>
                 <?php endforeach; ?>
             </div>
         </div>
@@ -118,6 +222,7 @@ function render_monitor_shell(array $monitorData): string
     <?php
     return ob_get_clean();
 }
+
 
 function render_topbar(array $dashboard): string
 {
