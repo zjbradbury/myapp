@@ -570,16 +570,16 @@ function render_pump_values_kpis(array $row): string
 {
     ob_start();
     ?>
-    <div class="kpi"><small>Suction Pump 1</small><b><?= h(pump_status_text($row['suction_pump_1_status'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Suction Pump 2</small><b><?= h(pump_status_text($row['suction_pump_2_status'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Feed Pump</small><b><?= h(pump_status_text($row['feed_pump_status'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Booster Pump</small><b><?= h(pump_status_text($row['booster_pump_status'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Suction Inlet</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Suction Outlet</small><b><?= fmt($row['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Feed Inlet</small><b><?= fmt($row['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Feed Outlet</small><b><?= fmt($row['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Booster Inlet</small><b><?= fmt($row['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Booster Outlet</small><b><?= fmt($row['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>SP1 Status</small><b><?= h(pump_status_text($row['suction_pump_1_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>SP2 Status</small><b><?= h(pump_status_text($row['suction_pump_2_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>FP Status</small><b><?= h(pump_status_text($row['feed_pump_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>BP Status</small><b><?= h(pump_status_text($row['booster_pump_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>SP2 Inlet Pressure</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>SP2 Outlet Pressure</small><b><?= fmt($row['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>FP Inlet Pressure</small><b><?= fmt($row['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>FP Outlet Pressure</small><b><?= fmt($row['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>BP Inlet Pressure</small><b><?= fmt($row['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>BP Outlet Pressure</small><b><?= fmt($row['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
     <?php
     return ob_get_clean();
 }
