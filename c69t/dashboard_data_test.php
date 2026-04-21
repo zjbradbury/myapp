@@ -133,6 +133,10 @@ function render_monitor_shell(array $monitorData): string
         $combinedOverall = 'NOT SET UP';
     }
 
+    $combinedMeta = $combinedIssueCount > 0
+        ? $combinedIssueCount . ' issue' . ($combinedIssueCount === 1 ? '' : 's') . ' in nozzle, tricanter, project flow, or pump values'
+        : 'All process streams normal. Expand to access toggles, timers, and details.';
+
     ob_start();
     ?>
     <div class="monitor-shell-shell" data-refresh-seconds="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>">
@@ -173,50 +177,56 @@ function render_monitor_shell(array $monitorData): string
                 </form>
             </div>
 
-            <div class="monitor-grid refined-monitor-grid">
-                <?php if ($combinedIssueCount > 0): ?>
-                    <div class="monitor-group-card monitor-state-<?= h(monitor_status_slug($combinedOverall)) ?>">
-                        <details class="monitor-group-details">
-                            <summary class="monitor-group-summary">
-                                <div class="monitor-group-main">
-                                    <div class="monitor-group-title-wrap">
-                                        <strong class="monitor-group-title">Process Streams</strong>
-                                        <span class="monitor-group-badge monitor-status monitor-<?= h(monitor_status_slug($combinedOverall)) ?>">
-                                            <?= h($combinedOverall) ?>
-                                        </span>
-                                    </div>
-                                    <div class="monitor-group-meta">
-                                        <?= (int)$combinedIssueCount ?> issue<?= $combinedIssueCount === 1 ? '' : 's' ?> in nozzle, tricanter, project flow, or pump values
-                                    </div>
-                                </div>
-
-                                <div class="monitor-group-preview">
-                                    <?php foreach ($combinedItems as $key => $item): ?>
-                                        <?php if (!monitor_has_issue($item)) continue; ?>
-                                        <span class="monitor-group-chip monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
-                                            <?= h($item['label'] ?? $key) ?>: <?= h($item['status'] ?? 'OK') ?>
-                                        </span>
-                                    <?php endforeach; ?>
-                                </div>
-
-                                <div class="monitor-group-expand">Expand</div>
-                            </summary>
-
-                            <div class="monitor-group-body">
-                                <div class="monitor-group-grid">
-                                    <?php foreach ($combinedItems as $key => $item): ?>
-                                        <?= render_single_monitor_item($key, $item) ?>
-                                    <?php endforeach; ?>
-                                </div>
+            <div class="monitor-group-card monitor-state-<?= h(monitor_status_slug($combinedOverall)) ?>">
+                <details class="monitor-group-details">
+                    <summary class="monitor-group-summary">
+                        <div class="monitor-group-main">
+                            <div class="monitor-group-title-wrap">
+                                <strong class="monitor-group-title">Process Streams</strong>
+                                <span class="monitor-group-badge monitor-status monitor-<?= h(monitor_status_slug($combinedOverall)) ?>">
+                                    <?= h($combinedOverall) ?>
+                                </span>
                             </div>
-                        </details>
-                    </div>
-                <?php endif; ?>
+                            <div class="monitor-group-meta"><?= h($combinedMeta) ?></div>
+                        </div>
 
-                <?php foreach ($otherItems as $key => $item): ?>
-                    <?= render_single_monitor_item($key, $item) ?>
-                <?php endforeach; ?>
+                        <div class="monitor-group-preview">
+                            <?php if ($combinedIssueCount > 0): ?>
+                                <?php foreach ($combinedItems as $key => $item): ?>
+                                    <?php if (!monitor_has_issue($item)) continue; ?>
+                                    <span class="monitor-group-chip monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                                        <?= h($item['label'] ?? $key) ?>: <?= h($item['status'] ?? 'OK') ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <?php foreach ($combinedItems as $key => $item): ?>
+                                    <span class="monitor-group-chip monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                                        <?= h($item['label'] ?? $key) ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+
+                        <div class="monitor-group-expand">Expand</div>
+                    </summary>
+
+                    <div class="monitor-group-body">
+                        <div class="monitor-group-grid">
+                            <?php foreach ($combinedItems as $key => $item): ?>
+                                <?= render_single_monitor_item($key, $item) ?>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </details>
             </div>
+
+            <?php if (!empty($otherItems)): ?>
+                <div class="monitor-grid refined-monitor-grid">
+                    <?php foreach ($otherItems as $key => $item): ?>
+                        <?= render_single_monitor_item($key, $item) ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     <?php
