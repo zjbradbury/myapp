@@ -9,8 +9,134 @@ function row_stamp(array $row): string
     return trim($date . ' ' . $time) ?: '-';
 }
 
+function monitor_status_slug(string $status): string
+{
+    return strtolower(str_replace(' ', '-', trim($status)));
+}
+
+function monitor_status_rank(string $status): int
+{
+    $map = [
+        'OK' => 0,
+        'MASTER OFF' => 0,
+        'OFF' => 0,
+        'DISABLED' => 0,
+        'NOT SET UP' => 1,
+        'NO DATA' => 2,
+        'WARNING' => 3,
+        'OVERDUE' => 4,
+    ];
+
+    return $map[trim($status)] ?? 0;
+}
+
+function monitor_has_issue(array $item): bool
+{
+    $status = strtoupper(trim((string)($item['status'] ?? '')));
+    return in_array($status, ['WARNING', 'OVERDUE', 'NO DATA', 'NOT SET UP'], true);
+}
+
+function render_single_monitor_item(string $key, array $item): string
+{
+    ob_start();
+    ?>
+    <div class="monitor-item monitor-state-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+        <form method="post">
+            <input type="hidden" name="monitor_form" value="item">
+            <input type="hidden" name="monitor_key" value="<?= h($key) ?>">
+
+            <div class="monitor-item-top">
+                <strong><?= h($item['label'] ?? $key) ?></strong>
+
+                <label class="switch-row small">
+                    <span>On</span>
+                    <input type="checkbox"
+                        name="monitor_enabled"
+                        <?= !empty($item['enabled']) ? 'checked' : '' ?>
+                        onchange="this.form.submit()">
+                </label>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Last Entry</span>
+                <span class="monitor-last-entry"><?= h($item['last_entry_display'] ?? '-') ?></span>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Since Last</span>
+                <span class="monitor-since"
+                    data-since-seconds="<?= ($item['since_seconds'] ?? null) === null ? '' : (int)$item['since_seconds'] ?>">
+                    <?= h($item['since_text'] ?? 'No data') ?>
+                </span>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Timer (min)</span>
+                <input type="number"
+                    class="monitor-minutes"
+                    name="monitor_minutes"
+                    min="1"
+                    max="1440"
+                    value="<?= (int)($item['minutes'] ?? 60) ?>"
+                    onchange="this.form.submit()"
+                    onblur="this.form.submit()">
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Countdown</span>
+                <span class="monitor-countdown"
+                    data-remaining-seconds="<?= ($item['remaining_seconds'] ?? null) === null ? '' : (int)$item['remaining_seconds'] ?>">
+                    <?= h($item['countdown'] ?? '--') ?>
+                </span>
+            </div>
+
+            <div class="monitor-line">
+                <span class="monitor-label">Status</span>
+                <span class="monitor-status monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                    <?= h($item['status'] ?? 'OK') ?>
+                </span>
+            </div>
+        </form>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 function render_monitor_shell(array $monitorData): string
 {
+    $combinedKeys = ['nozzle', 'tricanter', 'project_flow', 'pump_values'];
+    $combinedItems = [];
+    $otherItems = [];
+    $combinedIssueCount = 0;
+    $combinedHighestRank = 0;
+
+    foreach (($monitorData['items'] ?? []) as $key => $item) {
+        if (in_array($key, $combinedKeys, true)) {
+            $combinedItems[$key] = $item;
+            $combinedHighestRank = max($combinedHighestRank, monitor_status_rank((string)($item['status'] ?? 'OK')));
+            if (monitor_has_issue($item)) {
+                $combinedIssueCount++;
+            }
+        } else {
+            $otherItems[$key] = $item;
+        }
+    }
+
+    $combinedOverall = 'OK';
+    if ($combinedHighestRank >= 4) {
+        $combinedOverall = 'OVERDUE';
+    } elseif ($combinedHighestRank >= 3) {
+        $combinedOverall = 'WARNING';
+    } elseif ($combinedHighestRank >= 2) {
+        $combinedOverall = 'NO DATA';
+    } elseif ($combinedHighestRank >= 1) {
+        $combinedOverall = 'NOT SET UP';
+    }
+
+    $combinedMeta = $combinedIssueCount > 0
+        ? $combinedIssueCount . ' issue' . ($combinedIssueCount === 1 ? '' : 's') . ' in nozzle, tricanter, project flow, or pump values'
+        : 'All process streams normal. Expand to access toggles, timers, and details.';
+
     ob_start();
     ?>
     <div class="monitor-shell-shell" data-refresh-seconds="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>">
@@ -21,8 +147,8 @@ function render_monitor_shell(array $monitorData): string
                         <div class="section-kicker">system supervision</div>
                         <div class="monitor-heading">Monitoring</div>
                     </div>
-                    <div class="monitor-badge monitor-<?= strtolower(str_replace(' ', '-', $monitorData['master_state'])) ?>">
-                        <?= h($monitorData['master_state']) ?>
+                    <div class="monitor-badge monitor-<?= h(monitor_status_slug((string)($monitorData['master_state'] ?? 'OK'))) ?>">
+                        <?= h($monitorData['master_state'] ?? 'OK') ?>
                     </div>
                 </div>
 
@@ -43,7 +169,7 @@ function render_monitor_shell(array $monitorData): string
                             name="monitor_refresh_seconds"
                             min="5"
                             max="300"
-                            value="<?= (int)$monitorData['refresh_seconds'] ?>"
+                            value="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>"
                             onchange="this.form.submit()"
                             onblur="this.form.submit()">
                         <small>sec</small>
@@ -51,73 +177,62 @@ function render_monitor_shell(array $monitorData): string
                 </form>
             </div>
 
-            <div class="monitor-grid refined-monitor-grid">
-                <?php foreach ($monitorData['items'] as $key => $item): ?>
-                    <div class="monitor-item monitor-state-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
-                        <form method="post">
-                            <input type="hidden" name="monitor_form" value="item">
-                            <input type="hidden" name="monitor_key" value="<?= h($key) ?>">
-
-                            <div class="monitor-item-top">
-                                <strong><?= h($item['label']) ?></strong>
-
-                                <label class="switch-row small">
-                                    <span>On</span>
-                                    <input type="checkbox"
-                                        name="monitor_enabled"
-                                        <?= !empty($item['enabled']) ? 'checked' : '' ?>
-                                        onchange="this.form.submit()">
-                                </label>
-                            </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Last Entry</span>
-                                <span class="monitor-last-entry"><?= h($item['last_entry_display']) ?></span>
-                            </div>
-
-                            <div class="monitor-line">
-                                <span class="monitor-label">Since Last</span>
-                                <span class="monitor-since"
-                                    data-since-seconds="<?= $item['since_seconds'] === null ? '' : (int)$item['since_seconds'] ?>">
-                                    <?= h($item['since_text']) ?>
+            <div class="monitor-group-card monitor-state-<?= h(monitor_status_slug($combinedOverall)) ?>">
+                <details class="monitor-group-details">
+                    <summary class="monitor-group-summary">
+                        <div class="monitor-group-main">
+                            <div class="monitor-group-title-wrap">
+                                <strong class="monitor-group-title">Process Streams</strong>
+                                <span class="monitor-group-badge monitor-status monitor-<?= h(monitor_status_slug($combinedOverall)) ?>">
+                                    <?= h($combinedOverall) ?>
                                 </span>
                             </div>
+                            <div class="monitor-group-meta"><?= h($combinedMeta) ?></div>
+                        </div>
 
-                            <div class="monitor-line">
-                                <span class="monitor-label">Timer (min)</span>
-                                <input type="number"
-                                    class="monitor-minutes"
-                                    name="monitor_minutes"
-                                    min="1"
-                                    max="1440"
-                                    value="<?= (int)$item['minutes'] ?>"
-                                    onchange="this.form.submit()"
-                                    onblur="this.form.submit()">
-                            </div>
+                        <div class="monitor-group-preview">
+                            <?php if ($combinedIssueCount > 0): ?>
+                                <?php foreach ($combinedItems as $key => $item): ?>
+                                    <?php if (!monitor_has_issue($item)) continue; ?>
+                                    <span class="monitor-group-chip monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                                        <?= h($item['label'] ?? $key) ?>: <?= h($item['status'] ?? 'OK') ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <?php foreach ($combinedItems as $key => $item): ?>
+                                    <span class="monitor-group-chip monitor-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
+                                        <?= h($item['label'] ?? $key) ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
 
-                            <div class="monitor-line">
-                                <span class="monitor-label">Countdown</span>
-                                <span class="monitor-countdown"
-                                    data-remaining-seconds="<?= $item['remaining_seconds'] === null ? '' : (int)$item['remaining_seconds'] ?>">
-                                    <?= h($item['countdown']) ?>
-                                </span>
-                            </div>
+                        <div class="monitor-group-expand">Expand</div>
+                    </summary>
 
-                            <div class="monitor-line">
-                                <span class="monitor-label">Status</span>
-                                <span class="monitor-status monitor-<?= strtolower(str_replace(' ', '-', $item['status'])) ?>">
-                                    <?= h($item['status']) ?>
-                                </span>
-                            </div>
-                        </form>
+                    <div class="monitor-group-body">
+                        <div class="monitor-group-grid">
+                            <?php foreach ($combinedItems as $key => $item): ?>
+                                <?= render_single_monitor_item($key, $item) ?>
+                            <?php endforeach; ?>
+                        </div>
                     </div>
-                <?php endforeach; ?>
+                </details>
             </div>
+
+            <?php if (!empty($otherItems)): ?>
+                <div class="monitor-grid refined-monitor-grid">
+                    <?php foreach ($otherItems as $key => $item): ?>
+                        <?= render_single_monitor_item($key, $item) ?>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
     <?php
     return ob_get_clean();
 }
+
 
 function render_topbar(array $dashboard): string
 {
@@ -411,6 +526,95 @@ function render_project_flow_rows(array $rows): string
     return ob_get_clean();
 }
 
+function pump_status_text($value): string
+{
+    if ($value === null || $value === '' || !is_numeric($value)) {
+        return '-';
+    }
+
+    $value = (int)$value;
+
+    if ($value === 0) {
+        return 'OFF';
+    }
+
+    if ($value === 1) {
+        return 'ON';
+    }
+
+    if ($value === 2) {
+        return 'ERROR';
+    }
+
+    return (string)$value;
+}
+
+function pump_feedback_display($value, int $decimals = 2): string
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    if (!is_numeric($value)) {
+        return h($value);
+    }
+
+    if ((float)$value < 0) {
+        return '###';
+    }
+
+    return fmt($value, $decimals);
+}
+
+function render_pump_values_kpis(array $row): string
+{
+    ob_start();
+    ?>
+    <div class="kpi"><small>SP1 Status</small><b><?= h(pump_status_text($row['suction_pump_1_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>SP2 Status</small><b><?= h(pump_status_text($row['suction_pump_2_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>FP Status</small><b><?= h(pump_status_text($row['feed_pump_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>BP Status</small><b><?= h(pump_status_text($row['booster_pump_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>SP2 Inlet Pressure</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>SP2 Outlet Pressure</small><b><?= fmt($row['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>FP Inlet Pressure</small><b><?= fmt($row['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>FP Outlet Pressure</small><b><?= fmt($row['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>BP Inlet Pressure</small><b><?= fmt($row['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>BP Outlet Pressure</small><b><?= fmt($row['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <?php
+    return ob_get_clean();
+}
+
+function render_pump_values_rows(array $rows): string
+{
+    ob_start();
+
+    if (!$rows): ?>
+        <tr><td colspan="15">No pump values data in selected range.</td></tr>
+    <?php else:
+        foreach ($rows as $r): ?>
+            <tr class="pump-values-row" data-id="<?= (int)$r['id'] ?>">
+                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h($r['log_time'] ?? '') ?></td>
+                <td><?= h(pump_status_text($r['suction_pump_1_status'] ?? null)) ?></td>
+                <td><?= h(pump_status_text($r['suction_pump_2_status'] ?? null)) ?></td>
+                <td><?= pump_feedback_display($r['suction_pump_2_feedback'] ?? null, 2) ?></td>
+                <td><?= fmt($r['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= h(pump_status_text($r['feed_pump_status'] ?? null)) ?></td>
+                <td><?= pump_feedback_display($r['feed_pump_feedback'] ?? null, 2) ?></td>
+                <td><?= fmt($r['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= h(pump_status_text($r['booster_pump_status'] ?? null)) ?></td>
+                <td><?= pump_feedback_display($r['booster_pump_feedback'] ?? null, 2) ?></td>
+                <td><?= fmt($r['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
+            </tr>
+        <?php endforeach;
+    endif;
+
+    return ob_get_clean();
+}
+
 function build_dashboard_data(PDO $pdo, array $range): array
 {
     try {
@@ -420,6 +624,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $sample = tableExists($pdo, 'sample_logs') ? fetch_log_rows($pdo, 'sample_logs', $range, 'id DESC') : [];
         $gasTest = tableExists($pdo, 'gas_test_logs') ? fetch_log_rows($pdo, 'gas_test_logs', $range, 'id DESC') : [];
         $projectFlow = tableExists($pdo, 'project_flow_logs') ? fetch_log_rows($pdo, 'project_flow_logs', $range, 'id DESC') : [];
+        $pumpValues = tableExists($pdo, 'pump_values_logs') ? fetch_log_rows($pdo, 'pump_values_logs', $range, 'id DESC') : [];
 
         $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
         $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
@@ -427,6 +632,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $latestSampleOverall = tableExists($pdo, 'sample_logs') ? (fetch_latest_row($pdo, 'sample_logs') ?: []) : [];
         $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
         $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
+        $latestPumpValuesOverall = tableExists($pdo, 'pump_values_logs') ? (fetch_latest_row($pdo, 'pump_values_logs') ?: []) : [];
     } catch (Throwable $e) {
         throw new RuntimeException($e->getMessage());
     }
@@ -439,6 +645,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestSample = $sample[0] ?? [];
     $latestGasTest = $gasTest[0] ?? [];
     $latestProjectFlow = $projectFlow[0] ?? [];
+    $latestPumpValues = $pumpValues[0] ?? [];
 
     $solidWasteTotalAmount = 0.0;
     foreach ($solidWaste as $r) {
@@ -453,10 +660,11 @@ function build_dashboard_data(PDO $pdo, array $range): array
         !empty($latestSolidWasteOverall) ||
         !empty($latestSampleOverall) ||
         !empty($latestGasTestOverall) ||
-        !empty($latestProjectFlowOverall)
+        !empty($latestProjectFlowOverall) ||
+        !empty($latestPumpValuesOverall)
     ) ? 'ONLINE' : 'NO DATA';
 
-    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow);
+    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -473,6 +681,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'sample' => row_stamp($latestSampleOverall),
             'gas_test' => row_stamp($latestGasTestOverall),
             'project_flow' => row_stamp($latestProjectFlowOverall),
+            'pump_values' => row_stamp($latestPumpValuesOverall),
         ],
         'panels' => [
             'tricanter' => [
@@ -539,6 +748,21 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'project_flow' => [
                 'kpis_html' => render_project_flow_kpis($projectFlowKpis),
                 'rows_html' => render_project_flow_rows($projectFlow),
+            ],
+            'pump_values' => [
+                'kpis_html' => render_pump_values_kpis($latestPumpValues),
+                'rows_html' => render_pump_values_rows($pumpValues),
+                'chart' => [
+                    'labels' => label_series($pumpValues),
+                    'datasets' => [
+                        ['label' => 'Suction Inlet Pressure', 'data' => numeric_series($pumpValues, 'suction_pump_2_inlet_pressure')],
+                        ['label' => 'Suction Outlet Pressure', 'data' => numeric_series($pumpValues, 'suction_pump_2_outlet_pressure')],
+                        ['label' => 'Feed Inlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_inlet_pressure')],
+                        ['label' => 'Feed Outlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_outlet_pressure')],
+                        ['label' => 'Booster Inlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_inlet_pressure')],
+                        ['label' => 'Booster Outlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_outlet_pressure')],
+                    ],
+                ],
             ],
         ],
     ];

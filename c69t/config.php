@@ -415,8 +415,6 @@ function render_range_filter(array $range, string $message = 'Filtering table to
     <?php
 }
 
-
-
 function get_project_flow_kpis(PDO $pdo, array $range): array
 {
     if (!tableExists($pdo, 'project_flow_logs')) {
@@ -629,6 +627,12 @@ function buildMonitoringData(PDO $pdo): array
             'enabled' => (int)getSetting($pdo, 'monitor_project_flow_enabled', '1') === 1,
             'minutes' => max(1, (int)getSetting($pdo, 'monitor_project_flow_minutes', '60')),
         ],
+        'pump_values' => [
+            'label' => 'Pump Values',
+            'table' => 'pump_values_logs',
+            'enabled' => (int)getSetting($pdo, 'monitor_pump_values_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_pump_values_minutes', '60')),
+        ],
     ];
 
     $now = time();
@@ -703,5 +707,95 @@ function buildMonitoringData(PDO $pdo): array
         'refresh_seconds' => $refreshSeconds,
         'master_state' => $masterState,
         'items' => $items,
+    ];
+}
+
+function monitoring_state_rank($state)
+{
+    static $map = [
+        'OK' => 0,
+        'MASTER OFF' => 0,
+        'DISABLED' => 0,
+        'NOT SET UP' => 1,
+        'NO DATA' => 2,
+        'WARNING' => 3,
+        'OVERDUE' => 4,
+    ];
+
+    return $map[$state] ?? 0;
+}
+
+function monitoring_state_badge_class($state)
+{
+    switch ($state) {
+        case 'OVERDUE':
+            return 'danger';
+        case 'WARNING':
+            return 'warn';
+        case 'NO DATA':
+        case 'NOT SET UP':
+            return 'muted';
+        case 'OK':
+            return 'ok';
+        case 'MASTER OFF':
+        case 'DISABLED':
+        default:
+            return 'off';
+    }
+}
+
+function monitoring_has_issue($item)
+{
+    if (!is_array($item)) {
+        return false;
+    }
+
+    $state = strtoupper(trim((string)($item['state'] ?? '')));
+
+    return in_array($state, ['WARNING', 'OVERDUE', 'NO DATA', 'NOT SET UP'], true);
+}
+
+function build_compact_monitor_group(array $monitoring, array $keys, $title = 'Process Monitoring')
+{
+    $items = [];
+    $issueCount = 0;
+    $highestRank = 0;
+
+    foreach ($keys as $key) {
+        if (!isset($monitoring[$key])) {
+            continue;
+        }
+
+        $item = $monitoring[$key];
+        $item['key'] = $key;
+        $items[$key] = $item;
+
+        $rank = monitoring_state_rank($item['state'] ?? '');
+        if ($rank > $highestRank) {
+            $highestRank = $rank;
+        }
+
+        if (monitoring_has_issue($item)) {
+            $issueCount++;
+        }
+    }
+
+    $overallState = 'OK';
+    if ($highestRank >= 4) {
+        $overallState = 'OVERDUE';
+    } elseif ($highestRank >= 3) {
+        $overallState = 'WARNING';
+    } elseif ($highestRank >= 2) {
+        $overallState = 'NO DATA';
+    } elseif ($highestRank >= 1) {
+        $overallState = 'NOT SET UP';
+    }
+
+    return [
+        'title' => $title,
+        'items' => $items,
+        'issue_count' => $issueCount,
+        'has_issue' => $issueCount > 0,
+        'overall_state' => $overallState,
     ];
 }
