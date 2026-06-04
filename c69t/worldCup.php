@@ -145,18 +145,10 @@ function autoCalculateTeamStages(PDO $pdo) {
         } elseif (str_contains($stageRaw, "QUARTER")) {
             setStage($stages, $winner, "Quarter Final", false);
             setStage($stages, $loser, "Quarter Final", true);
-        } elseif (
-            str_contains($stageRaw, "LAST_16") ||
-            str_contains($stageRaw, "ROUND_OF_16") ||
-            str_contains($stageRaw, "ROUND OF 16")
-        ) {
+        } elseif (str_contains($stageRaw, "LAST_16") || str_contains($stageRaw, "ROUND_OF_16") || str_contains($stageRaw, "ROUND OF 16")) {
             setStage($stages, $winner, "Round of 16", false);
             setStage($stages, $loser, "Round of 16", true);
-        } elseif (
-            str_contains($stageRaw, "LAST_32") ||
-            str_contains($stageRaw, "ROUND_OF_32") ||
-            str_contains($stageRaw, "ROUND OF 32")
-        ) {
+        } elseif (str_contains($stageRaw, "LAST_32") || str_contains($stageRaw, "ROUND_OF_32") || str_contains($stageRaw, "ROUND OF 32")) {
             setStage($stages, $winner, "Round of 32", false);
             setStage($stages, $loser, "Round of 32", true);
         }
@@ -197,6 +189,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         redirectSelf("Player added");
     }
 
+    if ($action === "save_player") {
+        $stmt = $pdo->prepare("UPDATE sweep_players SET paid = ? WHERE id = ?");
+        $stmt->execute([
+            $_POST["paid"] ?? 0,
+            $_POST["player_id"]
+        ]);
+
+        redirectSelf("Player paid amount updated");
+    }
+
     if ($action === "delete_player") {
         $playerId = (int)($_POST["player_id"] ?? 0);
 
@@ -222,9 +224,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 
     if ($action === "save_payout") {
-        $stmt = $pdo->prepare("UPDATE sweep_payouts SET amount = ? WHERE id = ?");
+        $stmt = $pdo->prepare("
+            UPDATE sweep_payouts
+            SET amount = ?, payout_percent = ?
+            WHERE id = ?
+        ");
         $stmt->execute([
             $_POST["amount"] ?? 0,
+            $_POST["payout_percent"] ?? 0,
             $_POST["payout_id"]
         ]);
 
@@ -328,7 +335,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         autoCalculateTeamStages($pdo);
-
         redirectSelf("Synced successfully and placings updated");
     }
 }
@@ -337,6 +343,11 @@ $msg = $_GET["msg"] ?? "";
 
 $players = $pdo->query("SELECT * FROM sweep_players ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 $payouts = $pdo->query("SELECT * FROM sweep_payouts ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+
+$totalPaid = 0;
+foreach ($players as $p) {
+    $totalPaid += (float)$p["paid"];
+}
 
 $teams = $pdo->query("
     SELECT 
@@ -412,7 +423,22 @@ $lastSync = $pdo->query("SELECT MAX(last_synced) FROM sweep_matches")->fetchColu
 
 $payoutMap = [];
 foreach ($payouts as $p) {
-    $payoutMap[$p["placing"]] = $p["amount"];
+    $percent = (float)($p["payout_percent"] ?? 0);
+    $fixedAmount = (float)$p["amount"];
+    $calculatedAmount = $percent > 0 ? $totalPaid * ($percent / 100) : $fixedAmount;
+
+    $payoutMap[$p["placing"]] = [
+        "amount" => $calculatedAmount,
+        "fixed" => $fixedAmount,
+        "percent" => $percent
+    ];
+}
+
+$playerTeams = [];
+foreach ($teams as $t) {
+    if (!empty($t["player_id"])) {
+        $playerTeams[(int)$t["player_id"]][] = $t["team_name"];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -479,6 +505,7 @@ foreach ($payouts as $p) {
             padding: 9px;
             border-bottom: 1px solid rgba(255,255,255,.08);
             font-size: 14px;
+            vertical-align: top;
         }
 
         input, select {
@@ -578,9 +605,31 @@ foreach ($payouts as $p) {
         .status-scheduled {
             color: #facc15;
         }
+
+        .teams-popup {
+            display: none;
+            margin-top: 8px;
+            background: #020617;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 10px;
+            padding: 10px;
+            max-width: 260px;
+            line-height: 1.4;
+            color: #e5e7eb;
+        }
+
+        .summary-box {
+            background: #020617;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 14px;
+        }
     </style>
 </head>
 <body>
+<?php require_once "nav.php"; ?>
+
 <div class="container">
 
     <div class="topbar">
@@ -618,6 +667,11 @@ foreach ($payouts as $p) {
 
         <div class="card">
             <h2>Automatic Placings</h2>
+
+            <div class="summary-box">
+                Total paid in: <strong><?= money($totalPaid) ?></strong>
+            </div>
+
             <table>
                 <thead>
                     <tr>
@@ -634,20 +688,20 @@ foreach ($payouts as $p) {
                 <?php foreach ($teams as $i => $t): ?>
                     <?php
                         $placeLabel = "";
-                        $payout = "";
+                        $payout = 0;
 
                         if ($i === 0) {
                             $placeLabel = "Winner";
-                            $payout = $payoutMap["Winner"] ?? 0;
+                            $payout = $payoutMap["Winner"]["amount"] ?? 0;
                         } elseif ($i === 1) {
                             $placeLabel = "Runner Up";
-                            $payout = $payoutMap["Runner Up"] ?? 0;
+                            $payout = $payoutMap["Runner Up"]["amount"] ?? 0;
                         } elseif ($i === 2) {
                             $placeLabel = "Third Place";
-                            $payout = $payoutMap["Third Place"] ?? 0;
+                            $payout = $payoutMap["Third Place"]["amount"] ?? 0;
                         } elseif ($i === 3) {
                             $placeLabel = "Fourth Place";
-                            $payout = $payoutMap["Fourth Place"] ?? 0;
+                            $payout = $payoutMap["Fourth Place"]["amount"] ?? 0;
                         }
                     ?>
                     <tr class="rank-<?= $i + 1 ?>">
@@ -687,26 +741,61 @@ foreach ($payouts as $p) {
                 </form>
             <?php endif; ?>
 
+            <div class="summary-box">
+                Total paid in: <strong><?= money($totalPaid) ?></strong>
+            </div>
+
             <table>
                 <thead>
                     <tr>
                         <th>Player</th>
                         <th>Paid</th>
-                        <?php if ($canEdit): ?><th>Delete</th><?php endif; ?>
+                        <th>Teams</th>
+                        <?php if ($canEdit): ?>
+                            <th>Save</th>
+                            <th>Delete</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($players as $p): ?>
+                    <?php
+                        $teamsForPlayer = $playerTeams[(int)$p["id"]] ?? [];
+                        $teamText = $teamsForPlayer ? implode(", ", $teamsForPlayer) : "No teams assigned";
+                        $popupId = "teams_" . (int)$p["id"];
+                    ?>
                     <tr>
-                        <td><?= h($p["name"]) ?></td>
-                        <td><?= money($p["paid"]) ?></td>
                         <?php if ($canEdit): ?>
+                            <form method="post">
+                                <input type="hidden" name="action" value="save_player">
+                                <input type="hidden" name="player_id" value="<?= h($p["id"]) ?>">
+                                <td><?= h($p["name"]) ?></td>
+                                <td>
+                                    <input name="paid" type="number" step="0.01" value="<?= h($p["paid"]) ?>">
+                                </td>
+                                <td>
+                                    <button type="button" onclick="toggleTeams('<?= h($popupId) ?>')">Show Teams</button>
+                                    <div id="<?= h($popupId) ?>" class="teams-popup">
+                                        <?= h($teamText) ?>
+                                    </div>
+                                </td>
+                                <td><button>Save</button></td>
+                            </form>
                             <td>
                                 <form method="post" onsubmit="return confirm('Delete this player? Teams will become unassigned.');">
                                     <input type="hidden" name="action" value="delete_player">
                                     <input type="hidden" name="player_id" value="<?= h($p["id"]) ?>">
                                     <button class="delete-btn">Delete</button>
                                 </form>
+                            </td>
+                        <?php else: ?>
+                            <td><?= h($p["name"]) ?></td>
+                            <td><?= money($p["paid"]) ?></td>
+                            <td>
+                                <button type="button" onclick="toggleTeams('<?= h($popupId) ?>')">Show Teams</button>
+                                <div id="<?= h($popupId) ?>" class="teams-popup">
+                                    <?= h($teamText) ?>
+                                </div>
                             </td>
                         <?php endif; ?>
                     </tr>
@@ -720,24 +809,35 @@ foreach ($payouts as $p) {
                 <thead>
                     <tr>
                         <th>Placing</th>
-                        <th>Amount</th>
+                        <th>Fixed $</th>
+                        <th>% of Paid In</th>
+                        <th>Calculated</th>
                         <?php if ($canEdit): ?><th>Save</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($payouts as $p): ?>
+                    <?php
+                        $percent = (float)($p["payout_percent"] ?? 0);
+                        $fixed = (float)$p["amount"];
+                        $calculated = $percent > 0 ? $totalPaid * ($percent / 100) : $fixed;
+                    ?>
                     <tr>
                         <?php if ($canEdit): ?>
                             <form method="post">
                                 <input type="hidden" name="action" value="save_payout">
                                 <input type="hidden" name="payout_id" value="<?= h($p["id"]) ?>">
                                 <td><?= h($p["placing"]) ?></td>
-                                <td><input name="amount" type="number" step="0.01" value="<?= h($p["amount"]) ?>"></td>
+                                <td><input name="amount" type="number" step="0.01" value="<?= h($fixed) ?>"></td>
+                                <td><input name="payout_percent" type="number" step="0.01" value="<?= h($percent) ?>"></td>
+                                <td class="winner-money"><?= money($calculated) ?></td>
                                 <td><button>Save</button></td>
                             </form>
                         <?php else: ?>
                             <td><?= h($p["placing"]) ?></td>
-                            <td><?= money($p["amount"]) ?></td>
+                            <td><?= money($fixed) ?></td>
+                            <td><?= number_format($percent, 2) ?>%</td>
+                            <td class="winner-money"><?= money($calculated) ?></td>
                         <?php endif; ?>
                     </tr>
                 <?php endforeach; ?>
@@ -853,5 +953,14 @@ foreach ($payouts as $p) {
     </div>
 
 </div>
+
+<script>
+function toggleTeams(id) {
+    const box = document.getElementById(id);
+    if (!box) return;
+    box.style.display = box.style.display === "block" ? "none" : "block";
+}
+</script>
+
 </body>
 </html>
