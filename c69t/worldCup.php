@@ -7,7 +7,7 @@ require_once "config.php";
 */
 
 $apiKey = "5db2245321e542a88845416c09088cc4";
-$competitionCode = "CL";
+$competitionCode = "WC";
 $season = "2026";
 
 $canEdit = false;
