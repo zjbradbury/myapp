@@ -120,6 +120,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
             </div>
 
             <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
+            <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a>
             <a href="tricanter_list.php" class="<?= $currentPage === 'tricanter_list.php' ? 'active' : '' ?>">Tricanter
                 Logs</a>
             <a href="nozzle_list.php" class="<?= $currentPage === 'nozzle_list.php' ? 'active' : '' ?>">Nozzle Logs</a>
