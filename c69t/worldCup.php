@@ -99,7 +99,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->execute([$name, $paid]);
         }
 
-        header("Location: worldcup_sweep.php?msg=Player added");
+        header("Location: worldCup.php?msg=Player added");
         exit;
     }
 
@@ -114,7 +114,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->execute([$playerId]);
         }
 
-        header("Location: worldcup_sweep.php?msg=Player deleted");
+        header("Location: worldCup.php?msg=Player deleted");
         exit;
     }
 
@@ -131,7 +131,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_POST["team_id"]
         ]);
 
-        header("Location: worldcup_sweep.php?msg=Team updated");
+        header("Location: worldCup.php?msg=Team updated");
         exit;
     }
 
@@ -142,13 +142,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_POST["payout_id"]
         ]);
 
-        header("Location: worldcup_sweep.php?msg=Payout updated");
+        header("Location: worldCup.php?msg=Payout updated");
         exit;
     }
 
     if ($action === "sync_results") {
         if ($apiKey === "" || $apiKey === "PASTE_FOOTBALL_DATA_API_KEY_HERE") {
-            header("Location: worldcup_sweep.php?msg=API key missing");
+            header("Location: worldCup.php?msg=API key missing");
             exit;
         }
 
@@ -167,14 +167,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         curl_close($ch);
 
         if ($response === false || $httpCode >= 400) {
-            header("Location: worldcup_sweep.php?msg=" . urlencode("Sync failed. HTTP $httpCode $error"));
+            header("Location: worldCup.php?msg=" . urlencode("Sync failed. HTTP $httpCode $error"));
             exit;
         }
 
         $data = json_decode($response, true);
 
         if (!isset($data["matches"])) {
-            header("Location: worldcup_sweep.php?msg=Sync failed. No matches returned.");
+            header("Location: worldCup.php?msg=Sync failed. No matches returned.");
             exit;
         }
 
@@ -255,7 +255,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ]);
         }
 
-        header("Location: worldcup_sweep.php?msg=Synced successfully");
+        header("Location: worldCup.php?msg=Synced successfully");
         exit;
     }
 }
