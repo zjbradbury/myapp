@@ -30,12 +30,16 @@ $stageRank = [
     "Group Stage" => 10
 ];
 
-function h($v) {
-    return htmlspecialchars((string)$v, ENT_QUOTES, "UTF-8");
+if (!function_exists("h")) {
+    function h($v) {
+        return htmlspecialchars((string)$v, ENT_QUOTES, "UTF-8");
+    }
 }
 
-function money($v) {
-    return "$" . number_format((float)$v, 2);
+if (!function_exists("money")) {
+    function money($v) {
+        return "$" . number_format((float)$v, 2);
+    }
 }
 
 function upsertTeam(PDO $pdo, array $team): ?int {
