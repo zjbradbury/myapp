@@ -1,22 +1,12 @@
 <?php
 require_once "config.php";
 
-/*
-    Public can view.
-    Only logged-in admin can edit/sync.
-*/
-
 $apiKey = "5db2245321e542a88845416c09088cc4";
 $competitionCode = "WC";
 $season = "2026";
 
-$canEdit = false;
-
-if (function_exists("isLoggedIn") && function_exists("currentRole")) {
-    $canEdit = isLoggedIn() && currentRole() === "admin";
-}
-
-$msg = "";
+$selfPage = basename($_SERVER["PHP_SELF"]);
+$canEdit = function_exists("isLoggedIn") && function_exists("currentRole") && isLoggedIn() && currentRole() === "admin";
 
 $stageRank = [
     "Winner" => 100,
@@ -42,10 +32,14 @@ if (!function_exists("money")) {
     }
 }
 
+function redirectSelf($msg) {
+    global $selfPage;
+    header("Location: {$selfPage}?msg=" . urlencode($msg));
+    exit;
+}
+
 function upsertTeam(PDO $pdo, array $team): ?int {
-    if (empty($team["id"]) || empty($team["name"])) {
-        return null;
-    }
+    if (empty($team["id"]) || empty($team["name"])) return null;
 
     $stmt = $pdo->prepare("SELECT id FROM sweep_teams WHERE api_team_id = ?");
     $stmt->execute([$team["id"]]);
@@ -63,14 +57,13 @@ function upsertTeam(PDO $pdo, array $team): ?int {
             $team["crest"] ?? null,
             $team["id"]
         ]);
-
         return (int)$existing;
     }
 
     $stmt = $pdo->prepare("
         INSERT INTO sweep_teams
-        (api_team_id, team_name, short_name, flag_url, stage_reached)
-        VALUES (?, ?, ?, ?, 'Group Stage')
+        (api_team_id, team_name, short_name, flag_url, stage_reached, eliminated)
+        VALUES (?, ?, ?, ?, 'Group Stage', 0)
     ");
     $stmt->execute([
         $team["id"],
@@ -80,6 +73,108 @@ function upsertTeam(PDO $pdo, array $team): ?int {
     ]);
 
     return (int)$pdo->lastInsertId();
+}
+
+function setStage(array &$stages, int $teamId, string $stage, bool $eliminated) {
+    $rank = [
+        "Winner" => 100,
+        "Runner Up" => 95,
+        "Third Place" => 90,
+        "Fourth Place" => 85,
+        "Semi Final" => 80,
+        "Quarter Final" => 70,
+        "Round of 16" => 60,
+        "Round of 32" => 50,
+        "Group Stage" => 10
+    ];
+
+    if (!isset($stages[$teamId])) {
+        $stages[$teamId] = ["stage" => "Group Stage", "eliminated" => 0];
+    }
+
+    $currentRank = $rank[$stages[$teamId]["stage"]] ?? 0;
+    $newRank = $rank[$stage] ?? 0;
+
+    if ($newRank >= $currentRank) {
+        $stages[$teamId] = [
+            "stage" => $stage,
+            "eliminated" => $eliminated ? 1 : 0
+        ];
+    }
+}
+
+function autoCalculateTeamStages(PDO $pdo) {
+    $teams = $pdo->query("SELECT id FROM sweep_teams")->fetchAll(PDO::FETCH_COLUMN);
+
+    $stages = [];
+    foreach ($teams as $id) {
+        $stages[(int)$id] = [
+            "stage" => "Group Stage",
+            "eliminated" => 0
+        ];
+    }
+
+    $matches = $pdo->query("
+        SELECT *
+        FROM sweep_matches
+        WHERE completed = 1
+          AND team1_score IS NOT NULL
+          AND team2_score IS NOT NULL
+        ORDER BY match_date, match_time, id
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($matches as $m) {
+        $stageRaw = strtoupper((string)$m["stage"]);
+        $team1 = (int)$m["team1_id"];
+        $team2 = (int)$m["team2_id"];
+        $winner = (int)$m["winner_team_id"];
+
+        if (!$winner) continue;
+
+        $loser = ($winner === $team1) ? $team2 : $team1;
+
+        if (str_contains($stageRaw, "FINAL") && !str_contains($stageRaw, "SEMI") && !str_contains($stageRaw, "THIRD")) {
+            setStage($stages, $winner, "Winner", false);
+            setStage($stages, $loser, "Runner Up", true);
+        } elseif (str_contains($stageRaw, "THIRD")) {
+            setStage($stages, $winner, "Third Place", true);
+            setStage($stages, $loser, "Fourth Place", true);
+        } elseif (str_contains($stageRaw, "SEMI")) {
+            setStage($stages, $winner, "Semi Final", false);
+            setStage($stages, $loser, "Semi Final", true);
+        } elseif (str_contains($stageRaw, "QUARTER")) {
+            setStage($stages, $winner, "Quarter Final", false);
+            setStage($stages, $loser, "Quarter Final", true);
+        } elseif (
+            str_contains($stageRaw, "LAST_16") ||
+            str_contains($stageRaw, "ROUND_OF_16") ||
+            str_contains($stageRaw, "ROUND OF 16")
+        ) {
+            setStage($stages, $winner, "Round of 16", false);
+            setStage($stages, $loser, "Round of 16", true);
+        } elseif (
+            str_contains($stageRaw, "LAST_32") ||
+            str_contains($stageRaw, "ROUND_OF_32") ||
+            str_contains($stageRaw, "ROUND OF 32")
+        ) {
+            setStage($stages, $winner, "Round of 32", false);
+            setStage($stages, $loser, "Round of 32", true);
+        }
+    }
+
+    $stmt = $pdo->prepare("
+        UPDATE sweep_teams
+        SET stage_reached = ?, eliminated = ?
+        WHERE id = ?
+    ");
+
+    foreach ($stages as $teamId => $data) {
+        $stmt->execute([
+            $data["stage"],
+            $data["eliminated"],
+            $teamId
+        ]);
+    }
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -99,8 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->execute([$name, $paid]);
         }
 
-        header("Location: worldCup.php?msg=Player added");
-        exit;
+        redirectSelf("Player added");
     }
 
     if ($action === "delete_player") {
@@ -114,25 +208,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->execute([$playerId]);
         }
 
-        header("Location: worldCup.php?msg=Player deleted");
-        exit;
+        redirectSelf("Player deleted");
     }
 
-    if ($action === "save_team") {
-        $stmt = $pdo->prepare("
-            UPDATE sweep_teams
-            SET player_id = ?, stage_reached = ?, eliminated = ?
-            WHERE id = ?
-        ");
+    if ($action === "assign_team") {
+        $stmt = $pdo->prepare("UPDATE sweep_teams SET player_id = ? WHERE id = ?");
         $stmt->execute([
             $_POST["player_id"] ?: null,
-            $_POST["stage_reached"] ?? "Group Stage",
-            isset($_POST["eliminated"]) ? 1 : 0,
             $_POST["team_id"]
         ]);
 
-        header("Location: worldCup.php?msg=Team updated");
-        exit;
+        redirectSelf("Team owner updated");
     }
 
     if ($action === "save_payout") {
@@ -142,14 +228,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_POST["payout_id"]
         ]);
 
-        header("Location: worldCup.php?msg=Payout updated");
-        exit;
+        redirectSelf("Payout updated");
     }
 
     if ($action === "sync_results") {
         if ($apiKey === "" || $apiKey === "PASTE_FOOTBALL_DATA_API_KEY_HERE") {
-            header("Location: worldCup.php?msg=API key missing");
-            exit;
+            redirectSelf("API key missing");
         }
 
         $url = "https://api.football-data.org/v4/competitions/$competitionCode/matches?season=$season";
@@ -167,24 +251,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         curl_close($ch);
 
         if ($response === false || $httpCode >= 400) {
-            header("Location: worldCup.php?msg=" . urlencode("Sync failed. HTTP $httpCode $error"));
-            exit;
+            redirectSelf("Sync failed. HTTP $httpCode $error");
         }
 
         $data = json_decode($response, true);
 
         if (!isset($data["matches"])) {
-            header("Location: worldCup.php?msg=Sync failed. No matches returned.");
-            exit;
+            redirectSelf("Sync failed. No matches returned.");
         }
 
         foreach ($data["matches"] as $match) {
             $homeId = upsertTeam($pdo, $match["homeTeam"]);
             $awayId = upsertTeam($pdo, $match["awayTeam"]);
 
-            if (!$homeId || !$awayId) {
-                continue;
-            }
+            if (!$homeId || !$awayId) continue;
 
             $localDate = null;
             $localTime = null;
@@ -212,18 +292,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt = $pdo->prepare("
                 INSERT INTO sweep_matches
                 (
-                    api_match_id,
-                    match_date,
-                    match_time,
-                    stage,
-                    team1_id,
-                    team2_id,
-                    team1_score,
-                    team2_score,
-                    winner_team_id,
-                    completed,
-                    status,
-                    last_synced
+                    api_match_id, match_date, match_time, stage,
+                    team1_id, team2_id,
+                    team1_score, team2_score,
+                    winner_team_id, completed, status, last_synced
                 )
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
                 ON DUPLICATE KEY UPDATE
@@ -255,14 +327,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             ]);
         }
 
-        header("Location: worldCup.php?msg=Synced successfully");
-        exit;
+        autoCalculateTeamStages($pdo);
+
+        redirectSelf("Synced successfully and placings updated");
     }
 }
 
-if (isset($_GET["msg"])) {
-    $msg = $_GET["msg"];
-}
+$msg = $_GET["msg"] ?? "";
 
 $players = $pdo->query("SELECT * FROM sweep_players ORDER BY name")->fetchAll(PDO::FETCH_ASSOC);
 $payouts = $pdo->query("SELECT * FROM sweep_payouts ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
@@ -271,6 +342,7 @@ $teams = $pdo->query("
     SELECT 
         t.*,
         p.name AS player_name,
+
         COALESCE(SUM(
             CASE
                 WHEN m.completed = 1 AND m.winner_team_id = t.id THEN 3
@@ -284,7 +356,25 @@ $teams = $pdo->query("
                 ELSE 0
             END
         ), 0) AS points,
+
+        COALESCE(SUM(
+            CASE
+                WHEN m.completed = 1 AND m.team1_id = t.id THEN m.team1_score
+                WHEN m.completed = 1 AND m.team2_id = t.id THEN m.team2_score
+                ELSE 0
+            END
+        ), 0) AS goals_for,
+
+        COALESCE(SUM(
+            CASE
+                WHEN m.completed = 1 AND m.team1_id = t.id THEN m.team2_score
+                WHEN m.completed = 1 AND m.team2_id = t.id THEN m.team1_score
+                ELSE 0
+            END
+        ), 0) AS goals_against,
+
         COALESCE(SUM(CASE WHEN m.completed = 1 THEN 1 ELSE 0 END), 0) AS played
+
     FROM sweep_teams t
     LEFT JOIN sweep_players p ON p.id = t.player_id
     LEFT JOIN sweep_matches m ON m.team1_id = t.id OR m.team2_id = t.id
@@ -293,18 +383,15 @@ $teams = $pdo->query("
 
 foreach ($teams as &$t) {
     $t["rank_score"] = $stageRank[$t["stage_reached"]] ?? 0;
+    $t["goal_diff"] = (int)$t["goals_for"] - (int)$t["goals_against"];
 }
 unset($t);
 
 usort($teams, function ($a, $b) {
-    if ($b["rank_score"] !== $a["rank_score"]) {
-        return $b["rank_score"] <=> $a["rank_score"];
-    }
-
-    if ($b["points"] !== $a["points"]) {
-        return $b["points"] <=> $a["points"];
-    }
-
+    if ($b["rank_score"] !== $a["rank_score"]) return $b["rank_score"] <=> $a["rank_score"];
+    if ($b["points"] !== $a["points"]) return $b["points"] <=> $a["points"];
+    if ($b["goal_diff"] !== $a["goal_diff"]) return $b["goal_diff"] <=> $a["goal_diff"];
+    if ($b["goals_for"] !== $a["goals_for"]) return $b["goals_for"] <=> $a["goals_for"];
     return strcmp($a["team_name"], $b["team_name"]);
 });
 
@@ -327,7 +414,6 @@ $payoutMap = [];
 foreach ($payouts as $p) {
     $payoutMap[$p["placing"]] = $p["amount"];
 }
-
 ?>
 <!DOCTYPE html>
 <html>
@@ -424,10 +510,6 @@ foreach ($payouts as $p) {
             background: #dc2626;
         }
 
-        .delete-btn:hover {
-            background: #b91c1c;
-        }
-
         .msg {
             background: #064e3b;
             border: 1px solid #10b981;
@@ -461,6 +543,29 @@ foreach ($payouts as $p) {
             margin-right: 6px;
         }
 
+        .admin-pill, .viewer-pill {
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 13px;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .admin-pill {
+            background: #14532d;
+            color: #bbf7d0;
+        }
+
+        .viewer-pill {
+            background: #334155;
+            color: #cbd5e1;
+        }
+
+        .winner-money {
+            color: #22c55e;
+            font-weight: bold;
+        }
+
         .status-finished {
             color: #22c55e;
             font-weight: bold;
@@ -473,39 +578,9 @@ foreach ($payouts as $p) {
         .status-scheduled {
             color: #facc15;
         }
-
-        .admin-pill {
-            background: #14532d;
-            color: #bbf7d0;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 13px;
-            display: inline-block;
-            margin-left: 8px;
-        }
-
-        .viewer-pill {
-            background: #334155;
-            color: #cbd5e1;
-            padding: 6px 10px;
-            border-radius: 999px;
-            font-size: 13px;
-            display: inline-block;
-            margin-left: 8px;
-        }
-
-        .inline-form {
-            display: inline;
-        }
-
-        .winner-money {
-            color: #22c55e;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body>
-    <?php require_once "nav.php"; ?>
 <div class="container">
 
     <div class="topbar">
@@ -518,7 +593,6 @@ foreach ($payouts as $p) {
                     <span class="viewer-pill">Public view</span>
                 <?php endif; ?>
             </h1>
-
             <div class="muted">
                 Last sync: <?= $lastSync ? h($lastSync) : "Never" ?>
             </div>
@@ -526,12 +600,12 @@ foreach ($payouts as $p) {
 
         <div>
             <?php if ($canEdit): ?>
-                <form method="post" class="inline-form">
+                <form method="post">
                     <input type="hidden" name="action" value="sync_results">
                     <button type="submit">Sync Online Results</button>
                 </form>
             <?php else: ?>
-                <a class="button" href="login.php">Admin Login</a>
+                <a class="button" href="login.php?redirect=<?= urlencode($selfPage) ?>">Admin Login</a>
             <?php endif; ?>
         </div>
     </div>
@@ -543,16 +617,16 @@ foreach ($payouts as $p) {
     <div class="grid">
 
         <div class="card">
-            <h2>Placings</h2>
-
+            <h2>Automatic Placings</h2>
             <table>
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Team</th>
                         <th>Owner</th>
-                        <th>Stage</th>
+                        <th>Auto Stage</th>
                         <th>Pts</th>
+                        <th>GD</th>
                         <th>Payout</th>
                     </tr>
                 </thead>
@@ -587,6 +661,7 @@ foreach ($payouts as $p) {
                         <td><?= h($t["player_name"] ?: "Unassigned") ?></td>
                         <td><?= h($t["stage_reached"]) ?></td>
                         <td><?= (int)$t["points"] ?></td>
+                        <td><?= (int)$t["goal_diff"] ?></td>
                         <td>
                             <?php if ($placeLabel): ?>
                                 <span class="winner-money"><?= h($placeLabel) ?> - <?= money($payout) ?></span>
@@ -617,9 +692,7 @@ foreach ($payouts as $p) {
                     <tr>
                         <th>Player</th>
                         <th>Paid</th>
-                        <?php if ($canEdit): ?>
-                            <th>Delete</th>
-                        <?php endif; ?>
+                        <?php if ($canEdit): ?><th>Delete</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -648,9 +721,7 @@ foreach ($payouts as $p) {
                     <tr>
                         <th>Placing</th>
                         <th>Amount</th>
-                        <?php if ($canEdit): ?>
-                            <th>Save</th>
-                        <?php endif; ?>
+                        <?php if ($canEdit): ?><th>Save</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -661,12 +732,8 @@ foreach ($payouts as $p) {
                                 <input type="hidden" name="action" value="save_payout">
                                 <input type="hidden" name="payout_id" value="<?= h($p["id"]) ?>">
                                 <td><?= h($p["placing"]) ?></td>
-                                <td>
-                                    <input name="amount" type="number" step="0.01" value="<?= h($p["amount"]) ?>">
-                                </td>
-                                <td>
-                                    <button>Save</button>
-                                </td>
+                                <td><input name="amount" type="number" step="0.01" value="<?= h($p["amount"]) ?>"></td>
+                                <td><button>Save</button></td>
                             </form>
                         <?php else: ?>
                             <td><?= h($p["placing"]) ?></td>
@@ -681,18 +748,15 @@ foreach ($payouts as $p) {
     </div>
 
     <div class="card" style="margin-top:18px;">
-        <h2>Teams / Sweep Owners</h2>
-
+        <h2>Team Owners</h2>
         <table>
             <thead>
                 <tr>
                     <th>Team</th>
                     <th>Owner</th>
-                    <th>Stage Reached</th>
+                    <th>Auto Stage</th>
                     <th>Eliminated</th>
-                    <?php if ($canEdit): ?>
-                        <th>Save</th>
-                    <?php endif; ?>
+                    <?php if ($canEdit): ?><th>Save Owner</th><?php endif; ?>
                 </tr>
             </thead>
             <tbody>
@@ -700,16 +764,14 @@ foreach ($payouts as $p) {
                 <tr>
                     <?php if ($canEdit): ?>
                         <form method="post">
-                            <input type="hidden" name="action" value="save_team">
+                            <input type="hidden" name="action" value="assign_team">
                             <input type="hidden" name="team_id" value="<?= h($t["id"]) ?>">
-
                             <td>
                                 <?php if (!empty($t["flag_url"])): ?>
                                     <img class="flag" src="<?= h($t["flag_url"]) ?>">
                                 <?php endif; ?>
                                 <?= h($t["team_name"]) ?>
                             </td>
-
                             <td>
                                 <select name="player_id">
                                     <option value="">Unassigned</option>
@@ -720,24 +782,9 @@ foreach ($payouts as $p) {
                                     <?php endforeach; ?>
                                 </select>
                             </td>
-
-                            <td>
-                                <select name="stage_reached">
-                                    <?php foreach (array_keys($stageRank) as $stage): ?>
-                                        <option value="<?= h($stage) ?>" <?= $stage === $t["stage_reached"] ? "selected" : "" ?>>
-                                            <?= h($stage) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </td>
-
-                            <td>
-                                <input type="checkbox" name="eliminated" <?= $t["eliminated"] ? "checked" : "" ?>>
-                            </td>
-
-                            <td>
-                                <button>Save</button>
-                            </td>
+                            <td><?= h($t["stage_reached"]) ?></td>
+                            <td><?= $t["eliminated"] ? "Yes" : "No" ?></td>
+                            <td><button>Save</button></td>
                         </form>
                     <?php else: ?>
                         <td>
@@ -758,7 +805,6 @@ foreach ($payouts as $p) {
 
     <div class="card" style="margin-top:18px;">
         <h2>Matches / Results</h2>
-
         <table>
             <thead>
                 <tr>
@@ -774,12 +820,8 @@ foreach ($payouts as $p) {
             <?php foreach ($matches as $m): ?>
                 <?php
                     $statusClass = "status-scheduled";
-
-                    if ($m["status"] === "FINISHED") {
-                        $statusClass = "status-finished";
-                    } elseif ($m["status"] === "TIMED") {
-                        $statusClass = "status-timed";
-                    }
+                    if ($m["status"] === "FINISHED") $statusClass = "status-finished";
+                    elseif ($m["status"] === "TIMED") $statusClass = "status-timed";
                 ?>
                 <tr>
                     <td><?= h($m["match_date"]) ?></td>
@@ -790,9 +832,7 @@ foreach ($payouts as $p) {
                             <img class="flag" src="<?= h($m["team1_flag"]) ?>">
                         <?php endif; ?>
                         <?= h($m["team1"]) ?>
-
                         v
-
                         <?php if (!empty($m["team2_flag"])): ?>
                             <img class="flag" src="<?= h($m["team2_flag"]) ?>">
                         <?php endif; ?>
@@ -805,9 +845,7 @@ foreach ($payouts as $p) {
                             -
                         <?php endif; ?>
                     </td>
-                    <td class="<?= h($statusClass) ?>">
-                        <?= h($m["status"] ?: "Scheduled") ?>
-                    </td>
+                    <td class="<?= h($statusClass) ?>"><?= h($m["status"] ?: "Scheduled") ?></td>
                 </tr>
             <?php endforeach; ?>
             </tbody>
