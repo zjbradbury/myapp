@@ -162,7 +162,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
         }
     }
 
-    header("Location: project_tank_levels.php");
+    header("Location: fracCalc.php");
     exit;
 }
 
@@ -318,12 +318,12 @@ $tanks = $pdo->query("
                 </div>
 
                 <div class="tank-level">
-                    <?= number_format($estimatedLevel, 1) ?>%
+                    <?= number_format($estimatedLevel, 1) ?>m3
                 </div>
 
                 <div class="tank-meta">
-                    Start level: <?= number_format($startLevel, 1) ?>%<br>
-                    Estimated gain: <?= number_format($estimatedGain, 1) ?>%<br>
+                    Start level: <?= number_format($startLevel, 1) ?>m3<br>
+                    Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
                     Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
                     Flow used: <?= $flowDelta !== null ? number_format($flowDelta, 3) : "0.000" ?><br>
                     Capacity: <?= number_format($capacity, 3) ?><br>
@@ -341,14 +341,14 @@ $tanks = $pdo->query("
                     <form class="tank-form" method="post">
                         <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
                         <input type="hidden" name="action" value="set_start">
-                        <input type="number" step="0.1" name="start_level" placeholder="Start level %" required>
+                        <input type="number" step="0.1" name="start_level" placeholder="Start level m3" required>
                         <button type="submit">Set Start Level</button>
                     </form>
 
                     <form class="tank-form" method="post">
                         <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
                         <input type="hidden" name="action" value="set_manual">
-                        <input type="number" step="0.1" name="manual_level" placeholder="Manual level %" required>
+                        <input type="number" step="0.1" name="manual_level" placeholder="Manual level m3" required>
                         <button type="submit">Set Manual Level</button>
                     </form>
 
