@@ -725,16 +725,41 @@ function build_dashboard_data(PDO $pdo, array $range): array
         }
     }
 
-    $systemStatus = (
-        !empty($latestNozzleOverall) ||
-        !empty($latestTricanterOverall) ||
-        !empty($latestSolidWasteOverall) ||
-        !empty($latestSampleOverall) ||
-        !empty($latestGasTestOverall) ||
-        !empty($latestProjectFlowOverall) ||
-        !empty($latestPumpValuesOverall) ||
-        !empty($latestNitrogenOverall)
-    ) ? 'ONLINE' : 'NO DATA';
+    $latestOverallRows = [
+        $latestNozzleOverall,
+        $latestTricanterOverall,
+        $latestSolidWasteOverall,
+        $latestSampleOverall,
+        $latestGasTestOverall,
+        $latestProjectFlowOverall,
+        $latestPumpValuesOverall,
+        $latestNitrogenOverall,
+    ];
+
+    $latestEntryTimestamp = null;
+    foreach ($latestOverallRows as $latestRow) {
+        if (empty($latestRow)) {
+            continue;
+        }
+
+        $stamp = trim((string)($latestRow['log_date'] ?? '') . ' ' . (string)($latestRow['log_time'] ?? ''));
+        if ($stamp === '') {
+            continue;
+        }
+
+        $timestamp = strtotime($stamp);
+        if ($timestamp === false) {
+            continue;
+        }
+
+        if ($latestEntryTimestamp === null || $timestamp > $latestEntryTimestamp) {
+            $latestEntryTimestamp = $timestamp;
+        }
+    }
+
+    $systemStatus = $latestEntryTimestamp === null
+        ? 'NO DATA'
+        : ((time() - $latestEntryTimestamp) <= 1800 ? 'ONLINE' : 'OFFLINE');
 
     $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
     $monitorData = buildMonitoringData($pdo);
@@ -807,16 +832,6 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'gas_test' => [
                 'kpis_html' => render_gas_test_kpis($latestGasTest),
                 'rows_html' => render_gas_test_rows($gasTest),
-                'chart' => [
-                    'labels' => label_series($gasTest),
-                    'datasets' => [
-                        ['label' => 'Mercury', 'data' => numeric_series($gasTest, 'mercury')],
-                        ['label' => 'Benzene', 'data' => numeric_series($gasTest, 'benzene')],
-                        ['label' => 'LEL', 'data' => numeric_series($gasTest, 'lel')],
-                        ['label' => 'H2S', 'data' => numeric_series($gasTest, 'h2s')],
-                        ['label' => 'O2', 'data' => numeric_series($gasTest, 'o2')],
-                    ],
-                ],
             ],
             'project_flow' => [
                 'kpis_html' => render_project_flow_kpis($projectFlowKpis),

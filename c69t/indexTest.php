@@ -755,16 +755,41 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestPumpValuesOverall = tableExists($pdo, 'pump_values_logs') ? (fetch_latest_row($pdo, 'pump_values_logs') ?: []) : [];
     $latestNitrogenOverall = tableExists($pdo, 'nitrogen_logs') ? (fetch_latest_row($pdo, 'nitrogen_logs') ?: []) : [];
 
-    $systemStatus = (
-        !empty($latestNozzleOverall) ||
-        !empty($latestTricanterOverall) ||
-        !empty($latestSolidWasteOverall) ||
-        !empty($latestSampleOverall) ||
-        !empty($latestGasTestOverall) ||
-        !empty($latestProjectFlowOverall) ||
-        !empty($latestPumpValuesOverall) ||
-        !empty($latestNitrogenOverall)
-    ) ? 'ONLINE' : 'NO DATA';
+    $latestOverallRows = [
+        $latestNozzleOverall,
+        $latestTricanterOverall,
+        $latestSolidWasteOverall,
+        $latestSampleOverall,
+        $latestGasTestOverall,
+        $latestProjectFlowOverall,
+        $latestPumpValuesOverall,
+        $latestNitrogenOverall,
+    ];
+
+    $latestEntryTimestamp = null;
+    foreach ($latestOverallRows as $latestRow) {
+        if (empty($latestRow)) {
+            continue;
+        }
+
+        $stamp = trim((string)($latestRow['log_date'] ?? '') . ' ' . (string)($latestRow['log_time'] ?? ''));
+        if ($stamp === '') {
+            continue;
+        }
+
+        $timestamp = strtotime($stamp);
+        if ($timestamp === false) {
+            continue;
+        }
+
+        if ($latestEntryTimestamp === null || $timestamp > $latestEntryTimestamp) {
+            $latestEntryTimestamp = $timestamp;
+        }
+    }
+
+    $systemStatus = $latestEntryTimestamp === null
+        ? 'NO DATA'
+        : ((time() - $latestEntryTimestamp) <= 1800 ? 'ONLINE' : 'OFFLINE');
 
     $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
     $monitorData = buildMonitoringData($pdo);
@@ -838,16 +863,6 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'gas_test' => [
                 'kpis_html' => render_gas_test_kpis($latestGasTest),
                 'rows_html' => render_gas_test_rows($gasTest),
-                'chart' => [
-                    'labels' => label_series($gasTest),
-                    'datasets' => [
-                        ['label' => 'Mercury', 'data' => numeric_series($gasTest, 'mercury')],
-                        ['label' => 'Benzene', 'data' => numeric_series($gasTest, 'benzene')],
-                        ['label' => 'LEL', 'data' => numeric_series($gasTest, 'lel')],
-                        ['label' => 'H2S', 'data' => numeric_series($gasTest, 'h2s')],
-                        ['label' => 'O2', 'data' => numeric_series($gasTest, 'o2')],
-                    ],
-                ],
             ],
             'project_flow' => [
                 'kpis_html' => render_project_flow_kpis($projectFlowKpis),
@@ -1477,7 +1492,7 @@ $dashboard = build_dashboard_data($pdo, $range);
             <div class="panel-head">
                 <div>
                     <h2>Gas Test</h2>
-                    <div class="panel-sub">Gas readings with live chart and filtered table</div>
+                    <div class="panel-sub">Gas readings and filtered table</div>
                 </div>
                 <div class="panel-actions">
                     <a class="btn" href="gas_test_list.php">View Logs</a>
@@ -1487,10 +1502,6 @@ $dashboard = build_dashboard_data($pdo, $range);
 
             <div id="gas-test-kpis" class="kpis"><?= $dashboard['panels']['gas_test']['kpis_html'] ?></div>
 
-            <div class="chart-card">
-                <div class="chart-title">Gas Test Trends</div>
-                <div class="chart-wrap"><canvas id="gasTestCombinedChart"></canvas></div>
-            </div>
 
             <div class="table">
                 <table>
@@ -1521,10 +1532,6 @@ $dashboard = build_dashboard_data($pdo, $range);
                 <div>
                     <h2>Project Flow</h2>
                     <div class="panel-sub">Totals for selected date/time range</div>
-                </div>
-                <div class="panel-actions">
-                    <a class="btn" href="project_flow_list.php">View Logs</a>
-                    <?php if ($canEdit): ?><a class="btn" href="project_flow_add.php">Add Record</a><?php endif; ?>
                 </div>
             </div>
 
@@ -1989,7 +1996,6 @@ function applyPayload(payload) {
     if (payload.panels?.gas_test) {
         updateContainer('gas-test-kpis', payload.panels.gas_test.kpis_html);
         updateTbody('gas-test-tbody', payload.panels.gas_test.rows_html, 'gasLastSeen');
-        updateChart(charts.gasTest, payload.panels.gas_test.chart);
     }
 
     if (payload.panels?.project_flow) {
@@ -2044,7 +2050,6 @@ function schedulePolling() {
 charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle.chart);
 charts.tricanter = makeChart('tricanterCombinedChart', initialPanels.tricanter.chart);
 charts.solidWaste = makeChart('solidWasteCombinedChart', initialPanels.solid_waste.chart);
-charts.gasTest = makeChart('gasTestCombinedChart', initialPanels.gas_test.chart);
 charts.pumpValues = makeChart('pumpValuesPressureChart', initialPanels.pump_values.chart);
 charts.nitrogen = makeChart('nitrogenCombinedChart', initialPanels.nitrogen.chart);
 
