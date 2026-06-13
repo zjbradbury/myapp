@@ -163,6 +163,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown
                     Config</a>
 
+                    <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
+
             <?php endif; ?>
 
             <div class="hamburger-divider"></div>
