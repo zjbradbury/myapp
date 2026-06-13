@@ -55,6 +55,52 @@ function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol)
 function calculate_tank_level($tank, $latestFlow, $capacity)
 {
     $startLevel = (float) $tank["start_level"];
+    $isActive = (int) $tank["is_active"] === 1;
+
+    $flowDelta = 0;
+    $estimatedGain = 0;
+    $estimatedLevel = $startLevel;
+
+    // Inactive tanks hold their last saved level
+    if (!$isActive) {
+        return [
+            "level" => $estimatedLevel,
+            "gain" => 0,
+            "flow_delta" => 0
+        ];
+    }
+
+    $startFlow = $tank["start_flow_value"] !== null ? (float) $tank["start_flow_value"] : null;
+    $currentFlow = $latestFlow ? (float) $latestFlow["flow_value"] : null;
+
+    if ($currentFlow !== null && $startFlow !== null && $capacity > 0) {
+        $flowDelta = $currentFlow - $startFlow;
+
+        if ($flowDelta < 0) {
+            $flowDelta = 0;
+        }
+
+        $estimatedGain = $flowDelta;
+        $estimatedLevel = $startLevel + $estimatedGain;
+    }
+
+    if ($estimatedLevel > $capacity) {
+        $estimatedLevel = $capacity;
+    }
+
+    if ($estimatedLevel < 0) {
+        $estimatedLevel = 0;
+    }
+
+    return [
+        "level" => $estimatedLevel,
+        "gain" => $estimatedGain,
+        "flow_delta" => $flowDelta
+    ];
+}
+
+{
+    $startLevel = (float) $tank["start_level"];
     $startFlow = $tank["start_flow_value"] !== null ? (float) $tank["start_flow_value"] : null;
     $currentFlow = $latestFlow ? (float) $latestFlow["flow_value"] : null;
 
@@ -141,35 +187,32 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
             $pdo->commit();
         }
 
-        if ($action === "set_inactive") {
-            $stmt = $pdo->prepare("
-                UPDATE project_tank_levels
-                SET is_active = 0
-                WHERE tank_no = ?
-            ");
-            $stmt->execute([$tankNo]);
-        }
+if ($action === "set_inactive") {
+    $stmt = $pdo->prepare("SELECT * FROM project_tank_levels WHERE tank_no = ?");
+    $stmt->execute([$tankNo]);
+    $tank = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($action === "set_level") {
-            $startLevel = (float) ($_POST["start_level"] ?? 0);
+    $capacity = $tankCapacities[$tankNo] ?? 60.0;
+    $calc = calculate_tank_level($tank, $latestFlow, $capacity);
+    $lastLevel = $calc["level"];
 
-            $stmt = $pdo->prepare("
-    UPDATE project_tank_levels
-    SET
-        start_level = ?,
-        manual_level = NULL,
-        start_flow_value = ?,
-        start_datetime = ?
-    WHERE tank_no = ?
-");
+    $stmt = $pdo->prepare("
+        UPDATE project_tank_levels
+        SET 
+            is_active = 0,
+            start_level = ?,
+            start_flow_value = ?,
+            start_datetime = ?
+        WHERE tank_no = ?
+    ");
 
-$stmt->execute([
-    $startLevel,
-    $latestFlow ? $latestFlow["flow_value"] : null,
-    date('Y-m-d H:i:s'),
-    $tankNo
-]);
-        }
+    $stmt->execute([
+        $lastLevel,
+        $latestFlow ? $latestFlow["flow_value"] : null,
+        date('Y-m-d H:i:s'),
+        $tankNo
+    ]);
+}
 
         if ($action === "reset") {
 $stmt = $pdo->prepare("
