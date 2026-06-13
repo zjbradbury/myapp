@@ -38,10 +38,6 @@ for ($i = 1; $i <= 4; $i++) {
     $stmt->execute([$i, "Tank " . $i]);
 }
 
-function h($v) {
-    return htmlspecialchars((string)$v, ENT_QUOTES, "UTF-8");
-}
-
 function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol) {
     $sql = "
         SELECT 
