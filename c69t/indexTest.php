@@ -1346,7 +1346,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Live process trend and latest operating values</div>
                 </div>
                 <div class="panel-actions">
-                    <a class="btn" href="tricanter_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=tricanter">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="tricanter_add.php">Add Record</a><?php endif; ?>
                 </div>
             </div>
@@ -1387,7 +1387,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Amount, cycle spacing, and live row updates</div>
                 </div>
                 <div class="panel-actions">
-                    <a class="btn" href="solid_waste_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=solid_waste">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="solid_waste_add.php">Add Record</a><?php endif; ?>
                 </div>
             </div>
@@ -1422,7 +1422,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Live nozzle pressure, flow, angle, and RPM trend</div>
                 </div>
                 <div class="panel-actions">
-                    <a class="btn" href="nozzle_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=nozzle">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="nozzle_add.php">Add Record</a><?php endif; ?>
                 </div>
             </div>
@@ -1460,7 +1460,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Latest field sample snapshot and filtered records</div>
                 </div>
                 <div class="panel-actions">
-                    <a class="btn" href="sample_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=sample">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="sample_add.php">Add Record</a><?php endif; ?>
                 </div>
             </div>
@@ -1495,7 +1495,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Gas readings and filtered table</div>
                 </div>
                 <div class="panel-actions">
-                    <a class="btn" href="gas_test_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=gas_test">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="gas_test_add.php">Add Record</a><?php endif; ?>
                 </div>
             </div>
@@ -1563,7 +1563,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Pump statuses, feedback, and live pressure trends</div>
                 </div>
                 <!-- <div class="panel-actions">
-                    <a class="btn" href="pump_values_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=pump_values">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="pump_values_add.php">Add Record</a><?php endif; ?>
                 </div> -->
             </div>
@@ -1608,7 +1608,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Nitrogen generator status, purity, pressure, temperature, and O2 readings</div>
                 </div>
                 <!-- <div class="panel-actions">
-                    <a class="btn" href="nitrogen_list.php">View Logs</a>
+                    <a class="btn" href="logs.php?table=nitrogen">View Logs</a>
                     <?php if ($canEdit): ?><a class="btn" href="nitrogen_add.php">Add Record</a><?php endif; ?>
                 </div> -->
             </div>
