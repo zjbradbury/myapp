@@ -2,26 +2,11 @@
 require_once "config.php";
 requireRole(["admin"]);
 
-/*
-|--------------------------------------------------------------------------
-| CONFIG SECTION
-|--------------------------------------------------------------------------
-| Set these to match your Project Flow database table.
-|
-| This page assumes your project flow value is a CUMULATIVE total, e.g.
-| total m3, total litres, total kL, etc.
-|
-| If your value is only an instant flow rate, this page will need different
-| logic to integrate flow over time.
-*/
-
 $PROJECT_FLOW_TABLE = "project_flow_logs";
 $PROJECT_FLOW_VALUE_COLUMN = "total_tricanter";
 $PROJECT_FLOW_DATE_COLUMN = "log_date";
 $PROJECT_FLOW_TIME_COLUMN = "log_time";
 
-// Tank capacity in the same unit as your project flow total.
-// Example: if project flow is m3, tank capacity must be m3.
 $tankCapacities = [
     1 => 60.0,
     2 => 60.0,
@@ -29,14 +14,7 @@ $tankCapacities = [
     4 => 60.0,
 ];
 
-// Viewer can see only. Admin can edit.
 $canEdit = in_array(currentRole(), ["admin"], true);
-
-/*
-|--------------------------------------------------------------------------
-| TABLE SETUP
-|--------------------------------------------------------------------------
-*/
 
 $pdo->exec("
 CREATE TABLE IF NOT EXISTS project_tank_levels (
@@ -55,16 +33,14 @@ for ($i = 1; $i <= 4; $i++) {
     $stmt = $pdo->prepare("
         INSERT IGNORE INTO project_tank_levels
         (tank_no, tank_name, is_active, start_level, manual_level)
-        VALUES (?, ?, ?, 0, NULL)
+        VALUES (?, ?, 0, 0, NULL)
     ");
-    $stmt->execute([$i, "Tank " . $i, $i === 1 ? 1 : 0]);
+    $stmt->execute([$i, "Tank " . $i]);
 }
 
-/*
-|--------------------------------------------------------------------------
-| HELPERS
-|--------------------------------------------------------------------------
-*/
+function h($v) {
+    return htmlspecialchars((string)$v, ENT_QUOTES, "UTF-8");
+}
 
 function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol) {
     $sql = "
@@ -79,6 +55,40 @@ function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol) {
     return $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 }
 
+function calculate_tank_level($tank, $latestFlow, $capacity) {
+    $startLevel = (float)$tank["start_level"];
+    $startFlow = $tank["start_flow_value"] !== null ? (float)$tank["start_flow_value"] : null;
+    $currentFlow = $latestFlow ? (float)$latestFlow["flow_value"] : null;
+
+    $flowDelta = 0;
+    $estimatedGain = 0;
+    $estimatedLevel = $startLevel;
+
+    if ($currentFlow !== null && $startFlow !== null && $capacity > 0) {
+        $flowDelta = $currentFlow - $startFlow;
+
+        if ($flowDelta < 0) {
+            $flowDelta = 0;
+        }
+
+        $estimatedGain = $flowDelta;
+        $estimatedLevel = $startLevel + $estimatedGain;
+    }
+
+    if ($estimatedLevel > $capacity) {
+        $estimatedLevel = $capacity;
+    }
+
+    if ($estimatedLevel < 0) {
+        $estimatedLevel = 0;
+    }
+
+    return [
+        "level" => $estimatedLevel,
+        "gain" => $estimatedGain,
+        "flow_delta" => $flowDelta
+    ];
+}
 
 $latestFlow = latest_project_flow(
     $pdo,
@@ -88,34 +98,59 @@ $latestFlow = latest_project_flow(
     $PROJECT_FLOW_TIME_COLUMN
 );
 
-/*
-|--------------------------------------------------------------------------
-| POST ACTIONS
-|--------------------------------------------------------------------------
-*/
-
 if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
     $action = $_POST["action"] ?? "";
     $tankNo = isset($_POST["tank_no"]) ? (int)$_POST["tank_no"] : 0;
 
-    if ($tankNo >= 1 && $tankNo <= 4) {
+    if ($action === "deactivate_all") {
+        $pdo->exec("UPDATE project_tank_levels SET is_active = 0");
+        header("Location: fracCalc.php");
+        exit;
+    }
 
+    if ($tankNo >= 1 && $tankNo <= 4) {
         if ($action === "set_active") {
+            $stmt = $pdo->prepare("SELECT * FROM project_tank_levels WHERE tank_no = ?");
+            $stmt->execute([$tankNo]);
+            $tank = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $capacity = $tankCapacities[$tankNo] ?? 60.0;
+            $calc = calculate_tank_level($tank, $latestFlow, $capacity);
+            $lastLevel = $calc["level"];
+
             $pdo->beginTransaction();
 
             $pdo->exec("UPDATE project_tank_levels SET is_active = 0");
 
             $stmt = $pdo->prepare("
                 UPDATE project_tank_levels
-                SET is_active = 1
+                SET 
+                    is_active = 1,
+                    start_level = ?,
+                    manual_level = NULL,
+                    start_flow_value = ?,
+                    start_datetime = NOW()
                 WHERE tank_no = ?
             ");
-            $stmt->execute([$tankNo]);
+            $stmt->execute([
+                $lastLevel,
+                $latestFlow ? $latestFlow["flow_value"] : null,
+                $tankNo
+            ]);
 
             $pdo->commit();
         }
 
-        if ($action === "set_start") {
+        if ($action === "set_inactive") {
+            $stmt = $pdo->prepare("
+                UPDATE project_tank_levels
+                SET is_active = 0
+                WHERE tank_no = ?
+            ");
+            $stmt->execute([$tankNo]);
+        }
+
+        if ($action === "set_level") {
             $startLevel = (float)($_POST["start_level"] ?? 0);
 
             $stmt = $pdo->prepare("
@@ -132,17 +167,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
                 $latestFlow ? $latestFlow["flow_value"] : null,
                 $tankNo
             ]);
-        }
-
-        if ($action === "set_manual") {
-            $manualLevel = (float)($_POST["manual_level"] ?? 0);
-
-            $stmt = $pdo->prepare("
-                UPDATE project_tank_levels
-                SET manual_level = ?
-                WHERE tank_no = ?
-            ");
-            $stmt->execute([$manualLevel, $tankNo]);
         }
 
         if ($action === "reset") {
@@ -165,12 +189,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
     header("Location: fracCalc.php");
     exit;
 }
-
-/*
-|--------------------------------------------------------------------------
-| LOAD TANKS
-|--------------------------------------------------------------------------
-*/
 
 $tanks = $pdo->query("
     SELECT *
@@ -271,42 +289,28 @@ $tanks = $pdo->query("
         <?php else: ?>
             No project flow value found.
         <?php endif; ?>
+
+        <?php if ($canEdit): ?>
+            <form method="post" style="margin-top:12px;">
+                <input type="hidden" name="action" value="deactivate_all">
+                <button type="submit">Clear Active Tank</button>
+            </form>
+        <?php endif; ?>
     </div>
 
     <div class="tank-grid">
         <?php foreach ($tanks as $tank): ?>
             <?php
                 $tankNo = (int)$tank["tank_no"];
-                $capacity = $tankCapacities[$tankNo] ?? 100.0;
+                $capacity = $tankCapacities[$tankNo] ?? 60.0;
 
                 $startLevel = (float)$tank["start_level"];
-                $manualLevel = $tank["manual_level"] !== null ? (float)$tank["manual_level"] : null;
                 $startFlow = $tank["start_flow_value"] !== null ? (float)$tank["start_flow_value"] : null;
-                $currentFlow = $latestFlow ? (float)$latestFlow["flow_value"] : null;
 
-                $flowDelta = null;
-                $estimatedGain = 0;
-                $estimatedLevel = $startLevel;
-
-                if ($manualLevel !== null) {
-                    $estimatedLevel = $manualLevel;
-                } elseif ($currentFlow !== null && $startFlow !== null && $capacity > 0) {
-                    $flowDelta = $currentFlow - $startFlow;
-                    if ($flowDelta < 0) {
-                        $flowDelta = 0;
-                    }
-
-                    $estimatedGain = ($flowDelta / $capacity) * 100;
-                    $estimatedLevel = $startLevel + $estimatedGain;
-                }
-
-                if ($estimatedLevel > 100) {
-                    $estimatedLevel = 100;
-                }
-
-                if ($estimatedLevel < 0) {
-                    $estimatedLevel = 0;
-                }
+                $calc = calculate_tank_level($tank, $latestFlow, $capacity);
+                $estimatedLevel = $calc["level"];
+                $estimatedGain = $calc["gain"];
+                $flowDelta = $calc["flow_delta"];
             ?>
 
             <div class="tank-card <?= (int)$tank["is_active"] === 1 ? "active" : "" ?>">
@@ -325,31 +329,31 @@ $tanks = $pdo->query("
                     Start level: <?= number_format($startLevel, 1) ?>m3<br>
                     Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
                     Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
-                    Flow used: <?= $flowDelta !== null ? number_format($flowDelta, 3) : "0.000" ?><br>
-                    Capacity: <?= number_format($capacity, 3) ?><br>
-                    Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?><br>
-                    Mode: <?= $manualLevel !== null ? "Manual level" : "Estimated" ?>
+                    Flow used: <?= number_format($flowDelta, 3) ?><br>
+                    Capacity: <?= number_format($capacity, 3) ?>m3<br>
+                    Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?>
                 </div>
 
                 <?php if ($canEdit): ?>
-                    <form class="tank-form" method="post">
-                        <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="set_active">
-                        <button type="submit">Set Active Tank</button>
-                    </form>
+                    <?php if ((int)$tank["is_active"] === 1): ?>
+                        <form class="tank-form" method="post">
+                            <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
+                            <input type="hidden" name="action" value="set_inactive">
+                            <button type="submit">Set Inactive</button>
+                        </form>
+                    <?php else: ?>
+                        <form class="tank-form" method="post">
+                            <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
+                            <input type="hidden" name="action" value="set_active">
+                            <button type="submit">Set Active Tank</button>
+                        </form>
+                    <?php endif; ?>
 
                     <form class="tank-form" method="post">
                         <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="set_start">
-                        <input type="number" step="0.1" name="start_level" placeholder="Start level m3" required>
-                        <button type="submit">Set Start Level</button>
-                    </form>
-
-                    <form class="tank-form" method="post">
-                        <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="set_manual">
-                        <input type="number" step="0.1" name="manual_level" placeholder="Manual level m3" required>
-                        <button type="submit">Set Manual Level</button>
+                        <input type="hidden" name="action" value="set_level">
+                        <input type="number" step="0.1" name="start_level" placeholder="Set level m3" required>
+                        <button type="submit">Set Level</button>
                     </form>
 
                     <form class="tank-form" method="post">
