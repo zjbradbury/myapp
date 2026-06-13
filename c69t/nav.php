@@ -121,29 +121,29 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
             <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a>
-            <a href="tricanter_list.php" class="<?= $currentPage === 'tricanter_list.php' ? 'active' : '' ?>">Tricanter
+            <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">Tricanter
                 Logs</a>
-            <a href="nozzle_list.php" class="<?= $currentPage === 'nozzle_list.php' ? 'active' : '' ?>">Nozzle Logs</a>
-            <a href="solid_waste_list.php" class="<?= $currentPage === 'solid_waste_list.php' ? 'active' : '' ?>">Solid
+            <a href="logs.php?table=nozzle" class="<?= $currentPage === 'logs.php?table=nozzle' ? 'active' : '' ?>">Nozzle Logs</a>
+            <a href="logs.php?table=solid_waste" class="<?= $currentPage === 'logs.php?table=solid_waste' ? 'active' : '' ?>">Solid
                 Waste Logs</a>
 
-            <a href="sample_list.php" class="<?= $currentPage === 'sample_list.php' ? 'active' : '' ?>">Sample Logs</a>
+            <a href="logs.php?table=sample" class="<?= $currentPage === 'logs.php?table=sample' ? 'active' : '' ?>">Sample Logs</a>
 
-            <a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test
+            <a href="logs.php?table=gas_test" class="<?= $currentPage === 'logs.php?table=gas_test' ? 'active' : '' ?>">Gas Test
                 Logs</a>
 
             <div class="hamburger-divider"></div>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
-                <a href="tricanter_add.php" class="<?= $currentPage === 'tricanter_add.php' ? 'active' : '' ?>">Add Tricanter
+                <a href="record.php?action=add&table=tricanter" class="<?= $currentPage === 'record.php?action=add&table=tricanter' ? 'active' : '' ?>">Add Tricanter
                     Record</a>
-                <a href="nozzle_add.php" class="<?= $currentPage === 'nozzle_add.php' ? 'active' : '' ?>">Add Nozzle Record</a>
-                <a href="solid_waste_add.php" class="<?= $currentPage === 'solid_waste_add.php' ? 'active' : '' ?>">Add Solid
+                <a href="record.php?action=add&table=nozzle" class="<?= $currentPage === 'record.php?action=add&table=nozzle' ? 'active' : '' ?>">Add Nozzle Record</a>
+                <a href="record.php?action=add&table=solid_waste" class="<?= $currentPage === 'record.php?action=add&table=solid_waste' ? 'active' : '' ?>">Add Solid
                     Waste Record</a>
 
-                <a href="sample_add.php" class="<?= $currentPage === 'sample_add.php' ? 'active' : '' ?>">Add Sample Record</a>
+                <a href="record.php?action=add&table=sample" class="<?= $currentPage === 'record.php?action=add&table=sample' ? 'active' : '' ?>">Add Sample Record</a>
 
-                <a href="gas_test_add.php" class="<?= $currentPage === 'gas_test_add.php' ? 'active' : '' ?>">Add Gas Test
+                <a href="record.php?action=add&table=gas_test" class="<?= $currentPage === 'record.php?action=add&table=gas_test' ? 'active' : '' ?>">Add Gas Test
                     Record</a>
 
             <?php endif; ?>
