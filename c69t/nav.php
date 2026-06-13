@@ -121,15 +121,15 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
             <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a>
-            <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">Tricanter
+            <a href="tricanter_list.php" class="<?= $currentPage === 'tricanter_list.php' ? 'active' : '' ?>">Tricanter
                 Logs</a>
-            <a href="logs.php?table=nozzle" class="<?= $currentPage === 'logs.php?table=nozzle' ? 'active' : '' ?>">Nozzle Logs</a>
-            <a href="logs.php?table=solid_waste" class="<?= $currentPage === 'logs.php?table=solid_waste' ? 'active' : '' ?>">Solid
+            <a href="nozzle_list.php" class="<?= $currentPage === 'nozzle_list.php' ? 'active' : '' ?>">Nozzle Logs</a>
+            <a href="solid_waste_list.php" class="<?= $currentPage === 'solid_waste_list.php' ? 'active' : '' ?>">Solid
                 Waste Logs</a>
 
-            <a href="logs.php?table=sample" class="<?= $currentPage === 'logs.php?table=sample' ? 'active' : '' ?>">Sample Logs</a>
+            <a href="sample_list.php" class="<?= $currentPage === 'sample_list.php' ? 'active' : '' ?>">Sample Logs</a>
 
-            <a href="logs.php?table=gas_test" class="<?= $currentPage === 'logs.php?table=gas_test' ? 'active' : '' ?>">Gas Test
+            <a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test
                 Logs</a>
 
             <div class="hamburger-divider"></div>
