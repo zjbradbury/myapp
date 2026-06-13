@@ -79,9 +79,6 @@ function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol) {
     return $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 }
 
-function h($v) {
-    return htmlspecialchars((string)$v, ENT_QUOTES, "UTF-8");
-}
 
 $latestFlow = latest_project_flow(
     $pdo,
