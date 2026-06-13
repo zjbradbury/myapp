@@ -38,7 +38,8 @@ for ($i = 1; $i <= 4; $i++) {
     $stmt->execute([$i, "Tank " . $i]);
 }
 
-function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol) {
+function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol)
+{
     $sql = "
         SELECT 
             `$valueCol` AS flow_value,
@@ -51,10 +52,11 @@ function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol) {
     return $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
 }
 
-function calculate_tank_level($tank, $latestFlow, $capacity) {
-    $startLevel = (float)$tank["start_level"];
-    $startFlow = $tank["start_flow_value"] !== null ? (float)$tank["start_flow_value"] : null;
-    $currentFlow = $latestFlow ? (float)$latestFlow["flow_value"] : null;
+function calculate_tank_level($tank, $latestFlow, $capacity)
+{
+    $startLevel = (float) $tank["start_level"];
+    $startFlow = $tank["start_flow_value"] !== null ? (float) $tank["start_flow_value"] : null;
+    $currentFlow = $latestFlow ? (float) $latestFlow["flow_value"] : null;
 
     $flowDelta = 0;
     $estimatedGain = 0;
@@ -96,7 +98,7 @@ $latestFlow = latest_project_flow(
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
     $action = $_POST["action"] ?? "";
-    $tankNo = isset($_POST["tank_no"]) ? (int)$_POST["tank_no"] : 0;
+    $tankNo = isset($_POST["tank_no"]) ? (int) $_POST["tank_no"] : 0;
 
     if ($action === "deactivate_all") {
         $pdo->exec("UPDATE project_tank_levels SET is_active = 0");
@@ -119,18 +121,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
             $pdo->exec("UPDATE project_tank_levels SET is_active = 0");
 
             $stmt = $pdo->prepare("
-                UPDATE project_tank_levels
-                SET 
-                    is_active = 1,
-                    start_level = ?,
-                    manual_level = NULL,
-                    start_flow_value = ?,
-                    start_datetime = NOW()
-                WHERE tank_no = ?
-            ");
+    UPDATE project_tank_levels
+    SET
+        is_active = 1,
+        start_level = ?,
+        manual_level = NULL,
+        start_flow_value = ?,
+        start_datetime = ?
+    WHERE tank_no = ?
+");
+
             $stmt->execute([
                 $lastLevel,
                 $latestFlow ? $latestFlow["flow_value"] : null,
+                date('Y-m-d H:i:s'),
                 $tankNo
             ]);
 
@@ -147,38 +151,42 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
         }
 
         if ($action === "set_level") {
-            $startLevel = (float)($_POST["start_level"] ?? 0);
+            $startLevel = (float) ($_POST["start_level"] ?? 0);
 
             $stmt = $pdo->prepare("
-                UPDATE project_tank_levels
-                SET 
-                    start_level = ?,
-                    manual_level = NULL,
-                    start_flow_value = ?,
-                    start_datetime = NOW()
-                WHERE tank_no = ?
-            ");
-            $stmt->execute([
-                $startLevel,
-                $latestFlow ? $latestFlow["flow_value"] : null,
-                $tankNo
-            ]);
+    UPDATE project_tank_levels
+    SET
+        start_level = ?,
+        manual_level = NULL,
+        start_flow_value = ?,
+        start_datetime = ?
+    WHERE tank_no = ?
+");
+
+$stmt->execute([
+    $startLevel,
+    $latestFlow ? $latestFlow["flow_value"] : null,
+    date('Y-m-d H:i:s'),
+    $tankNo
+]);
         }
 
         if ($action === "reset") {
-            $stmt = $pdo->prepare("
-                UPDATE project_tank_levels
-                SET 
-                    start_level = 0,
-                    manual_level = NULL,
-                    start_flow_value = ?,
-                    start_datetime = NOW()
-                WHERE tank_no = ?
-            ");
-            $stmt->execute([
-                $latestFlow ? $latestFlow["flow_value"] : null,
-                $tankNo
-            ]);
+$stmt = $pdo->prepare("
+    UPDATE project_tank_levels
+    SET
+        start_level = 0,
+        manual_level = NULL,
+        start_flow_value = ?,
+        start_datetime = ?
+    WHERE tank_no = ?
+");
+
+$stmt->execute([
+    $latestFlow ? $latestFlow["flow_value"] : null,
+    date('Y-m-d H:i:s'),
+    $tankNo
+]);
         }
     }
 
@@ -195,6 +203,7 @@ $tanks = $pdo->query("
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Project Tank Levels</title>
     <link rel="stylesheet" href="style.css">
@@ -272,96 +281,97 @@ $tanks = $pdo->query("
 </head>
 
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="container wide">
-    <h1>Project Tank Levels</h1>
+    <div class="container wide">
+        <h1>Project Tank Levels</h1>
 
-    <div class="info-box">
-        <strong>Latest Project Flow:</strong>
-        <?php if ($latestFlow): ?>
-            <?= h($latestFlow["flow_value"]) ?>
-            at <?= h($latestFlow["flow_datetime"]) ?>
-        <?php else: ?>
-            No project flow value found.
-        <?php endif; ?>
+        <div class="info-box">
+            <strong>Latest Project Flow:</strong>
+            <?php if ($latestFlow): ?>
+                <?= h($latestFlow["flow_value"]) ?>
+                at <?= h($latestFlow["flow_datetime"]) ?>
+            <?php else: ?>
+                No project flow value found.
+            <?php endif; ?>
 
-        <?php if ($canEdit): ?>
-            <form method="post" style="margin-top:12px;">
-                <input type="hidden" name="action" value="deactivate_all">
-                <button type="submit">Clear Active Tank</button>
-            </form>
-        <?php endif; ?>
-    </div>
+            <?php if ($canEdit): ?>
+                <form method="post" style="margin-top:12px;">
+                    <input type="hidden" name="action" value="deactivate_all">
+                    <button type="submit">Clear Active Tank</button>
+                </form>
+            <?php endif; ?>
+        </div>
 
-    <div class="tank-grid">
-        <?php foreach ($tanks as $tank): ?>
-            <?php
-                $tankNo = (int)$tank["tank_no"];
+        <div class="tank-grid">
+            <?php foreach ($tanks as $tank): ?>
+                <?php
+                $tankNo = (int) $tank["tank_no"];
                 $capacity = $tankCapacities[$tankNo] ?? 60.0;
 
-                $startLevel = (float)$tank["start_level"];
-                $startFlow = $tank["start_flow_value"] !== null ? (float)$tank["start_flow_value"] : null;
+                $startLevel = (float) $tank["start_level"];
+                $startFlow = $tank["start_flow_value"] !== null ? (float) $tank["start_flow_value"] : null;
 
                 $calc = calculate_tank_level($tank, $latestFlow, $capacity);
                 $estimatedLevel = $calc["level"];
                 $estimatedGain = $calc["gain"];
                 $flowDelta = $calc["flow_delta"];
-            ?>
+                ?>
 
-            <div class="tank-card <?= (int)$tank["is_active"] === 1 ? "active" : "" ?>">
-                <div class="tank-title">
-                    <?= h($tank["tank_name"]) ?>
-                    <?php if ((int)$tank["is_active"] === 1): ?>
-                        <span class="active-badge">ACTIVE</span>
-                    <?php endif; ?>
-                </div>
+                <div class="tank-card <?= (int) $tank["is_active"] === 1 ? "active" : "" ?>">
+                    <div class="tank-title">
+                        <?= h($tank["tank_name"]) ?>
+                        <?php if ((int) $tank["is_active"] === 1): ?>
+                            <span class="active-badge">ACTIVE</span>
+                        <?php endif; ?>
+                    </div>
 
-                <div class="tank-level">
-                    <?= number_format($estimatedLevel, 1) ?>m3
-                </div>
+                    <div class="tank-level">
+                        <?= number_format($estimatedLevel, 1) ?>m3
+                    </div>
 
-                <div class="tank-meta">
-                    Start level: <?= number_format($startLevel, 1) ?>m3<br>
-                    Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
-                    Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
-                    Flow used: <?= number_format($flowDelta, 3) ?><br>
-                    Capacity: <?= number_format($capacity, 3) ?>m3<br>
-                    Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?>
-                </div>
+                    <div class="tank-meta">
+                        Start level: <?= number_format($startLevel, 1) ?>m3<br>
+                        Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
+                        Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
+                        Flow used: <?= number_format($flowDelta, 3) ?><br>
+                        Capacity: <?= number_format($capacity, 3) ?>m3<br>
+                        Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?>
+                    </div>
 
-                <?php if ($canEdit): ?>
-                    <?php if ((int)$tank["is_active"] === 1): ?>
+                    <?php if ($canEdit): ?>
+                        <?php if ((int) $tank["is_active"] === 1): ?>
+                            <form class="tank-form" method="post">
+                                <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
+                                <input type="hidden" name="action" value="set_inactive">
+                                <button type="submit">Set Inactive</button>
+                            </form>
+                        <?php else: ?>
+                            <form class="tank-form" method="post">
+                                <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
+                                <input type="hidden" name="action" value="set_active">
+                                <button type="submit">Set Active Tank</button>
+                            </form>
+                        <?php endif; ?>
+
                         <form class="tank-form" method="post">
                             <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                            <input type="hidden" name="action" value="set_inactive">
-                            <button type="submit">Set Inactive</button>
+                            <input type="hidden" name="action" value="set_level">
+                            <input type="number" step="0.1" name="start_level" placeholder="Set level m3" required>
+                            <button type="submit">Set Level</button>
                         </form>
-                    <?php else: ?>
+
                         <form class="tank-form" method="post">
                             <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                            <input type="hidden" name="action" value="set_active">
-                            <button type="submit">Set Active Tank</button>
+                            <input type="hidden" name="action" value="reset">
+                            <button type="submit" onclick="return confirm('Reset this tank level?')">Reset Level</button>
                         </form>
                     <?php endif; ?>
-
-                    <form class="tank-form" method="post">
-                        <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="set_level">
-                        <input type="number" step="0.1" name="start_level" placeholder="Set level m3" required>
-                        <button type="submit">Set Level</button>
-                    </form>
-
-                    <form class="tank-form" method="post">
-                        <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="reset">
-                        <button type="submit" onclick="return confirm('Reset this tank level?')">Reset Level</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-        <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </div>
-</div>
 
 </body>
+
 </html>
