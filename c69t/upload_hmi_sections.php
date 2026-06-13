@@ -20,23 +20,13 @@ function fail($msg, $code = 400)
 function parse_log_date($value)
 {
     $value = trim((string) $value);
-    if ($value === '') {
-        return null;
-    }
+    if ($value === '') return null;
 
-    $formats = [
-        'd/m/Y',
-        'j/n/Y',
-        'Y-m-d',
-        'd-m-Y',
-        'j-n-Y'
-    ];
+    $formats = ['d/m/Y', 'j/n/Y', 'Y-m-d', 'd-m-Y', 'j-n-Y'];
 
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat($format, $value);
-        if ($dt instanceof DateTime) {
-            return $dt->format('Y-m-d');
-        }
+        if ($dt instanceof DateTime) return $dt->format('Y-m-d');
     }
 
     return null;
@@ -45,9 +35,7 @@ function parse_log_date($value)
 function parse_log_time($value)
 {
     $value = trim((string) $value);
-    if ($value === '') {
-        return null;
-    }
+    if ($value === '') return null;
 
     if (is_numeric($value)) {
         $seconds = (int) round(((float) $value) * 86400);
@@ -55,22 +43,11 @@ function parse_log_time($value)
         return gmdate('H:i:s', $seconds);
     }
 
-    $formats = [
-        'H:i:s',
-        'H:i',
-        'G:i:s',
-        'G:i',
-        'g:i A',
-        'g:i:s A',
-        'h:i A',
-        'h:i:s A'
-    ];
+    $formats = ['H:i:s', 'H:i', 'G:i:s', 'G:i', 'g:i A', 'g:i:s A', 'h:i A', 'h:i:s A'];
 
     foreach ($formats as $format) {
         $dt = DateTime::createFromFormat($format, $value);
-        if ($dt instanceof DateTime) {
-            return $dt->format('H:i:s');
-        }
+        if ($dt instanceof DateTime) return $dt->format('H:i:s');
     }
 
     return null;
@@ -85,21 +62,15 @@ function normalize_key($key)
 
 function parse_number($value)
 {
-    if ($value === null) {
-        return null;
-    }
+    if ($value === null) return null;
 
     if (is_string($value)) {
         $value = trim($value);
-        if ($value === '') {
-            return null;
-        }
+        if ($value === '') return null;
 
         $value = str_replace(',', '', $value);
 
-        if (is_numeric($value)) {
-            return (float) $value;
-        }
+        if (is_numeric($value)) return (float) $value;
 
         $value = preg_replace('/[^0-9eE+\-\.]/', '', $value);
 
@@ -108,11 +79,21 @@ function parse_number($value)
         }
     }
 
-    if (!is_numeric($value)) {
-        return null;
-    }
+    if (!is_numeric($value)) return null;
 
     return (float) $value;
+}
+
+function parse_boolish($value)
+{
+    if ($value === null) return null;
+
+    $v = strtolower(trim((string) $value));
+
+    if (in_array($v, ['true', '1', 'on', 'yes'], true)) return 1;
+    if (in_array($v, ['false', '0', 'off', 'no'], true)) return 0;
+
+    return parse_number($value);
 }
 
 try {
@@ -165,6 +146,7 @@ try {
             ],
             'numeric_columns' => ['flow', 'pressure', 'min_deg', 'max_deg', 'rpm']
         ],
+
         'TRICANTER' => [
             'table' => 'tricanter_logs',
             'columns' => [
@@ -193,6 +175,7 @@ try {
                 'pressure'
             ]
         ],
+
         'SOLID_WASTE' => [
             'table' => 'solid_waste_logs',
             'columns' => [
@@ -203,6 +186,7 @@ try {
             ],
             'numeric_columns' => ['amount']
         ],
+
         'PROJECTFLOW' => [
             'table' => 'project_flow_logs',
             'columns' => [
@@ -223,6 +207,7 @@ try {
                 'total_nozzle'
             ]
         ],
+
         'PUMPVALUES' => [
             'table' => 'pump_values_logs',
             'columns' => [
@@ -270,6 +255,37 @@ try {
                 'booster_pump_inlet_pressure',
                 'booster_pump_outlet_pressure'
             ]
+        ],
+
+        'NITROGEN' => [
+            'table' => 'nitrogen_logs',
+            'columns' => [
+                'Date' => 'log_date',
+                'Time' => 'log_time',
+                'Nitrogen Active' => 'nitrogen_active',
+                'Trip Status' => 'trip_status',
+                'Outlet Flow' => 'outlet_flow',
+                'Outlet Purity' => 'outlet_purity',
+                'Inlet Pressure' => 'inlet_pressure',
+                'Outlet Pressure' => 'outlet_pressure',
+                'Pre Heat Temp' => 'pre_heat_temp',
+                'Post Heat Temp' => 'post_heat_temp',
+                'Interior O2' => 'interior_o2',
+                'Comments' => 'comments'
+            ],
+            'numeric_columns' => [
+                'outlet_flow',
+                'outlet_purity',
+                'inlet_pressure',
+                'outlet_pressure',
+                'pre_heat_temp',
+                'post_heat_temp',
+                'interior_o2'
+            ],
+            'boolean_columns' => [
+                'nitrogen_active',
+                'trip_status'
+            ]
         ]
     ];
 
@@ -290,6 +306,7 @@ try {
         $table = $sectionMap[$section]['table'];
         $allowedColumns = $sectionMap[$section]['columns'];
         $numericColumns = $sectionMap[$section]['numeric_columns'] ?? [];
+        $booleanColumns = $sectionMap[$section]['boolean_columns'] ?? [];
 
         $insertData = [
             'source_file' => $filename
@@ -347,6 +364,8 @@ try {
                 $value = parse_log_date($value);
             } elseif ($column === 'log_time' && $value !== null) {
                 $value = parse_log_time($value);
+            } elseif (in_array($column, $booleanColumns, true) && $value !== null) {
+                $value = parse_boolish($value);
             } elseif (in_array($column, $numericColumns, true) && $value !== null) {
                 $value = parse_number($value);
             }
