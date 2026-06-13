@@ -633,6 +633,12 @@ function buildMonitoringData(PDO $pdo): array
             'enabled' => (int)getSetting($pdo, 'monitor_pump_values_enabled', '1') === 1,
             'minutes' => max(1, (int)getSetting($pdo, 'monitor_pump_values_minutes', '60')),
         ],
+        'nitrogen' => [
+            'label' => 'Nitrogen',
+            'table' => 'nitrogen_logs',
+            'enabled' => (int)getSetting($pdo, 'monitor_nitrogen_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_nitrogen_minutes', '60')),
+        ],
     ];
 
     $now = time();
