@@ -104,7 +104,7 @@ function render_single_monitor_item(string $key, array $item): string
 
 function render_monitor_shell(array $monitorData): string
 {
-    $combinedKeys = ['nozzle', 'tricanter', 'project_flow', 'pump_values'];
+    $combinedKeys = ['nozzle', 'tricanter', 'project_flow', 'pump_values', 'nitrogen'];
     $combinedItems = [];
     $otherItems = [];
     $combinedIssueCount = 0;
@@ -526,6 +526,74 @@ function render_project_flow_rows(array $rows): string
     return ob_get_clean();
 }
 
+
+function nitrogen_bool_text($value): string
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    if (is_numeric($value)) {
+        return ((int)$value === 1) ? 'ON' : 'OFF';
+    }
+
+    $v = strtolower(trim((string)$value));
+    if (in_array($v, ['true', 'on', 'yes'], true)) {
+        return 'ON';
+    }
+    if (in_array($v, ['false', 'off', 'no'], true)) {
+        return 'OFF';
+    }
+
+    return h($value);
+}
+
+function render_nitrogen_kpis(array $row): string
+{
+    ob_start();
+    ?>
+    <div class="kpi"><small>Nitrogen Active</small><b><?= h(nitrogen_bool_text($row['nitrogen_active'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Trip Status</small><b><?= h(nitrogen_bool_text($row['trip_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 2) ?> M3/hr</b></div>
+    <div class="kpi"><small>Outlet Purity</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> % O2</b></div>
+    <div class="kpi"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Outlet Pressure</small><b><?= fmt($row['outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>Pre Heat Temp</small><b><?= fmt($row['pre_heat_temp'] ?? null, 1) ?> °C</b></div>
+    <div class="kpi"><small>Post Heat Temp</small><b><?= fmt($row['post_heat_temp'] ?? null, 1) ?> °C</b></div>
+    <div class="kpi"><small>Interior O2</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
+    <?php
+    return ob_get_clean();
+}
+
+function render_nitrogen_rows(array $rows): string
+{
+    ob_start();
+
+    if (!$rows): ?>
+        <tr><td colspan="12">No nitrogen data in selected range.</td></tr>
+    <?php else:
+        foreach ($rows as $r): ?>
+            <tr class="nitrogen-row" data-id="<?= (int)$r['id'] ?>">
+                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h($r['log_time'] ?? '') ?></td>
+                <td><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
+                <td><?= h(nitrogen_bool_text($r['trip_status'] ?? null)) ?></td>
+                <td><?= fmt($r['outlet_flow'] ?? null, 2) ?> M3/hr</td>
+                <td><?= fmt($r['outlet_purity'] ?? null, 2) ?> % O2</td>
+                <td><?= fmt($r['inlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td><?= fmt($r['pre_heat_temp'] ?? null, 1) ?> °C</td>
+                <td><?= fmt($r['post_heat_temp'] ?? null, 1) ?> °C</td>
+                <td><?= fmt($r['interior_o2'] ?? null, 2) ?> %</td>
+                <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
+            </tr>
+        <?php endforeach;
+    endif;
+
+    return ob_get_clean();
+}
+
+
 function pump_status_text($value): string
 {
     if ($value === null || $value === '' || !is_numeric($value)) {
@@ -625,6 +693,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $gasTest = tableExists($pdo, 'gas_test_logs') ? fetch_log_rows($pdo, 'gas_test_logs', $range, 'id DESC') : [];
         $projectFlow = tableExists($pdo, 'project_flow_logs') ? fetch_log_rows($pdo, 'project_flow_logs', $range, 'id DESC') : [];
         $pumpValues = tableExists($pdo, 'pump_values_logs') ? fetch_log_rows($pdo, 'pump_values_logs', $range, 'id DESC') : [];
+        $nitrogen = tableExists($pdo, 'nitrogen_logs') ? fetch_log_rows($pdo, 'nitrogen_logs', $range, 'id DESC') : [];
 
         $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
         $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
@@ -633,6 +702,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
         $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
         $latestPumpValuesOverall = tableExists($pdo, 'pump_values_logs') ? (fetch_latest_row($pdo, 'pump_values_logs') ?: []) : [];
+    $latestNitrogenOverall = tableExists($pdo, 'nitrogen_logs') ? (fetch_latest_row($pdo, 'nitrogen_logs') ?: []) : [];
     } catch (Throwable $e) {
         throw new RuntimeException($e->getMessage());
     }
@@ -646,6 +716,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestGasTest = $gasTest[0] ?? [];
     $latestProjectFlow = $projectFlow[0] ?? [];
     $latestPumpValues = $pumpValues[0] ?? [];
+    $latestNitrogen = $nitrogen[0] ?? [];
 
     $solidWasteTotalAmount = 0.0;
     foreach ($solidWaste as $r) {
@@ -661,10 +732,11 @@ function build_dashboard_data(PDO $pdo, array $range): array
         !empty($latestSampleOverall) ||
         !empty($latestGasTestOverall) ||
         !empty($latestProjectFlowOverall) ||
-        !empty($latestPumpValuesOverall)
+        !empty($latestPumpValuesOverall) ||
+        !empty($latestNitrogenOverall)
     ) ? 'ONLINE' : 'NO DATA';
 
-    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues);
+    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -682,6 +754,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'gas_test' => row_stamp($latestGasTestOverall),
             'project_flow' => row_stamp($latestProjectFlowOverall),
             'pump_values' => row_stamp($latestPumpValuesOverall),
+            'nitrogen' => row_stamp($latestNitrogenOverall),
         ],
         'panels' => [
             'tricanter' => [
@@ -761,6 +834,22 @@ function build_dashboard_data(PDO $pdo, array $range): array
                         ['label' => 'Feed Outlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_outlet_pressure')],
                         ['label' => 'Booster Inlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_inlet_pressure')],
                         ['label' => 'Booster Outlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_outlet_pressure')],
+                    ],
+                ],
+            ],
+            'nitrogen' => [
+                'kpis_html' => render_nitrogen_kpis($latestNitrogen),
+                'rows_html' => render_nitrogen_rows($nitrogen),
+                'chart' => [
+                    'labels' => label_series($nitrogen),
+                    'datasets' => [
+                        ['label' => 'Outlet Flow', 'data' => numeric_series($nitrogen, 'outlet_flow')],
+                        ['label' => 'Outlet Purity', 'data' => numeric_series($nitrogen, 'outlet_purity')],
+                        ['label' => 'Inlet Pressure', 'data' => numeric_series($nitrogen, 'inlet_pressure')],
+                        ['label' => 'Outlet Pressure', 'data' => numeric_series($nitrogen, 'outlet_pressure')],
+                        ['label' => 'Pre Heat Temp', 'data' => numeric_series($nitrogen, 'pre_heat_temp')],
+                        ['label' => 'Post Heat Temp', 'data' => numeric_series($nitrogen, 'post_heat_temp')],
+                        ['label' => 'Interior O2', 'data' => numeric_series($nitrogen, 'interior_o2')],
                     ],
                 ],
             ],
