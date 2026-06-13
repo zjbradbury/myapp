@@ -115,7 +115,132 @@ $tables = [
             ['key' => 'action_taken', 'label' => 'Actions Taken', 'class' => 'comment-cell'],
         ],
     ],
+
+    'project_flow' => [
+        'label' => 'Project Flow',
+        'table' => 'project_flow_logs',
+        'add' => 'project_flow_add.php',
+        'edit' => 'project_flow_edit.php',
+        'delete' => 'project_flow_delete.php',
+        'desc' => 'Project flow totaliser history for recovered oil, recovered water, solid waste, tricanter, and nozzle totals.',
+        'columns' => [
+            ['key' => 'id', 'label' => 'ID'],
+            ['key' => 'uploaded_at', 'label' => 'Uploaded At'],
+            ['key' => 'log_date', 'label' => 'Date'],
+            ['key' => 'log_time', 'label' => 'Time'],
+            ['key' => 'total_recovered_oil', 'label' => 'Recovered Oil', 'suffix' => ' m³', 'decimals' => 4],
+            ['key' => 'total_recovered_water', 'label' => 'Recovered Water', 'suffix' => ' m³', 'decimals' => 4],
+            ['key' => 'total_solid_waste', 'label' => 'Solid Waste', 'suffix' => ' KG', 'decimals' => 4],
+            ['key' => 'total_tricanter', 'label' => 'Tricanter', 'suffix' => ' m³', 'decimals' => 4],
+            ['key' => 'total_nozzle', 'label' => 'Nozzle', 'suffix' => ' m³', 'decimals' => 4],
+            ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
+        ],
+    ],
+    'pump_values' => [
+        'label' => 'Pump Values',
+        'table' => 'pump_values_logs',
+        'add' => null,
+        'edit' => null,
+        'delete' => null,
+        'desc' => 'Pump statuses, feedback, inlet pressure, and outlet pressure records.',
+        'columns' => [
+            ['key' => 'id', 'label' => 'ID'],
+            ['key' => 'uploaded_at', 'label' => 'Uploaded At'],
+            ['key' => 'log_date', 'label' => 'Date'],
+            ['key' => 'log_time', 'label' => 'Time'],
+            ['key' => 'suction_pump_1_status', 'label' => 'SP1 Status', 'type' => 'pump_status'],
+            ['key' => 'suction_pump_2_status', 'label' => 'SP2 Status', 'type' => 'pump_status'],
+            ['key' => 'suction_pump_2_speed_out', 'label' => 'SP2 Speed Out', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'suction_pump_2_feedback', 'label' => 'SP2 Feedback', 'type' => 'pump_feedback', 'decimals' => 2],
+            ['key' => 'suction_pump_2_inlet_pressure', 'label' => 'SP2 Inlet', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'suction_pump_2_outlet_pressure', 'label' => 'SP2 Outlet', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'feed_pump_status', 'label' => 'FP Status', 'type' => 'pump_status'],
+            ['key' => 'feed_pump_speed_out', 'label' => 'FP Speed Out', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'feed_pump_feedback', 'label' => 'FP Feedback', 'type' => 'pump_feedback', 'decimals' => 2],
+            ['key' => 'feed_pump_inlet_pressure', 'label' => 'FP Inlet', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'feed_pump_outlet_pressure', 'label' => 'FP Outlet', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'booster_pump_status', 'label' => 'BP Status', 'type' => 'pump_status'],
+            ['key' => 'booster_pump_speed_out', 'label' => 'BP Speed Out', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'booster_pump_feedback', 'label' => 'BP Feedback', 'type' => 'pump_feedback', 'decimals' => 2],
+            ['key' => 'booster_pump_inlet_pressure', 'label' => 'BP Inlet', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'booster_pump_outlet_pressure', 'label' => 'BP Outlet', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
+        ],
+    ],
+    'nitrogen' => [
+        'label' => 'Nitrogen',
+        'table' => 'nitrogen_logs',
+        'add' => null,
+        'edit' => null,
+        'delete' => null,
+        'desc' => 'Nitrogen generator status, purity, flow, pressures, heater temperatures, and interior oxygen records.',
+        'columns' => [
+            ['key' => 'id', 'label' => 'ID'],
+            ['key' => 'uploaded_at', 'label' => 'Uploaded At'],
+            ['key' => 'log_date', 'label' => 'Date'],
+            ['key' => 'log_time', 'label' => 'Time'],
+            ['key' => 'nitrogen_active', 'label' => 'Active', 'type' => 'bool'],
+            ['key' => 'trip_status', 'label' => 'Trip', 'type' => 'bool'],
+            ['key' => 'outlet_flow', 'label' => 'Outlet Flow', 'suffix' => ' M3/hr', 'decimals' => 2],
+            ['key' => 'outlet_purity', 'label' => 'Outlet Purity', 'suffix' => ' % O2', 'decimals' => 2],
+            ['key' => 'inlet_pressure', 'label' => 'Inlet Pressure', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'outlet_pressure', 'label' => 'Outlet Pressure', 'suffix' => ' BAR', 'decimals' => 3],
+            ['key' => 'pre_heat_temp', 'label' => 'Pre Heat Temp', 'suffix' => ' °C', 'decimals' => 1],
+            ['key' => 'post_heat_temp', 'label' => 'Post Heat Temp', 'suffix' => ' °C', 'decimals' => 1],
+            ['key' => 'interior_o2', 'label' => 'Interior O2', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
+        ],
+    ],
 ];
+
+
+function pump_status_text_for_logs($value): string
+{
+    if ($value === null || $value === '' || !is_numeric($value)) {
+        return '-';
+    }
+
+    $value = (int)$value;
+    if ($value === 0) return 'OFF';
+    if ($value === 1) return 'ON';
+    if ($value === 2) return 'ERROR';
+
+    return (string)$value;
+}
+
+function bool_text_for_logs($value): string
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    if (is_numeric($value)) {
+        return ((int)$value === 1) ? 'ON' : 'OFF';
+    }
+
+    $v = strtolower(trim((string)$value));
+    if (in_array($v, ['true', 'on', 'yes', '1'], true)) return 'ON';
+    if (in_array($v, ['false', 'off', 'no', '0'], true)) return 'OFF';
+
+    return (string)$value;
+}
+
+function pump_feedback_text_for_logs($value, int $decimals = 2): string
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    if (!is_numeric($value)) {
+        return (string)$value;
+    }
+
+    if ((float)$value < 0) {
+        return '###';
+    }
+
+    return fmt($value, $decimals);
+}
 
 function selected_table_key(array $tables): string
 {
@@ -132,6 +257,20 @@ function log_cell_value(array $row, array $col): string
 
     if ($value === null || $value === '') {
         return '-';
+    }
+
+    $type = $col['type'] ?? '';
+
+    if ($type === 'pump_status') {
+        return h(pump_status_text_for_logs($value));
+    }
+
+    if ($type === 'bool') {
+        return h(bool_text_for_logs($value));
+    }
+
+    if ($type === 'pump_feedback') {
+        return h(pump_feedback_text_for_logs($value, (int)($col['decimals'] ?? 2)));
     }
 
     $prefix = $col['prefix'] ?? '';
@@ -554,7 +693,7 @@ function nav_url_for_table(string $key): string
         </div>
 
         <div class="logs-actions">
-            <?php if ($canEdit): ?>
+            <?php if ($canEdit && !empty($config['add'])): ?>
                 <a class="btn" href="<?= h($config['add']) ?>">Add Record</a>
             <?php endif; ?>
             <a class="btn" href="csv_download.php?<?= h(http_build_query($csvParams)) ?>">Download CSV</a>
@@ -610,7 +749,7 @@ function nav_url_for_table(string $key): string
                                 <th><?= h($col['label']) ?></th>
                             <?php endforeach; ?>
 
-                            <?php if ($canEdit || $canDelete): ?>
+                            <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>
                                 <th>Actions</th>
                             <?php endif; ?>
                         </tr>
@@ -618,7 +757,7 @@ function nav_url_for_table(string $key): string
                     <tbody>
                         <?php if (!$rows): ?>
                             <tr>
-                                <td colspan="<?= count($config['columns']) + (($canEdit || $canDelete) ? 1 : 0) + ($canDelete ? 1 : 0) ?>">
+                                <td colspan="<?= count($config['columns']) + ((($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))) ? 1 : 0) + ($canDelete ? 1 : 0) ?>">
                                     No records found in selected range.
                                 </td>
                             </tr>
@@ -635,14 +774,14 @@ function nav_url_for_table(string $key): string
                                         <td class="<?= h($col['class'] ?? '') ?>"><?= log_cell_value($row, $col) ?></td>
                                     <?php endforeach; ?>
 
-                                    <?php if ($canEdit || $canDelete): ?>
+                                    <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>
                                         <td>
                                             <div class="actions-cell">
-                                                <?php if ($canEdit): ?>
+                                                <?php if ($canEdit && !empty($config['edit'])): ?>
                                                     <a class="btn small" href="<?= h($config['edit']) ?>?id=<?= (int)$row['id'] ?>">Edit</a>
                                                 <?php endif; ?>
 
-                                                <?php if ($canDelete): ?>
+                                                <?php if ($canDelete && !empty($config['delete'])): ?>
                                                     <a class="btn small danger"
                                                        href="<?= h($config['delete']) ?>?id=<?= (int)$row['id'] ?>"
                                                        onclick="return confirm('Delete this record?');">
