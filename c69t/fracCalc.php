@@ -7,11 +7,16 @@ $PROJECT_FLOW_VALUE_COLUMN = "total_tricanter";
 $PROJECT_FLOW_DATE_COLUMN = "log_date";
 $PROJECT_FLOW_TIME_COLUMN = "log_time";
 
+$TRICANTER_TABLE = "tricanter_logs";
+$TRICANTER_FEED_RATE_COLUMN = "feed_rate";
+$TRICANTER_DATE_COLUMN = "log_date";
+$TRICANTER_TIME_COLUMN = "log_time";
+
 $tankCapacities = [
-    1 => 60.0,
-    2 => 60.0,
-    3 => 60.0,
-    4 => 60.0,
+    1 => 55.0,
+    2 => 55.0,
+    3 => 55.0,
+    4 => 55.0,
 ];
 
 $canEdit = in_array(currentRole(), ["admin"], true);
@@ -46,6 +51,20 @@ function latest_project_flow($pdo, $table, $valueCol, $dateCol, $timeCol)
             TIMESTAMP(`$dateCol`, `$timeCol`) AS flow_datetime
         FROM `$table`
         WHERE `$valueCol` IS NOT NULL
+        ORDER BY `$dateCol` DESC, `$timeCol` DESC, id DESC
+        LIMIT 1
+    ";
+    return $pdo->query($sql)->fetch(PDO::FETCH_ASSOC);
+}
+
+function latest_tricanter_feed_rate($pdo, $table, $feedRateCol, $dateCol, $timeCol)
+{
+    $sql = "
+        SELECT 
+            `$feedRateCol` AS feed_rate,
+            TIMESTAMP(`$dateCol`, `$timeCol`) AS feed_datetime
+        FROM `$table`
+        WHERE `$feedRateCol` IS NOT NULL
         ORDER BY `$dateCol` DESC, `$timeCol` DESC, id DESC
         LIMIT 1
     ";
@@ -98,12 +117,67 @@ function calculate_tank_level($tank, $latestFlow, $capacity)
     ];
 }
 
+function calculate_eta_to_full($tank, $estimatedLevel, $capacity, $latestFeedRate)
+{
+    $isActive = (int)$tank["is_active"] === 1;
+    $feedRate = $latestFeedRate ? (float)$latestFeedRate["feed_rate"] : 0;
+    $remainingCapacity = $capacity - $estimatedLevel;
+
+    if ($remainingCapacity < 0) {
+        $remainingCapacity = 0;
+    }
+
+    if ($remainingCapacity <= 0) {
+        return [
+            "feed_rate" => $feedRate,
+            "remaining" => 0,
+            "eta" => "At capacity"
+        ];
+    }
+
+    if (!$isActive) {
+        return [
+            "feed_rate" => $feedRate,
+            "remaining" => $remainingCapacity,
+            "eta" => "Inactive"
+        ];
+    }
+
+    if ($feedRate <= 0) {
+        return [
+            "feed_rate" => $feedRate,
+            "remaining" => $remainingCapacity,
+            "eta" => "Not available"
+        ];
+    }
+
+    $hoursToFull = $remainingCapacity / $feedRate;
+    $minutesToFull = (int)round($hoursToFull * 60);
+
+    $etaTime = new DateTime();
+    $etaTime->modify("+{$minutesToFull} minutes");
+
+    return [
+        "feed_rate" => $feedRate,
+        "remaining" => $remainingCapacity,
+        "eta" => $etaTime->format("d/m/Y H:i") . " (" . number_format($hoursToFull, 1) . " hr)"
+    ];
+}
+
 $latestFlow = latest_project_flow(
     $pdo,
     $PROJECT_FLOW_TABLE,
     $PROJECT_FLOW_VALUE_COLUMN,
     $PROJECT_FLOW_DATE_COLUMN,
     $PROJECT_FLOW_TIME_COLUMN
+);
+
+$latestFeedRate = latest_tricanter_feed_rate(
+    $pdo,
+    $TRICANTER_TABLE,
+    $TRICANTER_FEED_RATE_COLUMN,
+    $TRICANTER_DATE_COLUMN,
+    $TRICANTER_TIME_COLUMN
 );
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
@@ -119,7 +193,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
 
         foreach ($tanksToFreeze as $tankToFreeze) {
             $freezeTankNo = (int)$tankToFreeze["tank_no"];
-            $capacity = $tankCapacities[$freezeTankNo] ?? 60.0;
+            $capacity = $tankCapacities[$freezeTankNo] ?? 55.0;
             $calc = calculate_tank_level($tankToFreeze, $latestFlow, $capacity);
             $lastLevel = $calc["level"];
 
@@ -152,7 +226,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
             $stmt->execute([$tankNo]);
             $tank = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $capacity = $tankCapacities[$tankNo] ?? 60.0;
+            $capacity = $tankCapacities[$tankNo] ?? 55.0;
             $calc = calculate_tank_level($tank, $latestFlow, $capacity);
             $lastLevel = $calc["level"];
 
@@ -166,7 +240,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
 
             foreach ($activeTanks as $activeTank) {
                 $activeTankNo = (int)$activeTank["tank_no"];
-                $activeCapacity = $tankCapacities[$activeTankNo] ?? 60.0;
+                $activeCapacity = $tankCapacities[$activeTankNo] ?? 55.0;
                 $activeCalc = calculate_tank_level($activeTank, $latestFlow, $activeCapacity);
                 $activeLastLevel = $activeCalc["level"];
 
@@ -215,7 +289,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
             $stmt->execute([$tankNo]);
             $tank = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            $capacity = $tankCapacities[$tankNo] ?? 60.0;
+            $capacity = $tankCapacities[$tankNo] ?? 55.0;
             $calc = calculate_tank_level($tank, $latestFlow, $capacity);
             $lastLevel = $calc["level"];
 
@@ -245,7 +319,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && $canEdit) {
                 $startLevel = 0;
             }
 
-            $capacity = $tankCapacities[$tankNo] ?? 60.0;
+            $capacity = $tankCapacities[$tankNo] ?? 55.0;
 
             if ($startLevel > $capacity) {
                 $startLevel = $capacity;
@@ -392,6 +466,16 @@ $tanks = $pdo->query("
             No project flow value found.
         <?php endif; ?>
 
+        <br>
+
+        <strong>Latest Tricanter Feed Rate:</strong>
+        <?php if ($latestFeedRate): ?>
+            <?= number_format((float)$latestFeedRate["feed_rate"], 2) ?> m3/hr
+            at <?= h($latestFeedRate["feed_datetime"]) ?>
+        <?php else: ?>
+            No tricanter feed rate found.
+        <?php endif; ?>
+
         <?php if ($canEdit): ?>
             <form method="post" style="margin-top:12px;">
                 <input type="hidden" name="action" value="deactivate_all">
@@ -404,7 +488,7 @@ $tanks = $pdo->query("
         <?php foreach ($tanks as $tank): ?>
             <?php
                 $tankNo = (int)$tank["tank_no"];
-                $capacity = $tankCapacities[$tankNo] ?? 60.0;
+                $capacity = $tankCapacities[$tankNo] ?? 55.0;
 
                 $startLevel = (float)$tank["start_level"];
                 $startFlow = $tank["start_flow_value"] !== null ? (float)$tank["start_flow_value"] : null;
@@ -413,6 +497,11 @@ $tanks = $pdo->query("
                 $estimatedLevel = $calc["level"];
                 $estimatedGain = $calc["gain"];
                 $flowDelta = $calc["flow_delta"];
+
+                $etaCalc = calculate_eta_to_full($tank, $estimatedLevel, $capacity, $latestFeedRate);
+                $feedRate = $etaCalc["feed_rate"];
+                $remainingCapacity = $etaCalc["remaining"];
+                $etaDisplay = $etaCalc["eta"];
             ?>
 
             <div class="tank-card <?= (int)$tank["is_active"] === 1 ? "active" : "" ?>">
@@ -432,8 +521,11 @@ $tanks = $pdo->query("
                     Saved level: <?= number_format($startLevel, 1) ?>m3<br>
                     Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
                     Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
-                    Flow used: <?= number_format($flowDelta, 3) ?><br>
+                    Flow used: <?= number_format($flowDelta, 3) ?>m3<br>
                     Capacity: <?= number_format($capacity, 3) ?>m3<br>
+                    Remaining: <?= number_format($remainingCapacity, 1) ?>m3<br>
+                    Feed rate: <?= $feedRate > 0 ? number_format($feedRate, 2) . " m3/hr" : "Not available" ?><br>
+                    Est. full time: <?= h($etaDisplay) ?><br>
                     Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?><br>
                     Status: <?= (int)$tank["is_active"] === 1 ? "Active / counting" : "Inactive / held" ?>
                 </div>
