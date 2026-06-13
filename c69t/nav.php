@@ -132,8 +132,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <a href="gas_test_list.php" class="<?= $currentPage === 'gas_test_list.php' ? 'active' : '' ?>">Gas Test
                 Logs</a>
 
-            <a href="project_flow_list.php" class="<?= $currentPage === 'project_flow_list.php' ? 'active' : '' ?>">Project
-                Flow Logs</a>
             <div class="hamburger-divider"></div>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
@@ -147,9 +145,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
                 <a href="gas_test_add.php" class="<?= $currentPage === 'gas_test_add.php' ? 'active' : '' ?>">Add Gas Test
                     Record</a>
-
-                <a href="project_flow_add.php" class="<?= $currentPage === 'project_flow_add.php' ? 'active' : '' ?>">Add
-                    Project Flow Record</a>
 
             <?php endif; ?>
 
