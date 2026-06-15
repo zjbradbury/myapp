@@ -328,7 +328,7 @@ function range_summary_text(array $range, string $defaultText = 'Current shift b
 function render_dashboard_range_filter(array $range): void
 {
     ?>
-    <form method="get" class="filter-form">
+    <form method="get" action="index.php" class="filter-form">
         <div class="range-layout">
             <div class="range-inputs">
                 <div class="range-row">
@@ -347,7 +347,7 @@ function render_dashboard_range_filter(array $range): void
             <div class="range-buttons">
                 <div class="filter-actions">
                     <button type="submit" class="btn">Apply Range</button>
-                    <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
+                    <a href="index.php" class="btn">Clear</a>
                 </div>
 
                 <div class="quick-actions">
