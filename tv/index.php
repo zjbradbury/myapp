@@ -9,13 +9,16 @@ error_reporting(E_ALL);
 | Use either local file paths or remote URLs.
 */
 $m3uSource = 'https://i.mjh.nz/au/Adelaide/raw-tv.m3u8';
-$epgSource = 'https://i.mjh.nz/au/Adelaide/epg.xml';
 
 /*
 |--------------------------------------------------------------------------
 | HELPERS
 |--------------------------------------------------------------------------
 */
+function h($value) {
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
 function loadTextFile($source) {
     if (filter_var($source, FILTER_VALIDATE_URL)) {
         $context = stream_context_create([
@@ -32,15 +35,18 @@ function loadTextFile($source) {
     } else {
         $content = @file_get_contents($source);
     }
+
     return $content !== false ? $content : '';
 }
 
 function parseAttributes($text) {
     $attrs = [];
     preg_match_all('/([a-zA-Z0-9\-_]+)="([^"]*)"/', $text, $matches, PREG_SET_ORDER);
+
     foreach ($matches as $match) {
         $attrs[$match[1]] = $match[2];
     }
+
     return $attrs;
 }
 
@@ -52,174 +58,44 @@ function parseM3U($content) {
     for ($i = 0; $i < $count; $i++) {
         $line = trim($lines[$i]);
 
-        if (stripos($line, '#EXTINF:') === 0) {
-            $attrs = parseAttributes($line);
-
-            $name = '';
-            $commaPos = strrpos($line, ',');
-            if ($commaPos !== false) {
-                $name = trim(substr($line, $commaPos + 1));
-            }
-
-            $url = '';
-            for ($j = $i + 1; $j < $count; $j++) {
-                $nextLine = trim($lines[$j]);
-                if ($nextLine === '' || strpos($nextLine, '#') === 0) {
-                    continue;
-                }
-                $url = $nextLine;
-                $i = $j;
-                break;
-            }
-
-            if ($url !== '') {
-                $channels[] = [
-                    'name' => $name ?: ($attrs['tvg-name'] ?? 'Unnamed Channel'),
-                    'url' => $url,
-                    'logo' => $attrs['tvg-logo'] ?? '',
-                    'group' => $attrs['group-title'] ?? 'Other',
-                    'tvg_id' => $attrs['tvg-id'] ?? '',
-                    'tvg_name' => $attrs['tvg-name'] ?? $name
-                ];
-            }
-        }
-    }
-
-    return $channels;
-}
-
-function parseXmltvTime($timeString) {
-    $timeString = trim($timeString);
-    if ($timeString === '') {
-        return null;
-    }
-
-    if (preg_match('/^(\d{14})\s*([+\-]\d{4})?$/', $timeString, $m)) {
-        $datePart = $m[1];
-        $tzPart = $m[2] ?? '+0000';
-
-        $formatted = substr($datePart, 0, 4) . '-' .
-                     substr($datePart, 4, 2) . '-' .
-                     substr($datePart, 6, 2) . ' ' .
-                     substr($datePart, 8, 2) . ':' .
-                     substr($datePart, 10, 2) . ':' .
-                     substr($datePart, 12, 2) . ' ' .
-                     $tzPart;
-
-        $dt = DateTime::createFromFormat('Y-m-d H:i:s O', $formatted);
-        return $dt ?: null;
-    }
-
-    return null;
-}
-
-function parseEPG($content) {
-    $guide = [];
-
-    if (trim($content) === '') {
-        return $guide;
-    }
-
-    libxml_use_internal_errors(true);
-    $xml = simplexml_load_string($content);
-
-    if (!$xml) {
-        return $guide;
-    }
-
-    foreach ($xml->programme as $programme) {
-        $channelId = (string)$programme['channel'];
-        $startRaw = (string)$programme['start'];
-        $stopRaw = (string)$programme['stop'];
-
-        $start = parseXmltvTime($startRaw);
-        $stop = parseXmltvTime($stopRaw);
-
-        if (!$start || !$stop || $channelId === '') {
+        if (stripos($line, '#EXTINF:') !== 0) {
             continue;
         }
 
-        $title = trim((string)$programme->title);
-        $desc = trim((string)$programme->desc);
+        $attrs = parseAttributes($line);
 
-        if (!isset($guide[$channelId])) {
-            $guide[$channelId] = [];
+        $name = '';
+        $commaPos = strrpos($line, ',');
+        if ($commaPos !== false) {
+            $name = trim(substr($line, $commaPos + 1));
         }
 
-        $guide[$channelId][] = [
-            'start' => $start,
-            'stop' => $stop,
-            'title' => $title !== '' ? $title : 'Untitled',
-            'desc' => $desc
+        $url = '';
+        for ($j = $i + 1; $j < $count; $j++) {
+            $nextLine = trim($lines[$j]);
+
+            if ($nextLine === '' || strpos($nextLine, '#') === 0) {
+                continue;
+            }
+
+            $url = $nextLine;
+            $i = $j;
+            break;
+        }
+
+        if ($url === '') {
+            continue;
+        }
+
+        $channels[] = [
+            'name' => $name ?: ($attrs['tvg-name'] ?? 'Unnamed Channel'),
+            'url' => $url,
+            'logo' => $attrs['tvg-logo'] ?? '',
+            'group' => $attrs['group-title'] ?? 'Other'
         ];
     }
 
-    foreach ($guide as $channelId => $programmes) {
-        usort($programmes, function ($a, $b) {
-            return $a['start'] <=> $b['start'];
-        });
-        $guide[$channelId] = $programmes;
-    }
-
-    return $guide;
-}
-
-function getNowNextForChannel($tvgId, $guide, $timezone = 'Australia/Adelaide') {
-    $result = [
-        'now' => null,
-        'next' => null
-    ];
-
-    if (!$tvgId || !isset($guide[$tvgId])) {
-        return $result;
-    }
-
-    $now = new DateTime('now', new DateTimeZone($timezone));
-
-    foreach ($guide[$tvgId] as $index => $program) {
-        $start = clone $program['start'];
-        $stop = clone $program['stop'];
-
-        $start->setTimezone(new DateTimeZone($timezone));
-        $stop->setTimezone(new DateTimeZone($timezone));
-
-        if ($now >= $start && $now < $stop) {
-            $result['now'] = [
-                'title' => $program['title'],
-                'desc' => $program['desc'],
-                'start' => $start->format('g:i A'),
-                'stop' => $stop->format('g:i A')
-            ];
-
-            if (isset($guide[$tvgId][$index + 1])) {
-                $nextProgram = $guide[$tvgId][$index + 1];
-                $nextStart = clone $nextProgram['start'];
-                $nextStop = clone $nextProgram['stop'];
-                $nextStart->setTimezone(new DateTimeZone($timezone));
-                $nextStop->setTimezone(new DateTimeZone($timezone));
-
-                $result['next'] = [
-                    'title' => $nextProgram['title'],
-                    'desc' => $nextProgram['desc'],
-                    'start' => $nextStart->format('g:i A'),
-                    'stop' => $nextStop->format('g:i A')
-                ];
-            }
-            break;
-        }
-
-        if ($now < $start) {
-            $result['next'] = [
-                'title' => $program['title'],
-                'desc' => $program['desc'],
-                'start' => $start->format('g:i A'),
-                'stop' => $stop->format('g:i A')
-            ];
-            break;
-        }
-    }
-
-    return $result;
+    return $channels;
 }
 
 /*
@@ -228,31 +104,22 @@ function getNowNextForChannel($tvgId, $guide, $timezone = 'Australia/Adelaide') 
 |--------------------------------------------------------------------------
 */
 $m3uContent = loadTextFile($m3uSource);
-$epgContent = loadTextFile($epgSource);
-
 $channels = parseM3U($m3uContent);
-$guide = parseEPG($epgContent);
 
-// Add now/next data to each channel
-foreach ($channels as &$channel) {
-    $channel['guide'] = getNowNextForChannel($channel['tvg_id'], $guide);
-}
-unset($channel);
-
-// Default selected channel
 $selectedIndex = 0;
-if (isset($_GET['ch']) && is_numeric($_GET['ch'])) {
+if (isset($_GET['ch']) && is_numeric($_GET['ch']) && count($channels) > 0) {
     $selectedIndex = max(0, min((int)$_GET['ch'], count($channels) - 1));
 }
 $selectedChannel = $channels[$selectedIndex] ?? null;
 
-// Group channels
 $groupedChannels = [];
 foreach ($channels as $index => $channel) {
     $groupName = $channel['group'] ?: 'Other';
+
     if (!isset($groupedChannels[$groupName])) {
         $groupedChannels[$groupName] = [];
     }
+
     $groupedChannels[$groupName][] = [
         'index' => $index,
         'channel' => $channel
@@ -384,7 +251,7 @@ foreach ($channels as $index => $channel) {
             text-overflow: ellipsis;
         }
 
-        .channel-program {
+        .channel-group-label {
             font-size: 12px;
             color: #9da7b8;
             margin-top: 4px;
@@ -429,46 +296,6 @@ foreach ($channels as $index => $channel) {
             display: block;
         }
 
-        .guide-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .guide-card {
-            background: #181c24;
-            border: 1px solid #2a2f3a;
-            border-radius: 14px;
-            padding: 16px;
-            min-width: 0;
-        }
-
-        .guide-label {
-            font-size: 12px;
-            color: #9da7b8;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .guide-time {
-            font-size: 13px;
-            color: #8ec5ff;
-            margin-bottom: 6px;
-        }
-
-        .guide-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        .guide-desc {
-            font-size: 14px;
-            color: #c9d1d9;
-            line-height: 1.4;
-        }
-
         .mobile-toggle {
             display: none;
             margin-top: 10px;
@@ -478,11 +305,6 @@ foreach ($channels as $index => $channel) {
             border-radius: 10px;
             padding: 10px 14px;
             cursor: pointer;
-        }
-
-        .empty-guide {
-            color: #9da7b8;
-            font-size: 14px;
         }
 
         @media (max-width: 980px) {
@@ -522,10 +344,6 @@ foreach ($channels as $index => $channel) {
                 overflow: visible;
             }
 
-            .guide-grid {
-                grid-template-columns: 1fr;
-            }
-
             video {
                 max-height: 45vh;
             }
@@ -540,40 +358,36 @@ foreach ($channels as $index => $channel) {
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="Search channels...">
                 </div>
-                <button class="mobile-toggle" id="toggleChannels">Show / Hide Channels</button>
+                <button class="mobile-toggle" id="toggleChannels" type="button">Show / Hide Channels</button>
             </div>
 
             <div class="channel-list" id="channelList">
                 <?php foreach ($groupedChannels as $groupName => $items): ?>
                     <div class="channel-group">
-                        <div class="group-title"><?php echo htmlspecialchars($groupName, ENT_QUOTES, 'UTF-8'); ?></div>
+                        <div class="group-title"><?php echo h($groupName); ?></div>
 
                         <?php foreach ($items as $item): ?>
                             <?php
                             $channel = $item['channel'];
                             $index = $item['index'];
-                            $nowText = 'No guide data';
-                            if (!empty($channel['guide']['now'])) {
-                                $nowText = 'Now: ' . $channel['guide']['now']['title'];
-                            } elseif (!empty($channel['guide']['next'])) {
-                                $nowText = 'Next: ' . $channel['guide']['next']['title'];
-                            }
+                            $fallbackLogo = 'https://via.placeholder.com/44x44?text=TV';
                             ?>
                             <button
                                 class="channel-item <?php echo $selectedIndex === $index ? 'active' : ''; ?>"
-                                data-url="<?php echo htmlspecialchars($channel['url'], ENT_QUOTES, 'UTF-8'); ?>"
-                                data-name="<?php echo htmlspecialchars($channel['name'], ENT_QUOTES, 'UTF-8'); ?>"
-                                onclick="selectChannel(this, <?php echo $index; ?>)"
+                                data-url="<?php echo h($channel['url']); ?>"
+                                data-name="<?php echo h($channel['name']); ?>"
+                                onclick="selectChannel(this, <?php echo (int)$index; ?>)"
+                                type="button"
                             >
                                 <img
                                     class="channel-logo"
-                                    src="<?php echo htmlspecialchars($channel['logo'] ?: 'https://via.placeholder.com/44x44?text=TV', ENT_QUOTES, 'UTF-8'); ?>"
-                                    alt="<?php echo htmlspecialchars($channel['name'], ENT_QUOTES, 'UTF-8'); ?>"
-                                    onerror="this.src='https://via.placeholder.com/44x44?text=TV';"
+                                    src="<?php echo h($channel['logo'] ?: $fallbackLogo); ?>"
+                                    alt="<?php echo h($channel['name']); ?>"
+                                    onerror="this.src='<?php echo h($fallbackLogo); ?>';"
                                 >
                                 <div class="channel-meta">
-                                    <div class="channel-name"><?php echo htmlspecialchars($channel['name'], ENT_QUOTES, 'UTF-8'); ?></div>
-                                    <div class="channel-program"><?php echo htmlspecialchars($nowText, ENT_QUOTES, 'UTF-8'); ?></div>
+                                    <div class="channel-name"><?php echo h($channel['name']); ?></div>
+                                    <div class="channel-group-label"><?php echo h($channel['group'] ?: 'TV Channel'); ?></div>
                                 </div>
                             </button>
                         <?php endforeach; ?>
@@ -585,48 +399,12 @@ foreach ($channels as $index => $channel) {
         <main class="main">
             <?php if ($selectedChannel): ?>
                 <div class="player-header">
-                    <h2 id="currentChannel"><?php echo htmlspecialchars($selectedChannel['name'], ENT_QUOTES, 'UTF-8'); ?></h2>
+                    <h2 id="currentChannel"><?php echo h($selectedChannel['name']); ?></h2>
                     <div class="status" id="playerStatus">Ready</div>
                 </div>
 
                 <div class="video-wrap">
                     <video id="video" controls autoplay playsinline></video>
-                </div>
-
-                <div class="guide-grid">
-                    <div class="guide-card">
-                        <div class="guide-label">Now Playing</div>
-                        <?php if (!empty($selectedChannel['guide']['now'])): ?>
-                            <div class="guide-time">
-                                <?php echo htmlspecialchars($selectedChannel['guide']['now']['start'] . ' - ' . $selectedChannel['guide']['now']['stop'], ENT_QUOTES, 'UTF-8'); ?>
-                            </div>
-                            <div class="guide-title">
-                                <?php echo htmlspecialchars($selectedChannel['guide']['now']['title'], ENT_QUOTES, 'UTF-8'); ?>
-                            </div>
-                            <div class="guide-desc">
-                                <?php echo nl2br(htmlspecialchars($selectedChannel['guide']['now']['desc'] ?: 'No description.', ENT_QUOTES, 'UTF-8')); ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="empty-guide">No current program found for this channel.</div>
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="guide-card">
-                        <div class="guide-label">Up Next</div>
-                        <?php if (!empty($selectedChannel['guide']['next'])): ?>
-                            <div class="guide-time">
-                                <?php echo htmlspecialchars($selectedChannel['guide']['next']['start'] . ' - ' . $selectedChannel['guide']['next']['stop'], ENT_QUOTES, 'UTF-8'); ?>
-                            </div>
-                            <div class="guide-title">
-                                <?php echo htmlspecialchars($selectedChannel['guide']['next']['title'], ENT_QUOTES, 'UTF-8'); ?>
-                            </div>
-                            <div class="guide-desc">
-                                <?php echo nl2br(htmlspecialchars($selectedChannel['guide']['next']['desc'] ?: 'No description.', ENT_QUOTES, 'UTF-8')); ?>
-                            </div>
-                        <?php else: ?>
-                            <div class="empty-guide">No upcoming program found for this channel.</div>
-                        <?php endif; ?>
-                    </div>
                 </div>
             <?php else: ?>
                 <h2>No channels loaded</h2>
@@ -731,6 +509,7 @@ foreach ($channels as $index => $channel) {
         if (searchInput) {
             searchInput.addEventListener('input', function () {
                 const term = this.value.toLowerCase().trim();
+
                 document.querySelectorAll('.channel-item').forEach(function (item) {
                     const name = (item.getAttribute('data-name') || '').toLowerCase();
                     item.style.display = name.includes(term) ? 'flex' : 'none';
@@ -744,7 +523,7 @@ foreach ($channels as $index => $channel) {
             });
         }
 
-        if (toggleChannels) {
+        if (toggleChannels && channelList) {
             toggleChannels.addEventListener('click', function () {
                 channelList.classList.toggle('show');
             });
