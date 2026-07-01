@@ -325,6 +325,46 @@ function range_summary_text(array $range, string $defaultText = 'Current shift b
     return $defaultText;
 }
 
+function preserved_query_params(array $remove = ['start', 'end', 'quick', 'msg']): array
+{
+    $params = $_GET;
+
+    foreach ($remove as $key) {
+        unset($params[$key]);
+    }
+
+    return $params;
+}
+
+function render_preserved_hidden_inputs(array $remove = ['start', 'end', 'quick', 'msg']): void
+{
+    foreach (preserved_query_params($remove) as $key => $value) {
+        if (is_array($value)) {
+            continue;
+        }
+        echo '<input type="hidden" name="' . h($key) . '" value="' . h($value) . '">' . "\n";
+    }
+}
+
+function current_page_with_params(array $remove = ['start', 'end', 'quick', 'msg'], array $extra = []): string
+{
+    $params = preserved_query_params($remove);
+
+    foreach ($extra as $key => $value) {
+        if ($value === null) {
+            unset($params[$key]);
+        } else {
+            $params[$key] = $value;
+        }
+    }
+
+    $path = $_SERVER['PHP_SELF'] ?? '';
+    $file = basename($path) ?: 'index.php';
+    $query = http_build_query($params);
+
+    return $file . ($query !== '' ? '?' . $query : '');
+}
+
 function render_dashboard_range_filter(array $range): void
 {
     ?>
@@ -365,11 +405,14 @@ function render_dashboard_range_filter(array $range): void
 
 function render_range_filter(array $range, string $message = 'Filtering table to selected range'): void
 {
+    $clearUrl = current_page_with_params(['start', 'end', 'quick', 'msg']);
     ?>
     <div class="list-filter-card">
         <div class="list-filter-title">Date / Time Range</div>
 
-        <form method="get" class="list-filter-form">
+        <form method="get" action="<?= h(basename($_SERVER['PHP_SELF'] ?? '')) ?>" class="list-filter-form">
+            <?php render_preserved_hidden_inputs(['start', 'end', 'quick', 'msg']); ?>
+
             <div class="list-range-layout">
                 <div class="list-range-inputs">
                     <div class="list-range-row">
@@ -388,7 +431,7 @@ function render_range_filter(array $range, string $message = 'Filtering table to
                 <div class="list-range-buttons">
                     <div class="list-filter-actions">
                         <button type="submit" class="btn">Apply Range</button>
-                        <a href="<?= h($_SERVER['PHP_SELF']) ?>" class="btn">Clear</a>
+                        <a href="<?= h($clearUrl) ?>" class="btn">Clear</a>
                     </div>
 
                     <div class="list-quick-actions">
@@ -756,7 +799,7 @@ function monitoring_has_issue($item)
         return false;
     }
 
-    $state = strtoupper(trim((string)($item['state'] ?? '')));
+    $state = strtoupper(trim((string)($item['state'] ?? $item['status'] ?? '')));
 
     return in_array($state, ['WARNING', 'OVERDUE', 'NO DATA', 'NOT SET UP'], true);
 }
@@ -776,7 +819,7 @@ function build_compact_monitor_group(array $monitoring, array $keys, $title = 'P
         $item['key'] = $key;
         $items[$key] = $item;
 
-        $rank = monitoring_state_rank($item['state'] ?? '');
+        $rank = monitoring_state_rank($item['state'] ?? $item['status'] ?? '');
         if ($rank > $highestRank) {
             $highestRank = $rank;
         }
