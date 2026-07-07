@@ -137,6 +137,7 @@ try {
                 'Date' => 'log_date',
                 'Time' => 'log_time',
                 'Nozzle' => 'nozzle',
+                'Nozzle Status' => 'nozzle_status',
                 'Flow' => 'flow',
                 'Pressure' => 'pressure',
                 'Min_Deg' => 'min_deg',
@@ -144,7 +145,7 @@ try {
                 'RPM' => 'rpm',
                 'Comments' => 'comments'
             ],
-            'numeric_columns' => ['flow', 'pressure', 'min_deg', 'max_deg', 'rpm']
+            'numeric_columns' => ['nozzle_status', 'flow', 'pressure', 'min_deg', 'max_deg', 'rpm']
         ],
 
         'TRICANTER' => [
@@ -152,6 +153,7 @@ try {
             'columns' => [
                 'Date' => 'log_date',
                 'Time' => 'log_time',
+                'Tricanter Status' => 'tricanter_status',
                 'Bowl_Speed' => 'bowl_speed',
                 'Screw_Speed' => 'screw_speed',
                 'Bowl_RPM' => 'bowl_rpm',
@@ -164,6 +166,7 @@ try {
                 'Comments' => 'comments'
             ],
             'numeric_columns' => [
+                'tricanter_status',
                 'bowl_speed',
                 'screw_speed',
                 'bowl_rpm',
@@ -298,6 +301,12 @@ try {
 
         $section = strtoupper(trim((string) $record['table']));
         $section = str_replace(' ', '_', $section);
+
+        // Accept both old VBS/PHP naming and Python logger naming.
+        // PROJECTFLOW was the original section name; PROJECT_FLOW is used by the new logger.
+        if ($section === 'PROJECT_FLOW') {
+            $section = 'PROJECTFLOW';
+        }
 
         if (!isset($sectionMap[$section])) {
             continue;
