@@ -683,6 +683,49 @@ function render_pump_values_rows(array $rows): string
     return ob_get_clean();
 }
 
+function filter_rows_to_minute_increments(array $rows, int $incrementMinutes = 15): array
+{
+    if (!$rows || $incrementMinutes <= 0) {
+        return $rows;
+    }
+
+    $latestTimestamp = null;
+    foreach ($rows as $row) {
+        $stamp = trim((string)($row['log_date'] ?? '') . ' ' . (string)($row['log_time'] ?? ''));
+        $timestamp = $stamp !== '' ? strtotime($stamp) : false;
+        if ($timestamp === false) {
+            continue;
+        }
+
+        if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+            $latestTimestamp = $timestamp;
+        }
+    }
+
+    if ($latestTimestamp === null) {
+        return $rows;
+    }
+
+    $incrementSeconds = $incrementMinutes * 60;
+    $nextTarget = $latestTimestamp;
+    $filtered = [];
+
+    foreach ($rows as $row) {
+        $stamp = trim((string)($row['log_date'] ?? '') . ' ' . (string)($row['log_time'] ?? ''));
+        $timestamp = $stamp !== '' ? strtotime($stamp) : false;
+        if ($timestamp === false) {
+            continue;
+        }
+
+        if ($timestamp <= $nextTarget) {
+            $filtered[] = $row;
+            $nextTarget = $timestamp - $incrementSeconds;
+        }
+    }
+
+    return $filtered;
+}
+
 function build_dashboard_data(PDO $pdo, array $range): array
 {
     try {
@@ -708,6 +751,12 @@ function build_dashboard_data(PDO $pdo, array $range): array
     }
 
     $solidWaste = solid_diff_minutes_rows($solidWaste);
+
+    $tricanter = filter_rows_to_minute_increments($tricanter, 15);
+    $nozzle = filter_rows_to_minute_increments($nozzle, 15);
+    $projectFlow = filter_rows_to_minute_increments($projectFlow, 15);
+    $pumpValues = filter_rows_to_minute_increments($pumpValues, 15);
+    $nitrogen = filter_rows_to_minute_increments($nitrogen, 15);
 
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
