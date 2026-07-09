@@ -123,6 +123,12 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a>
             <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">View
                 Logs</a>
+
+            <a href="graphs.php" class="<?= $currentPage === 'graphs.php' ? 'active' : '' ?>">View Graphs</a>
+
+
+
+
             <!-- <a href="logs.php?table=nozzle" class="<?= $currentPage === 'logs.php?table=nozzle' ? 'active' : '' ?>">Nozzle Logs</a>
             <a href="logs.php?table=solid_waste" class="<?= $currentPage === 'logs.php?table=solid_waste' ? 'active' : '' ?>">Solid
                 Waste Logs</a>
