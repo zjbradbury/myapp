@@ -234,6 +234,85 @@ function log_cell_value(array $row, array $col): string
     return h($prefix . (string)$value . $suffix);
 }
 
+
+function selected_interval_minutes(): int
+{
+    $allowed = [0, 1, 5, 10, 15, 30, 60, 120, 360, 720];
+    $value = (int)($_GET['interval'] ?? $_POST['interval'] ?? 0);
+    return in_array($value, $allowed, true) ? $value : 0;
+}
+
+function selected_time_search(): string
+{
+    return trim((string)($_GET['time_search'] ?? $_POST['time_search'] ?? ''));
+}
+
+function normalise_time_search(string $value): string
+{
+    $value = trim($value);
+    if ($value === '') return '';
+
+    // Allow quick entry like 615 to mean 06:15.
+    if (preg_match('/^\d{3,4}$/', $value)) {
+        $value = str_pad($value, 4, '0', STR_PAD_LEFT);
+        return substr($value, 0, 2) . ':' . substr($value, 2, 2);
+    }
+
+    return $value;
+}
+
+function filter_rows_by_time_search(array $rows, string $timeSearch): array
+{
+    $timeSearch = normalise_time_search($timeSearch);
+    if ($timeSearch === '') {
+        return $rows;
+    }
+
+    return array_values(array_filter($rows, function ($row) use ($timeSearch) {
+        $time = (string)($row['log_time'] ?? '');
+        return strpos($time, $timeSearch) !== false;
+    }));
+}
+
+function filter_rows_to_minute_increments_for_logs(array $rows, int $incrementMinutes): array
+{
+    if (!$rows || $incrementMinutes <= 0) {
+        return $rows;
+    }
+
+    $latestTimestamp = null;
+    foreach ($rows as $row) {
+        $stamp = trim((string)($row['log_date'] ?? '') . ' ' . (string)($row['log_time'] ?? ''));
+        $timestamp = $stamp !== '' ? strtotime($stamp) : false;
+        if ($timestamp === false) continue;
+        if ($latestTimestamp === null || $timestamp > $latestTimestamp) {
+            $latestTimestamp = $timestamp;
+        }
+    }
+
+    if ($latestTimestamp === null) {
+        return $rows;
+    }
+
+    $incrementSeconds = $incrementMinutes * 60;
+    $nextTarget = $latestTimestamp;
+    $filtered = [];
+
+    // The logs page fetches newest first. This keeps the newest row, then steps back from there.
+    foreach ($rows as $row) {
+        $stamp = trim((string)($row['log_date'] ?? '') . ' ' . (string)($row['log_time'] ?? ''));
+        $timestamp = $stamp !== '' ? strtotime($stamp) : false;
+        if ($timestamp === false) continue;
+
+        if ($timestamp <= $nextTarget) {
+            $filtered[] = $row;
+            $nextTarget = $timestamp - $incrementSeconds;
+        }
+    }
+
+    return $filtered;
+}
+
 function url_with_current_state(string $baseUrl, array $extra = []): string
 {
     $params = $_GET;
@@ -264,6 +343,8 @@ function nav_url_for_table(string $key): string
 $selectedKey = selected_table_key($tables);
 $config = $tables[$selectedKey];
 $range = get_range_filter_state(true);
+$selectedInterval = selected_interval_minutes();
+$timeSearch = selected_time_search();
 $message = '';
 $error = '';
 
@@ -305,6 +386,8 @@ try {
         $error = $config['table'] . ' does not exist yet.';
     } else {
         $rows = fetch_log_rows($pdo, $config['table'], $range, 'log_date DESC, log_time DESC, id DESC');
+        $rows = filter_rows_by_time_search($rows, $timeSearch);
+        $rows = filter_rows_to_minute_increments_for_logs($rows, $selectedInterval);
     }
 } catch (Throwable $e) {
     $error = $e->getMessage();
@@ -315,6 +398,8 @@ $csvParams = [
     'start' => $range['start'] ?? '',
     'end' => $range['end'] ?? '',
     'quick' => $range['quick'] ?? '',
+    'interval' => $selectedInterval,
+    'time_search' => $timeSearch,
 ];
 ?>
 <!DOCTYPE html>
@@ -373,6 +458,38 @@ $csvParams = [
 
     <div class="filter-card panel">
         <?php render_range_filter($range, 'Filtering ' . $config['label'] . ' table to selected range'); ?>
+
+        <form method="get" class="list-extra-filter-form" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+            <?php foreach ($_GET as $key => $value): ?>
+                <?php if (!in_array($key, ['interval', 'time_search'], true) && !is_array($value)): ?>
+                    <input type="hidden" name="<?= h($key) ?>" value="<?= h((string)$value) ?>">
+                <?php endif; ?>
+            <?php endforeach; ?>
+
+            <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9cc1de;">
+                Show interval
+                <select name="interval">
+                    <option value="0" <?= $selectedInterval === 0 ? 'selected' : '' ?>>All records</option>
+                    <option value="1" <?= $selectedInterval === 1 ? 'selected' : '' ?>>Every 1 minute</option>
+                    <option value="5" <?= $selectedInterval === 5 ? 'selected' : '' ?>>Every 5 minutes</option>
+                    <option value="10" <?= $selectedInterval === 10 ? 'selected' : '' ?>>Every 10 minutes</option>
+                    <option value="15" <?= $selectedInterval === 15 ? 'selected' : '' ?>>Every 15 minutes</option>
+                    <option value="30" <?= $selectedInterval === 30 ? 'selected' : '' ?>>Every 30 minutes</option>
+                    <option value="60" <?= $selectedInterval === 60 ? 'selected' : '' ?>>Every 60 minutes</option>
+                    <option value="120" <?= $selectedInterval === 120 ? 'selected' : '' ?>>Every 2 hours</option>
+                    <option value="360" <?= $selectedInterval === 360 ? 'selected' : '' ?>>Every 6 hours</option>
+                    <option value="720" <?= $selectedInterval === 720 ? 'selected' : '' ?>>Every 12 hours</option>
+                </select>
+            </label>
+
+            <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9cc1de;">
+                Time search
+                <input type="text" name="time_search" value="<?= h($timeSearch) ?>" placeholder="06:15 or 06:">
+            </label>
+
+            <button class="btn" type="submit">Apply</button>
+            <a class="btn" href="<?= h(url_with_current_state('logs.php', ['interval' => null, 'time_search' => null])) ?>">Clear Log Filters</a>
+        </form>
     </div>
 
     <?php if ($message !== ''): ?>
@@ -475,4 +592,3 @@ if (selectAllRows) {
 </script>
 </body>
 </html>
-
