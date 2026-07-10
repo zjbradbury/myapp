@@ -33,6 +33,13 @@ $tables = [
             "rpm" => "RPM",
         ],
     ],
+    "solid_waste_logs" => [
+        "label" => "Solid Waste",
+        "columns" => [
+            "amount" => "Amount",
+            "diff_minutes" => "Time Since Previous Entry",
+        ],
+    ],
     "pump_values_logs" => [
         "label" => "Pump Values",
         "columns" => [
@@ -138,17 +145,53 @@ foreach ($selected as $seriesKey) {
 
     $seriesLabel = $tables[$table]["label"] . " - " . $tables[$table]["columns"][$column];
 
-    $sql = "
-        SELECT
-            FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(CONCAT(log_date, ' ', log_time)) / :bucket) * :bucket) AS bucket_time,
-            AVG(CAST(`$column` AS DECIMAL(18,4))) AS avg_value
-        FROM `$table`
-        WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
-          AND `$column` IS NOT NULL
-          AND `$column` <> ''
-        GROUP BY bucket_time
-        ORDER BY bucket_time ASC
-    ";
+    if ($table === "solid_waste_logs" && $column === "diff_minutes") {
+        /*
+         * diff_minutes is calculated from the actual timestamp of each solid
+         * waste entry to the immediately preceding solid waste entry. The
+         * previous entry may be before the selected range, so the first point
+         * in the range still receives the correct time difference.
+         */
+        $sql = "
+            SELECT
+                FROM_UNIXTIME(
+                    FLOOR(UNIX_TIMESTAMP(entry_time) / :bucket) * :bucket
+                ) AS bucket_time,
+                AVG(diff_minutes) AS avg_value
+            FROM (
+                SELECT
+                    CONCAT(sw.log_date, ' ', sw.log_time) AS entry_time,
+                    TIMESTAMPDIFF(
+                        SECOND,
+                        (
+                            SELECT MAX(CONCAT(prev.log_date, ' ', prev.log_time))
+                            FROM solid_waste_logs prev
+                            WHERE CONCAT(prev.log_date, ' ', prev.log_time)
+                                < CONCAT(sw.log_date, ' ', sw.log_time)
+                        ),
+                        CONCAT(sw.log_date, ' ', sw.log_time)
+                    ) / 60.0 AS diff_minutes
+                FROM solid_waste_logs sw
+                WHERE CONCAT(sw.log_date, ' ', sw.log_time)
+                    BETWEEN :start_dt AND :end_dt
+            ) calculated
+            WHERE diff_minutes IS NOT NULL
+            GROUP BY bucket_time
+            ORDER BY bucket_time ASC
+        ";
+    } else {
+        $sql = "
+            SELECT
+                FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(CONCAT(log_date, ' ', log_time)) / :bucket) * :bucket) AS bucket_time,
+                AVG(CAST(`$column` AS DECIMAL(18,4))) AS avg_value
+            FROM `$table`
+            WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
+              AND `$column` IS NOT NULL
+              AND `$column` <> ''
+            GROUP BY bucket_time
+            ORDER BY bucket_time ASC
+        ";
+    }
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
@@ -497,7 +540,7 @@ $rangeSummary = date("d/m/Y H:i", strtotime($startSql)) . " to " . date("d/m/Y H
             <div class="hero-status-row">
                 <div>
                     <div class="hero-status status-online">CUSTOM TREND</div>
-                    <div class="info-sub">Select any values from tricanter, nozzle, pump values, and nitrogen logs.</div>
+                    <div class="info-sub">Select values from tricanter, nozzle, solid waste, pump values, and nitrogen logs.</div>
                 </div>
 
                 <div class="hero-stats">
@@ -630,6 +673,9 @@ const chartPalette = {
     'Nozzle - Max Deg': '#c8a7ff',
     'Nozzle - RPM': '#ff7e67',
 
+    'Solid Waste - Amount': '#00ff88',
+    'Solid Waste - Time Since Previous Entry': '#ffd24d',
+
     'Pump Values - SP2 Inlet Pressure': '#00e5ff',
     'Pump Values - SP2 Outlet Pressure': '#7dd3fc',
     'Pump Values - Feed Pump Inlet Pressure': '#ffd24d',
@@ -736,6 +782,14 @@ function makeChart(canvasId, labels, datasets) {
 
                             if (rawValue === null || rawValue === '' || typeof rawValue === 'undefined') {
                                 return ds.label + ': -';
+                            }
+
+                            if (ds.label === 'Solid Waste - Amount') {
+                                return ds.label + ': ' + rawValue + ' KG';
+                            }
+
+                            if (ds.label === 'Solid Waste - Time Since Previous Entry') {
+                                return ds.label + ': ' + rawValue + ' min';
                             }
 
                             return ds.label + ': ' + rawValue;
