@@ -145,54 +145,113 @@ foreach ($selected as $seriesKey) {
 
     $seriesLabel = $tables[$table]["label"] . " - " . $tables[$table]["columns"][$column];
 
-    if ($table === "solid_waste_logs" && $column === "diff_minutes") {
+    if ($table === "solid_waste_logs") {
         /*
-         * diff_minutes is calculated from the actual timestamp of each solid
-         * waste entry to the immediately preceding solid waste entry. The
-         * previous entry may be before the selected range, so the first point
-         * in the range still receives the correct time difference.
+         * Solid waste is event-based rather than continuously logged.
+         * Calculate each entry first, independently of the graph frequency,
+         * and only then place the result into the selected time bucket.
          */
-        $sql = "
-            SELECT
-                FROM_UNIXTIME(
-                    FLOOR(UNIX_TIMESTAMP(entry_time) / :bucket) * :bucket
-                ) AS bucket_time,
-                AVG(diff_minutes) AS avg_value
-            FROM (
-                SELECT
-                    CONCAT(sw.log_date, ' ', sw.log_time) AS entry_time,
-                    TIMESTAMPDIFF(
-                        SECOND,
-                        (
-                            SELECT MAX(CONCAT(prev.log_date, ' ', prev.log_time))
-                            FROM solid_waste_logs prev
-                            WHERE CONCAT(prev.log_date, ' ', prev.log_time)
-                                < CONCAT(sw.log_date, ' ', sw.log_time)
-                        ),
-                        CONCAT(sw.log_date, ' ', sw.log_time)
-                    ) / 60.0 AS diff_minutes
-                FROM solid_waste_logs sw
-                WHERE CONCAT(sw.log_date, ' ', sw.log_time)
-                    BETWEEN :start_dt AND :end_dt
-            ) calculated
-            WHERE diff_minutes IS NOT NULL
-            GROUP BY bucket_time
-            ORDER BY bucket_time ASC
+        $previousSql = "
+            SELECT log_date, log_time, amount
+            FROM solid_waste_logs
+            WHERE CONCAT(log_date, ' ', log_time) < :start_dt
+            ORDER BY log_date DESC, log_time DESC
+            LIMIT 1
         ";
-    } else {
-        $sql = "
-            SELECT
-                FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(CONCAT(log_date, ' ', log_time)) / :bucket) * :bucket) AS bucket_time,
-                AVG(CAST(`$column` AS DECIMAL(18,4))) AS avg_value
-            FROM `$table`
+
+        $previousStmt = $pdo->prepare($previousSql);
+        $previousStmt->execute([":start_dt" => $startSql]);
+        $previousRow = $previousStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        $solidSql = "
+            SELECT log_date, log_time, amount
+            FROM solid_waste_logs
             WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
-              AND `$column` IS NOT NULL
-              AND `$column` <> ''
-            GROUP BY bucket_time
-            ORDER BY bucket_time ASC
+            ORDER BY log_date ASC, log_time ASC
         ";
+
+        $solidStmt = $pdo->prepare($solidSql);
+        $solidStmt->execute([
+            ":start_dt" => $startSql,
+            ":end_dt" => $endSql,
+        ]);
+
+        $solidRows = $solidStmt->fetchAll(PDO::FETCH_ASSOC);
+        $dataByBucketValues = [];
+        $previousTimestamp = null;
+
+        if ($previousRow) {
+            $previousTimestamp = strtotime(
+                (string)$previousRow["log_date"] . " " . (string)$previousRow["log_time"]
+            );
+        }
+
+        foreach ($solidRows as $solidRow) {
+            $entryTimestamp = strtotime(
+                (string)$solidRow["log_date"] . " " . (string)$solidRow["log_time"]
+            );
+
+            if ($entryTimestamp === false) {
+                continue;
+            }
+
+            $value = null;
+
+            if ($column === "amount") {
+                if ($solidRow["amount"] !== null && $solidRow["amount"] !== '' && is_numeric($solidRow["amount"])) {
+                    $value = (float)$solidRow["amount"];
+                }
+            } elseif ($column === "diff_minutes" && $previousTimestamp !== null) {
+                $value = ($entryTimestamp - $previousTimestamp) / 60;
+            }
+
+            $bucketTimestamp = (int)(floor($entryTimestamp / $bucketSeconds) * $bucketSeconds);
+            $bucketKey = date("Y-m-d H:i:s", $bucketTimestamp);
+
+            if ($value !== null) {
+                $dataByBucketValues[$bucketKey][] = $value;
+            }
+
+            $previousTimestamp = $entryTimestamp;
+        }
+
+        $dataByBucket = [];
+
+        foreach ($dataByBucketValues as $bucketKey => $bucketValues) {
+            if (!$bucketValues) {
+                continue;
+            }
+
+            /*
+             * If more than one solid-waste event occurs in one selected
+             * interval, show their average, matching the other graph series.
+             */
+            $dataByBucket[$bucketKey] = round(
+                array_sum($bucketValues) / count($bucketValues),
+                3
+            );
+        }
+
+        $seriesData[] = [
+            "key" => $seriesKey,
+            "label" => $seriesLabel,
+            "data" => $dataByBucket,
+        ];
+
+        continue;
     }
 
+    $sql = "
+        SELECT
+            FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(CONCAT(log_date, ' ', log_time)) / :bucket) * :bucket) AS bucket_time,
+            AVG(CAST(`$column` AS DECIMAL(18,4))) AS avg_value
+        FROM `$table`
+        WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
+          AND `$column` IS NOT NULL
+          AND `$column` <> ''
+        GROUP BY bucket_time
+        ORDER BY bucket_time ASC
+    ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
         ":bucket" => $bucketSeconds,
