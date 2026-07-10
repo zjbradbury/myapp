@@ -98,7 +98,31 @@ $startSql = str_replace("T", " ", $start) . ":00";
 $endSql = str_replace("T", " ", $end) . ":00";
 $bucketSeconds = $interval * 60;
 
-$labels = [];
+/*
+|--------------------------------------------------------------------------
+| BUILD ONE SHARED X-AXIS TIMELINE
+|--------------------------------------------------------------------------
+| Every selected series is placed against these exact interval buckets.
+| This prevents data from different tables shifting left/right when one
+| table has a missing record at a particular time.
+*/
+$startTimestamp = strtotime($startSql);
+$endTimestamp = strtotime($endSql);
+
+$timelineStart = (int)(floor($startTimestamp / $bucketSeconds) * $bucketSeconds);
+$timelineEnd = (int)(floor($endTimestamp / $bucketSeconds) * $bucketSeconds);
+
+$timelineKeys = [];
+$finalLabels = [];
+
+if ($startTimestamp !== false && $endTimestamp !== false && $timelineEnd >= $timelineStart) {
+    for ($timestamp = $timelineStart; $timestamp <= $timelineEnd; $timestamp += $bucketSeconds) {
+        $bucketKey = date("Y-m-d H:i:s", $timestamp);
+        $timelineKeys[] = $bucketKey;
+        $finalLabels[] = date("d/m H:i", $timestamp);
+    }
+}
+
 $seriesData = [];
 
 foreach ($selected as $seriesKey) {
@@ -133,29 +157,37 @@ foreach ($selected as $seriesKey) {
         ":end_dt" => $endSql,
     ]);
 
-    $data = [];
+    $dataByBucket = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $timeLabel = date("d/m H:i", strtotime($row["bucket_time"]));
-        $labels[$timeLabel] = true;
-        $data[$timeLabel] = is_null($row["avg_value"]) ? null : round((float)$row["avg_value"], 3);
+        $bucketTimestamp = strtotime((string)$row["bucket_time"]);
+
+        if ($bucketTimestamp === false) {
+            continue;
+        }
+
+        $bucketKey = date("Y-m-d H:i:s", $bucketTimestamp);
+        $dataByBucket[$bucketKey] = is_null($row["avg_value"])
+            ? null
+            : round((float)$row["avg_value"], 3);
     }
 
     $seriesData[] = [
         "key" => $seriesKey,
         "label" => $seriesLabel,
-        "data" => $data,
+        "data" => $dataByBucket,
     ];
 }
 
-$finalLabels = array_keys($labels);
-
 $datasets = [];
+
 foreach ($seriesData as $series) {
     $values = [];
 
-    foreach ($finalLabels as $label) {
-        $values[] = $series["data"][$label] ?? null;
+    foreach ($timelineKeys as $bucketKey) {
+        $values[] = array_key_exists($bucketKey, $series["data"])
+            ? $series["data"][$bucketKey]
+            : null;
     }
 
     $datasets[] = [
@@ -658,7 +690,7 @@ function chartDatasetObject(ds) {
         pointRadius: 0,
         pointHoverRadius: 4,
         pointHitRadius: 12,
-        spanGaps: true
+        spanGaps: false
     };
 }
 
@@ -680,7 +712,7 @@ function makeChart(canvasId, labels, datasets) {
             maintainAspectRatio: false,
             animation: false,
             interaction: {
-                mode: 'nearest',
+                mode: 'index',
                 intersect: false
             },
             plugins: {
