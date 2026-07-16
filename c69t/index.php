@@ -341,7 +341,7 @@ function render_tricanter_rows(array $rows): string
         <tr><td colspan="11">No tricanter data in selected range.</td></tr>
     <?php else:
         foreach ($rows as $r): ?>
-            <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
+            <tr class="tri-row<?= ((int)($r['tricanter_status'] ?? 0) === 1) ? ' tricanter-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
@@ -867,6 +867,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'rows_html' => render_tricanter_rows($tricanter),
                 'chart' => [
                     'labels' => label_series($tricanter),
+                    'status' => numeric_series($tricanter, 'tricanter_status'),
                     'datasets' => [
                         ['label' => 'Bowl Speed', 'data' => numeric_series($tricanter, 'bowl_speed')],
                         ['label' => 'Screw Speed', 'data' => numeric_series($tricanter, 'screw_speed')],
@@ -1734,6 +1735,42 @@ const chartPalette = {
 const initialPanels = <?= json_encode($dashboard['panels'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
 const charts = {};
 
+const tricanterStatusHighlightPlugin = {
+    id: 'tricanterStatusHighlight',
+    beforeDatasetsDraw(chart, args, pluginOptions) {
+        const statusData = pluginOptions?.statusData || [];
+        if (!statusData.length || !chart.chartArea) return;
+
+        const {ctx, chartArea, scales} = chart;
+        const xScale = scales.x;
+        if (!xScale) return;
+
+        ctx.save();
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+
+        statusData.forEach((status, index) => {
+            if (Number(status) !== 1) return;
+
+            const center = xScale.getPixelForValue(index);
+            const previous = index > 0
+                ? xScale.getPixelForValue(index - 1)
+                : center - ((xScale.getPixelForValue(index + 1) || center + 12) - center);
+            const next = index < statusData.length - 1
+                ? xScale.getPixelForValue(index + 1)
+                : center + (center - previous);
+
+            const left = Math.max(chartArea.left, center - Math.abs(center - previous) / 2);
+            const right = Math.min(chartArea.right, center + Math.abs(next - center) / 2);
+
+            ctx.fillRect(left, chartArea.top, Math.max(2, right - left), chartArea.bottom - chartArea.top);
+        });
+
+        ctx.restore();
+    }
+};
+
+Chart.register(tricanterStatusHighlightPlugin);
+
 function validDatasets(datasets) {
     return (datasets || []).filter(ds => Array.isArray(ds.data) && ds.data.length > 0);
 }
@@ -1799,6 +1836,9 @@ function makeChart(canvasId, config) {
                 intersect: false
             },
             plugins: {
+                tricanterStatusHighlight: {
+                    statusData: config.status || []
+                },
                 legend: {
                     display: true,
                     labels: {
@@ -1847,6 +1887,7 @@ function updateChart(chart, config) {
     const usable = validDatasets(config.datasets || []);
     chart.data.labels = config.labels || [];
     chart.data.datasets = usable.map(chartDatasetObject);
+    chart.options.plugins.tricanterStatusHighlight.statusData = config.status || [];
     chart.update('none');
 }
 
