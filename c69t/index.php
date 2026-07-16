@@ -1776,25 +1776,40 @@ function validDatasets(datasets) {
 }
 
 function normaliseSeries(data) {
-    const numeric = data.filter(v => v !== null && v !== '' && !Number.isNaN(Number(v))).map(Number);
+    const cleaned = (data || []).map(value => {
+        if (
+            value === null ||
+            typeof value === 'undefined' ||
+            value === '' ||
+            String(value).trim().toLowerCase() === 'null' ||
+            String(value).trim().toLowerCase() === 'nan' ||
+            Number.isNaN(Number(value))
+        ) {
+            return null;
+        }
+
+        return Number(value);
+    });
+
+    const numeric = cleaned.filter(value => value !== null);
 
     if (!numeric.length) {
-        return data.map(() => null);
+        return cleaned;
     }
 
     const min = Math.min(...numeric);
     const max = Math.max(...numeric);
 
     if (max === min) {
-        return data.map(v => {
-            if (v === null || v === '' || Number.isNaN(Number(v))) return null;
-            return 50;
-        });
+        return cleaned.map(value => value === null ? null : 50);
     }
 
-    return data.map(v => {
-        if (v === null || v === '' || Number.isNaN(Number(v))) return null;
-        return ((Number(v) - min) / (max - min)) * 100;
+    return cleaned.map(value => {
+        if (value === null) {
+            return null;
+        }
+
+        return ((value - min) / (max - min)) * 100;
     });
 }
 
@@ -1810,7 +1825,7 @@ function chartDatasetObject(ds) {
         pointRadius: 0,
         pointHoverRadius: 4,
         pointHitRadius: 12,
-        spanGaps: true
+        spanGaps: Number.POSITIVE_INFINITY
     };
 }
 
