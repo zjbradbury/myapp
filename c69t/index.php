@@ -779,6 +779,15 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $pumpValues = filter_rows_to_minute_increments($pumpValues, 15);
     $nitrogen = filter_rows_to_minute_increments($nitrogen, 15);
 
+    // Tables remain newest-first, while charts must run oldest-to-newest.
+    // Keeping separate arrays prevents labels, values, and status highlights
+    // from becoming misaligned after each AJAX refresh.
+    $tricanterChart = array_reverse($tricanter);
+    $solidWasteChart = array_reverse($solidWaste);
+    $nozzleChart = array_reverse($nozzle);
+    $pumpValuesChart = array_reverse($pumpValues);
+    $nitrogenChart = array_reverse($nitrogen);
+
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
     $latestSolidWaste = $solidWaste[0] ?? [];
@@ -866,18 +875,18 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_tricanter_kpis($latestTricanter),
                 'rows_html' => render_tricanter_rows($tricanter),
                 'chart' => [
-                    'labels' => label_series($tricanter),
-                    'status' => numeric_series($tricanter, 'tricanter_status'),
+                    'labels' => label_series($tricanterChart),
+                    'status' => numeric_series($tricanterChart, 'tricanter_status'),
                     'datasets' => [
-                        ['label' => 'Bowl Speed', 'data' => numeric_series($tricanter, 'bowl_speed')],
-                        ['label' => 'Screw Speed', 'data' => numeric_series($tricanter, 'screw_speed')],
-                        ['label' => 'Bowl RPM', 'data' => numeric_series($tricanter, 'bowl_rpm')],
-                        ['label' => 'Screw RPM', 'data' => numeric_series($tricanter, 'screw_rpm')],
-                        ['label' => 'Impeller', 'data' => numeric_series($tricanter, 'impeller')],
-                        ['label' => 'Feed Rate', 'data' => numeric_series($tricanter, 'feed_rate')],
-                        ['label' => 'Torque', 'data' => numeric_series($tricanter, 'torque')],
-                        ['label' => 'Temp', 'data' => numeric_series($tricanter, 'temp')],
-                        ['label' => 'Pressure', 'data' => numeric_series($tricanter, 'pressure')],
+                        ['label' => 'Bowl Speed', 'data' => numeric_series($tricanterChart, 'bowl_speed')],
+                        ['label' => 'Screw Speed', 'data' => numeric_series($tricanterChart, 'screw_speed')],
+                        ['label' => 'Bowl RPM', 'data' => numeric_series($tricanterChart, 'bowl_rpm')],
+                        ['label' => 'Screw RPM', 'data' => numeric_series($tricanterChart, 'screw_rpm')],
+                        ['label' => 'Impeller', 'data' => numeric_series($tricanterChart, 'impeller')],
+                        ['label' => 'Feed Rate', 'data' => numeric_series($tricanterChart, 'feed_rate')],
+                        ['label' => 'Torque', 'data' => numeric_series($tricanterChart, 'torque')],
+                        ['label' => 'Temp', 'data' => numeric_series($tricanterChart, 'temp')],
+                        ['label' => 'Pressure', 'data' => numeric_series($tricanterChart, 'pressure')],
                     ],
                 ],
             ],
@@ -885,10 +894,10 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_solid_waste_kpis($latestSolidWaste, $solidWasteTotalAmount),
                 'rows_html' => render_solid_waste_rows($solidWaste),
                 'chart' => [
-                    'labels' => label_series($solidWaste),
+                    'labels' => label_series($solidWasteChart),
                     'datasets' => [
-                        ['label' => 'Amount', 'data' => numeric_series($solidWaste, 'amount')],
-                        ['label' => 'Diff (min)', 'data' => solid_diff_series($solidWaste)],
+                        ['label' => 'Amount', 'data' => numeric_series($solidWasteChart, 'amount')],
+                        ['label' => 'Diff (min)', 'data' => solid_diff_series($solidWasteChart)],
                     ],
                 ],
             ],
@@ -896,13 +905,13 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_nozzle_kpis($latestNozzle),
                 'rows_html' => render_nozzle_rows($nozzle),
                 'chart' => [
-                    'labels' => label_series($nozzle),
+                    'labels' => label_series($nozzleChart),
                     'datasets' => [
-                        ['label' => 'Flow', 'data' => numeric_series($nozzle, 'flow')],
-                        ['label' => 'Pressure', 'data' => numeric_series($nozzle, 'pressure')],
-                        ['label' => 'Min Deg', 'data' => numeric_series($nozzle, 'min_deg')],
-                        ['label' => 'Max Deg', 'data' => numeric_series($nozzle, 'max_deg')],
-                        ['label' => 'RPM', 'data' => numeric_series($nozzle, 'rpm')],
+                        ['label' => 'Flow', 'data' => numeric_series($nozzleChart, 'flow')],
+                        ['label' => 'Pressure', 'data' => numeric_series($nozzleChart, 'pressure')],
+                        ['label' => 'Min Deg', 'data' => numeric_series($nozzleChart, 'min_deg')],
+                        ['label' => 'Max Deg', 'data' => numeric_series($nozzleChart, 'max_deg')],
+                        ['label' => 'RPM', 'data' => numeric_series($nozzleChart, 'rpm')],
                     ],
                 ],
             ],
@@ -922,14 +931,14 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_pump_values_kpis($latestPumpValues),
                 'rows_html' => render_pump_values_rows($pumpValues),
                 'chart' => [
-                    'labels' => label_series($pumpValues),
+                    'labels' => label_series($pumpValuesChart),
                     'datasets' => [
-                        ['label' => 'Suction Inlet Pressure', 'data' => numeric_series($pumpValues, 'suction_pump_2_inlet_pressure')],
-                        ['label' => 'Suction Outlet Pressure', 'data' => numeric_series($pumpValues, 'suction_pump_2_outlet_pressure')],
-                        ['label' => 'Feed Inlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_inlet_pressure')],
-                        ['label' => 'Feed Outlet Pressure', 'data' => numeric_series($pumpValues, 'feed_pump_outlet_pressure')],
-                        ['label' => 'Booster Inlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_inlet_pressure')],
-                        ['label' => 'Booster Outlet Pressure', 'data' => numeric_series($pumpValues, 'booster_pump_outlet_pressure')],
+                        ['label' => 'Suction Inlet Pressure', 'data' => numeric_series($pumpValuesChart, 'suction_pump_2_inlet_pressure')],
+                        ['label' => 'Suction Outlet Pressure', 'data' => numeric_series($pumpValuesChart, 'suction_pump_2_outlet_pressure')],
+                        ['label' => 'Feed Inlet Pressure', 'data' => numeric_series($pumpValuesChart, 'feed_pump_inlet_pressure')],
+                        ['label' => 'Feed Outlet Pressure', 'data' => numeric_series($pumpValuesChart, 'feed_pump_outlet_pressure')],
+                        ['label' => 'Booster Inlet Pressure', 'data' => numeric_series($pumpValuesChart, 'booster_pump_inlet_pressure')],
+                        ['label' => 'Booster Outlet Pressure', 'data' => numeric_series($pumpValuesChart, 'booster_pump_outlet_pressure')],
                     ],
                 ],
             ],
@@ -937,15 +946,15 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_nitrogen_kpis($latestNitrogen),
                 'rows_html' => render_nitrogen_rows($nitrogen),
                 'chart' => [
-                    'labels' => label_series($nitrogen),
+                    'labels' => label_series($nitrogenChart),
                     'datasets' => [
-                        ['label' => 'Outlet Flow', 'data' => numeric_series($nitrogen, 'outlet_flow')],
-                        ['label' => 'Outlet Purity', 'data' => numeric_series($nitrogen, 'outlet_purity')],
-                        ['label' => 'Inlet Pressure', 'data' => numeric_series($nitrogen, 'inlet_pressure')],
-                        ['label' => 'Outlet Pressure', 'data' => numeric_series($nitrogen, 'outlet_pressure')],
-                        ['label' => 'Pre Heat Temp', 'data' => numeric_series($nitrogen, 'pre_heat_temp')],
-                        ['label' => 'Post Heat Temp', 'data' => numeric_series($nitrogen, 'post_heat_temp')],
-                        ['label' => 'Interior O2', 'data' => numeric_series($nitrogen, 'interior_o2')],
+                        ['label' => 'Outlet Flow', 'data' => numeric_series($nitrogenChart, 'outlet_flow')],
+                        ['label' => 'Outlet Purity', 'data' => numeric_series($nitrogenChart, 'outlet_purity')],
+                        ['label' => 'Inlet Pressure', 'data' => numeric_series($nitrogenChart, 'inlet_pressure')],
+                        ['label' => 'Outlet Pressure', 'data' => numeric_series($nitrogenChart, 'outlet_pressure')],
+                        ['label' => 'Pre Heat Temp', 'data' => numeric_series($nitrogenChart, 'pre_heat_temp')],
+                        ['label' => 'Post Heat Temp', 'data' => numeric_series($nitrogenChart, 'post_heat_temp')],
+                        ['label' => 'Interior O2', 'data' => numeric_series($nitrogenChart, 'interior_o2')],
                     ],
                 ],
             ],
@@ -1825,7 +1834,7 @@ function chartDatasetObject(ds) {
         pointRadius: 0,
         pointHoverRadius: 4,
         pointHitRadius: 12,
-        spanGaps: Number.POSITIVE_INFINITY
+        spanGaps: true
     };
 }
 
