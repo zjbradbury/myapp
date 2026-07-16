@@ -605,3 +605,14 @@ th {
     0%   { background: rgba(255,255,0,0.7); }
     100% { background: transparent; }
 }
+
+/* Tricanter status alarm highlighting */
+.tri-row.tricanter-status-alert > td {
+    background: rgba(220, 38, 38, 0.30);
+    color: #ffe5e5;
+    border-bottom-color: rgba(255, 120, 120, 0.55);
+}
+
+.tri-row.tricanter-status-alert:hover > td {
+    background: rgba(239, 68, 68, 0.42);
+}
