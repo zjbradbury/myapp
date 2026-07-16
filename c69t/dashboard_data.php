@@ -683,6 +683,61 @@ function render_pump_values_rows(array $rows): string
     return ob_get_clean();
 }
 
+
+function dashboard_chart_rows(array $rows): array
+{
+    $chartRows = array_values($rows);
+
+    usort($chartRows, static function (array $a, array $b): int {
+        $aStamp = trim((string)($a['log_date'] ?? '') . ' ' . (string)($a['log_time'] ?? ''));
+        $bStamp = trim((string)($b['log_date'] ?? '') . ' ' . (string)($b['log_time'] ?? ''));
+
+        $aTime = strtotime($aStamp);
+        $bTime = strtotime($bStamp);
+
+        if ($aTime === false) $aTime = 0;
+        if ($bTime === false) $bTime = 0;
+
+        if ($aTime === $bTime) {
+            return ((int)($a['id'] ?? 0)) <=> ((int)($b['id'] ?? 0));
+        }
+
+        return $aTime <=> $bTime;
+    });
+
+    return $chartRows;
+}
+
+function dashboard_chart_labels(array $rows): array
+{
+    return array_map(static function (array $row): string {
+        $date = trim((string)($row['log_date'] ?? ''));
+        $time = trim((string)($row['log_time'] ?? ''));
+        return trim($date . ' ' . $time);
+    }, $rows);
+}
+
+function dashboard_chart_numeric(array $rows, string $column): array
+{
+    return array_map(static function (array $row) use ($column) {
+        $value = $row[$column] ?? null;
+
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '' || strcasecmp($trimmed, 'null') === 0 || strcasecmp($trimmed, 'nan') === 0) {
+                return null;
+            }
+            $value = $trimmed;
+        }
+
+        return is_numeric($value) ? (float)$value : null;
+    }, $rows);
+}
+
 function filter_rows_to_minute_increments(array $rows, int $incrementMinutes = 15): array
 {
     if (!$rows || $incrementMinutes <= 0) {
@@ -758,14 +813,13 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $pumpValues = filter_rows_to_minute_increments($pumpValues, 15);
     $nitrogen = filter_rows_to_minute_increments($nitrogen, 15);
 
-    // Tables remain newest-first, while charts must run oldest-to-newest.
-    // Keeping separate arrays prevents labels, values, and status highlights
-    // from becoming misaligned after each AJAX refresh.
-    $tricanterChart = array_reverse($tricanter);
-    $solidWasteChart = array_reverse($solidWaste);
-    $nozzleChart = array_reverse($nozzle);
-    $pumpValuesChart = array_reverse($pumpValues);
-    $nitrogenChart = array_reverse($nitrogen);
+    // Tables stay newest-first. Charts get their own explicitly time-sorted rows.
+    // The chart helpers preserve a value (including null) for every timestamp.
+    $tricanterChart = dashboard_chart_rows($tricanter);
+    $solidWasteChart = dashboard_chart_rows($solidWaste);
+    $nozzleChart = dashboard_chart_rows($nozzle);
+    $pumpValuesChart = dashboard_chart_rows($pumpValues);
+    $nitrogenChart = dashboard_chart_rows($nitrogen);
 
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
@@ -844,18 +898,18 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_tricanter_kpis($latestTricanter),
                 'rows_html' => render_tricanter_rows($tricanter),
                 'chart' => [
-                    'labels' => label_series($tricanterChart),
-                    'status' => numeric_series($tricanterChart, 'tricanter_status'),
+                    'labels' => dashboard_chart_labels($tricanterChart),
+                    'status' => dashboard_chart_numeric($tricanterChart, 'tricanter_status'),
                     'datasets' => [
-                        ['label' => 'Bowl Speed', 'data' => numeric_series($tricanterChart, 'bowl_speed')],
-                        ['label' => 'Screw Speed', 'data' => numeric_series($tricanterChart, 'screw_speed')],
-                        ['label' => 'Bowl RPM', 'data' => numeric_series($tricanterChart, 'bowl_rpm')],
-                        ['label' => 'Screw RPM', 'data' => numeric_series($tricanterChart, 'screw_rpm')],
-                        ['label' => 'Impeller', 'data' => numeric_series($tricanterChart, 'impeller')],
-                        ['label' => 'Feed Rate', 'data' => numeric_series($tricanterChart, 'feed_rate')],
-                        ['label' => 'Torque', 'data' => numeric_series($tricanterChart, 'torque')],
-                        ['label' => 'Temp', 'data' => numeric_series($tricanterChart, 'temp')],
-                        ['label' => 'Pressure', 'data' => numeric_series($tricanterChart, 'pressure')],
+                        ['label' => 'Bowl Speed', 'data' => dashboard_chart_numeric($tricanterChart, 'bowl_speed')],
+                        ['label' => 'Screw Speed', 'data' => dashboard_chart_numeric($tricanterChart, 'screw_speed')],
+                        ['label' => 'Bowl RPM', 'data' => dashboard_chart_numeric($tricanterChart, 'bowl_rpm')],
+                        ['label' => 'Screw RPM', 'data' => dashboard_chart_numeric($tricanterChart, 'screw_rpm')],
+                        ['label' => 'Impeller', 'data' => dashboard_chart_numeric($tricanterChart, 'impeller')],
+                        ['label' => 'Feed Rate', 'data' => dashboard_chart_numeric($tricanterChart, 'feed_rate')],
+                        ['label' => 'Torque', 'data' => dashboard_chart_numeric($tricanterChart, 'torque')],
+                        ['label' => 'Temp', 'data' => dashboard_chart_numeric($tricanterChart, 'temp')],
+                        ['label' => 'Pressure', 'data' => dashboard_chart_numeric($tricanterChart, 'pressure')],
                     ],
                 ],
             ],
@@ -863,10 +917,10 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_solid_waste_kpis($latestSolidWaste, $solidWasteTotalAmount),
                 'rows_html' => render_solid_waste_rows($solidWaste),
                 'chart' => [
-                    'labels' => label_series($solidWasteChart),
+                    'labels' => dashboard_chart_labels($solidWasteChart),
                     'datasets' => [
-                        ['label' => 'Amount', 'data' => numeric_series($solidWasteChart, 'amount')],
-                        ['label' => 'Diff (min)', 'data' => solid_diff_series($solidWasteChart)],
+                        ['label' => 'Amount', 'data' => dashboard_chart_numeric($solidWasteChart, 'amount')],
+                        ['label' => 'Diff (min)', 'data' => array_map(static fn(array $row) => isset($row['_diff_minutes']) && is_numeric($row['_diff_minutes']) ? (float)$row['_diff_minutes'] : null, $solidWasteChart)],
                     ],
                 ],
             ],
@@ -874,13 +928,13 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_nozzle_kpis($latestNozzle),
                 'rows_html' => render_nozzle_rows($nozzle),
                 'chart' => [
-                    'labels' => label_series($nozzleChart),
+                    'labels' => dashboard_chart_labels($nozzleChart),
                     'datasets' => [
-                        ['label' => 'Flow', 'data' => numeric_series($nozzleChart, 'flow')],
-                        ['label' => 'Pressure', 'data' => numeric_series($nozzleChart, 'pressure')],
-                        ['label' => 'Min Deg', 'data' => numeric_series($nozzleChart, 'min_deg')],
-                        ['label' => 'Max Deg', 'data' => numeric_series($nozzleChart, 'max_deg')],
-                        ['label' => 'RPM', 'data' => numeric_series($nozzleChart, 'rpm')],
+                        ['label' => 'Flow', 'data' => dashboard_chart_numeric($nozzleChart, 'flow')],
+                        ['label' => 'Pressure', 'data' => dashboard_chart_numeric($nozzleChart, 'pressure')],
+                        ['label' => 'Min Deg', 'data' => dashboard_chart_numeric($nozzleChart, 'min_deg')],
+                        ['label' => 'Max Deg', 'data' => dashboard_chart_numeric($nozzleChart, 'max_deg')],
+                        ['label' => 'RPM', 'data' => dashboard_chart_numeric($nozzleChart, 'rpm')],
                     ],
                 ],
             ],
@@ -900,14 +954,14 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_pump_values_kpis($latestPumpValues),
                 'rows_html' => render_pump_values_rows($pumpValues),
                 'chart' => [
-                    'labels' => label_series($pumpValuesChart),
+                    'labels' => dashboard_chart_labels($pumpValuesChart),
                     'datasets' => [
-                        ['label' => 'Suction Inlet Pressure', 'data' => numeric_series($pumpValuesChart, 'suction_pump_2_inlet_pressure')],
-                        ['label' => 'Suction Outlet Pressure', 'data' => numeric_series($pumpValuesChart, 'suction_pump_2_outlet_pressure')],
-                        ['label' => 'Feed Inlet Pressure', 'data' => numeric_series($pumpValuesChart, 'feed_pump_inlet_pressure')],
-                        ['label' => 'Feed Outlet Pressure', 'data' => numeric_series($pumpValuesChart, 'feed_pump_outlet_pressure')],
-                        ['label' => 'Booster Inlet Pressure', 'data' => numeric_series($pumpValuesChart, 'booster_pump_inlet_pressure')],
-                        ['label' => 'Booster Outlet Pressure', 'data' => numeric_series($pumpValuesChart, 'booster_pump_outlet_pressure')],
+                        ['label' => 'Suction Inlet Pressure', 'data' => dashboard_chart_numeric($pumpValuesChart, 'suction_pump_2_inlet_pressure')],
+                        ['label' => 'Suction Outlet Pressure', 'data' => dashboard_chart_numeric($pumpValuesChart, 'suction_pump_2_outlet_pressure')],
+                        ['label' => 'Feed Inlet Pressure', 'data' => dashboard_chart_numeric($pumpValuesChart, 'feed_pump_inlet_pressure')],
+                        ['label' => 'Feed Outlet Pressure', 'data' => dashboard_chart_numeric($pumpValuesChart, 'feed_pump_outlet_pressure')],
+                        ['label' => 'Booster Inlet Pressure', 'data' => dashboard_chart_numeric($pumpValuesChart, 'booster_pump_inlet_pressure')],
+                        ['label' => 'Booster Outlet Pressure', 'data' => dashboard_chart_numeric($pumpValuesChart, 'booster_pump_outlet_pressure')],
                     ],
                 ],
             ],
@@ -915,15 +969,15 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'kpis_html' => render_nitrogen_kpis($latestNitrogen),
                 'rows_html' => render_nitrogen_rows($nitrogen),
                 'chart' => [
-                    'labels' => label_series($nitrogenChart),
+                    'labels' => dashboard_chart_labels($nitrogenChart),
                     'datasets' => [
-                        ['label' => 'Outlet Flow', 'data' => numeric_series($nitrogenChart, 'outlet_flow')],
-                        ['label' => 'Outlet Purity', 'data' => numeric_series($nitrogenChart, 'outlet_purity')],
-                        ['label' => 'Inlet Pressure', 'data' => numeric_series($nitrogenChart, 'inlet_pressure')],
-                        ['label' => 'Outlet Pressure', 'data' => numeric_series($nitrogenChart, 'outlet_pressure')],
-                        ['label' => 'Pre Heat Temp', 'data' => numeric_series($nitrogenChart, 'pre_heat_temp')],
-                        ['label' => 'Post Heat Temp', 'data' => numeric_series($nitrogenChart, 'post_heat_temp')],
-                        ['label' => 'Interior O2', 'data' => numeric_series($nitrogenChart, 'interior_o2')],
+                        ['label' => 'Outlet Flow', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_flow')],
+                        ['label' => 'Outlet Purity', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_purity')],
+                        ['label' => 'Inlet Pressure', 'data' => dashboard_chart_numeric($nitrogenChart, 'inlet_pressure')],
+                        ['label' => 'Outlet Pressure', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_pressure')],
+                        ['label' => 'Pre Heat Temp', 'data' => dashboard_chart_numeric($nitrogenChart, 'pre_heat_temp')],
+                        ['label' => 'Post Heat Temp', 'data' => dashboard_chart_numeric($nitrogenChart, 'post_heat_temp')],
+                        ['label' => 'Interior O2', 'data' => dashboard_chart_numeric($nitrogenChart, 'interior_o2')],
                     ],
                 ],
             ],
