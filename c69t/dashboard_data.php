@@ -311,7 +311,7 @@ function render_tricanter_rows(array $rows): string
         <tr><td colspan="11">No tricanter data in selected range.</td></tr>
     <?php else:
         foreach ($rows as $r): ?>
-            <tr class="tri-row" data-id="<?= (int)$r['id'] ?>">
+            <tr class="tri-row<?= ((int)($r['tricanter_status'] ?? 0) === 1) ? ' tricanter-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
@@ -836,6 +836,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'rows_html' => render_tricanter_rows($tricanter),
                 'chart' => [
                     'labels' => label_series($tricanter),
+                    'status' => numeric_series($tricanter, 'tricanter_status'),
                     'datasets' => [
                         ['label' => 'Bowl Speed', 'data' => numeric_series($tricanter, 'bowl_speed')],
                         ['label' => 'Screw Speed', 'data' => numeric_series($tricanter, 'screw_speed')],
