@@ -1,279 +1,57 @@
 (() => {
-    "use strict";
+"use strict";
+const form=document.getElementById("displayConfig");
+const displayGrid=document.getElementById("displayGrid");
+const configPanel=document.getElementById("configPanel");
+const configBackdrop=document.getElementById("configBackdrop");
+const storageKey="tab-sa-racing-display-v5";
 
-    const form = document.getElementById("displayConfig");
-    const displayGrid = document.getElementById("displayGrid");
-    const configPanel = document.getElementById("configPanel");
-    const configBackdrop = document.getElementById("configBackdrop");
-    const storageKey = "tab-sa-racing-display-v3";
-
-    function openConfig() {
-        configPanel.classList.add("is-open");
-        configPanel.classList.remove("is-hidden");
-        configBackdrop.hidden = false;
-        document.body.classList.add("config-open");
-    }
-
-    function closeConfig() {
-        configPanel.classList.remove("is-open");
-        configPanel.classList.add("is-hidden");
-        configBackdrop.hidden = true;
-        document.body.classList.remove("config-open");
-    }
-
-
-    function normaliseCodes(value) {
-        return String(value || "")
-            .toUpperCase()
-            .split(/[\s,\-]+/)
-            .map(code => code.trim())
-            .filter(code => /^[A-Z0-9]{2,4}$/.test(code));
-    }
-
-    function selectedCheckboxCodes() {
-        return [...form.querySelectorAll('input[name="meetingCode[]"]:checked')]
-            .map(input => input.value.toUpperCase());
-    }
-
-    function selectedCodes() {
-        return [...new Set([
-            ...selectedCheckboxCodes(),
-            ...normaliseCodes(form.customCodes.value),
-        ])];
-    }
-
-    function readConfig() {
-        return {
-            showNextToJump: form.showNextToJump.checked,
-            showGallery: form.showGallery.checked,
-            meetingCodes: selectedCheckboxCodes(),
-            customCodes: form.customCodes.value,
-            panelHeight: Number(form.panelHeight.value),
-            showPanelHeading: form.showPanelHeading.checked,
-        };
-    }
-
-    function writeConfig(config) {
-        if (typeof config.showNextToJump === "boolean") {
-            form.showNextToJump.checked = config.showNextToJump;
-        }
-        if (typeof config.showGallery === "boolean") {
-            form.showGallery.checked = config.showGallery;
-        }
-        if (typeof config.showPanelHeading === "boolean") {
-            form.showPanelHeading.checked = config.showPanelHeading;
-        }
-
-        const savedCodes = Array.isArray(config.meetingCodes) ? config.meetingCodes : [];
-        form.querySelectorAll('input[name="meetingCode[]"]').forEach(input => {
-            input.checked = savedCodes.includes(input.value);
-        });
-
-        form.customCodes.value = config.customCodes || "";
-
-        if (config.panelHeight) {
-            form.panelHeight.value = String(config.panelHeight);
-        }
-    }
-
-    function buildUrl(baseUrl, pageCodes = []) {
-        const url = new URL(baseUrl);
-        url.searchParams.set("jurisdiction", TAB_CONFIG.jurisdiction);
-        url.searchParams.set("channelType", TAB_CONFIG.channelType);
-
-        if (pageCodes.length) {
-            url.searchParams.set("page", pageCodes.join("-"));
-        }
-
-        return url.toString();
-    }
-
-    function updatePreview() {
-        const codes = selectedCodes();
-        document.getElementById("pageCodePreview").textContent =
-            codes.length ? codes.join("-") : "No codes selected";
-    }
-
-    function enterPanelFullscreen(card) {
-        if (card.requestFullscreen) {
-            card.requestFullscreen();
-        } else if (card.webkitRequestFullscreen) {
-            card.webkitRequestFullscreen();
-        }
-    }
-
-    function createDisplayCard(title, url, config, subtitle) {
-        const card = document.createElement("section");
-        card.className = "display-card";
-        card.style.setProperty("--panel-height", `${config.panelHeight}px`);
-
-        if (config.showPanelHeading) {
-            const header = document.createElement("div");
-            header.className = "display-card-header";
-
-            const headingWrap = document.createElement("div");
-            headingWrap.className = "card-heading";
-
-            const heading = document.createElement("strong");
-            heading.textContent = title;
-
-            const subheading = document.createElement("small");
-            subheading.textContent = subtitle || "SA · retail";
-
-            headingWrap.append(heading, subheading);
-
-            const actions = document.createElement("div");
-            actions.className = "card-actions";
-
-            const fullscreenButton = document.createElement("button");
-            fullscreenButton.type = "button";
-            fullscreenButton.className = "mini-button";
-            fullscreenButton.textContent = "Fullscreen";
-            fullscreenButton.title = "Fullscreen this TAB panel only";
-            fullscreenButton.addEventListener("click", () => enterPanelFullscreen(card));
-
-            actions.appendChild(fullscreenButton);
-            header.append(headingWrap, actions);
-            card.appendChild(header);
-        }
-
-        const frameWrap = document.createElement("div");
-        frameWrap.className = "frame-wrap";
-
-        const frame = document.createElement("iframe");
-        frame.className = "tab-frame";
-        frame.src = url;
-        frame.title = title;
-        frame.allow = "fullscreen";
-        frame.loading = "eager";
-        frame.referrerPolicy = "strict-origin-when-cross-origin";
-
-        frameWrap.appendChild(frame);
-        card.appendChild(frameWrap);
-
-        if (!config.showPanelHeading) {
-            const floatingFullscreen = document.createElement("button");
-            floatingFullscreen.type = "button";
-            floatingFullscreen.className = "floating-fullscreen";
-            floatingFullscreen.textContent = "Fullscreen";
-            floatingFullscreen.addEventListener("click", () => enterPanelFullscreen(card));
-            card.appendChild(floatingFullscreen);
-        }
-
-        return card;
-    }
-
-    function render(save = true) {
-        const config = readConfig();
-        const codes = selectedCodes();
-
-        if (save) {
-            localStorage.setItem(storageKey, JSON.stringify(config));
-        }
-
-        displayGrid.replaceChildren();
-        let panelCount = 0;
-
-        if (config.showNextToJump) {
-            if (codes.length) {
-                const url = buildUrl(TAB_CONFIG.racingDetailUrl, codes);
-                displayGrid.appendChild(
-                    createDisplayCard(
-                        `Next to jump — ${codes.join("-")}`,
-                        url,
-                        config,
-                        `SA · retail · page=${codes.join("-")}`
-                    )
-                );
-                panelCount++;
-            } else {
-                const error = document.createElement("div");
-                error.className = "empty-state";
-                error.textContent = "Select at least one meeting code for Next to jump.";
-                displayGrid.appendChild(error);
-            }
-        }
-
-        if (config.showGallery) {
-            const url = buildUrl(TAB_CONFIG.galleryUrl);
-            displayGrid.appendChild(
-                createDisplayCard(
-                    "Gallery with triple results",
-                    url,
-                    config,
-                    "SA · retail · fixed gallery"
-                )
-            );
-            panelCount++;
-        }
-
-        if (!config.showNextToJump && !config.showGallery) {
-            const empty = document.createElement("div");
-            empty.className = "empty-state";
-            empty.textContent = "Select at least one TAB display.";
-            displayGrid.appendChild(empty);
-        }
-
-        document.getElementById("displayTitle").textContent =
-            `${panelCount} TAB panel${panelCount === 1 ? "" : "s"}`;
-
-        updatePreview();
-    }
-
-    form.addEventListener("submit", event => {
-        event.preventDefault();
-        render(true);
-
-        closeConfig();
-    });
-
-    form.addEventListener("input", updatePreview);
-    form.addEventListener("change", updatePreview);
-
-    document.querySelectorAll("[data-codes]").forEach(button => {
-        button.addEventListener("click", () => {
-            const codes = button.dataset.codes.split(",");
-            form.querySelectorAll('input[name="meetingCode[]"]').forEach(input => {
-                input.checked = codes.includes(input.value);
-            });
-            form.customCodes.value = "";
-            updatePreview();
-        });
-    });
-
-    document.getElementById("clearCodes").addEventListener("click", () => {
-        form.querySelectorAll('input[name="meetingCode[]"]').forEach(input => {
-            input.checked = false;
-        });
-        form.customCodes.value = "";
-        updatePreview();
-    });
-
-    document.getElementById("hideConfig").addEventListener("click", closeConfig);
-    document.getElementById("showConfig").addEventListener("click", openConfig);
-    configBackdrop.addEventListener("click", closeConfig);
-
-    document.addEventListener("keydown", event => {
-        if (event.key === "Escape") {
-            closeConfig();
-        }
-    });
-
-    document.getElementById("resetConfig").addEventListener("click", () => {
-        localStorage.removeItem(storageKey);
-        location.reload();
-    });
-
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-        try {
-            writeConfig(JSON.parse(saved));
-        } catch (error) {
-            console.warn("Could not load saved TAB display configuration.", error);
-        }
-    }
-
-    closeConfig();
-    updatePreview();
-    render(false);
+function openConfig(){configPanel.classList.add("is-open");configPanel.classList.remove("is-hidden");configBackdrop.hidden=false;document.body.classList.add("config-open")}
+function closeConfig(){configPanel.classList.remove("is-open");configPanel.classList.add("is-hidden");configBackdrop.hidden=true;document.body.classList.remove("config-open")}
+function normaliseCodes(v){return String(v||"").toUpperCase().split(/[\s,\-]+/).map(v=>v.trim()).filter(v=>/^[A-Z0-9]{1,4}$/.test(v))}
+function checkboxCodes(){return [...form.querySelectorAll('input[name="meetingCode[]"]:checked')].map(i=>i.value.toUpperCase())}
+function selectedCodes(){return [...new Set([...checkboxCodes(),...normaliseCodes(form.customCodes.value)])]}
+function readConfig(){return{
+showSelectableNextToJump:form.showSelectableNextToJump.checked,
+showAllNextToJump:form.showAllNextToJump.checked,
+showAllSecondNextToJump:form.showAllSecondNextToJump.checked,
+showTripleResults:form.showTripleResults.checked,
+showGallery:form.showGallery.checked,
+meetingCodes:checkboxCodes(),customCodes:form.customCodes.value,
+gridColumns:Number(form.gridColumns.value),panelHeight:Number(form.panelHeight.value),
+showPanelHeading:form.showPanelHeading.checked}}
+function writeConfig(c){
+["showSelectableNextToJump","showAllNextToJump","showAllSecondNextToJump","showTripleResults","showGallery","showPanelHeading"].forEach(n=>{if(typeof c[n]==="boolean"&&form[n])form[n].checked=c[n]});
+const codes=Array.isArray(c.meetingCodes)?c.meetingCodes:[];
+form.querySelectorAll('input[name="meetingCode[]"]').forEach(i=>i.checked=codes.includes(i.value));
+form.customCodes.value=c.customCodes||"";
+if(c.gridColumns)form.gridColumns.value=String(c.gridColumns);
+if(c.panelHeight)form.panelHeight.value=String(c.panelHeight)}
+function selectableUrl(codes){const u=new URL(TAB_CONFIG.racingDetailUrl);u.searchParams.set("jurisdiction","SA");u.searchParams.set("channelType","retail");u.searchParams.set("page",codes.join("-"));return u.toString()}
+function updatePreview(){const c=selectedCodes();document.getElementById("pageCodePreview").textContent=c.length?c.join("-"):"No codes selected"}
+function card(title,url,c,subtitle){const el=document.createElement("section");el.className="display-card";el.style.setProperty("--panel-height",`${c.panelHeight}px`);
+if(c.showPanelHeading){const h=document.createElement("div");h.className="display-card-header";h.innerHTML=`<div class="card-heading"><strong></strong><small></small></div>`;h.querySelector("strong").textContent=title;h.querySelector("small").textContent=subtitle;el.appendChild(h)}
+const w=document.createElement("div");w.className="frame-wrap";const f=document.createElement("iframe");f.className="tab-frame";f.src=url;f.title=title;f.allow="fullscreen";f.loading="eager";w.appendChild(f);el.appendChild(w);return el}
+function render(save=true){const c=readConfig(),codes=selectedCodes();if(save)localStorage.setItem(storageKey,JSON.stringify(c));displayGrid.replaceChildren();displayGrid.style.setProperty("--grid-columns",String(c.gridColumns));const p=[];
+if(c.showSelectableNextToJump&&codes.length)p.push(["Selectable Next To Jump",selectableUrl(codes),`SA · page=${codes.join("-")}`]);
+if(c.showAllNextToJump)p.push(["All Races Next To Jump",TAB_CONFIG.allNextToJumpUrl,"SA · page=0"]);
+if(c.showAllSecondNextToJump)p.push(["All Second Next To Jump",TAB_CONFIG.allSecondNextToJumpUrl,"SA · page=1"]);
+if(c.showTripleResults)p.push(["All Triple Race Results",TAB_CONFIG.tripleResultsUrl,"SA · fixed page"]);
+if(c.showGallery)p.push(["Gallery with Triple Results",TAB_CONFIG.galleryUrl,"SA · fixed gallery"]);
+p.forEach(x=>displayGrid.appendChild(card(x[0],x[1],c,x[2])));
+if(c.showSelectableNextToJump&&!codes.length){const e=document.createElement("div");e.className="empty-state";e.textContent="Select at least one meeting code.";displayGrid.appendChild(e)}
+if(!p.length&&!displayGrid.children.length){const e=document.createElement("div");e.className="empty-state";e.textContent="Select at least one TAB display.";displayGrid.appendChild(e)}
+document.getElementById("displayTitle").textContent=`${p.length} TAB panel${p.length===1?"":"s"}`;updatePreview()}
+async function fullscreenGrid(){if(document.fullscreenElement===displayGrid){await document.exitFullscreen();return}if(displayGrid.requestFullscreen)await displayGrid.requestFullscreen()}
+form.addEventListener("submit",e=>{e.preventDefault();render(true);closeConfig()});
+form.addEventListener("input",updatePreview);form.addEventListener("change",updatePreview);
+document.querySelectorAll("[data-codes]").forEach(b=>b.addEventListener("click",()=>{const c=b.dataset.codes.split(",");form.querySelectorAll('input[name="meetingCode[]"]').forEach(i=>i.checked=c.includes(i.value));form.customCodes.value="";updatePreview()}));
+document.getElementById("clearCodes").addEventListener("click",()=>{form.querySelectorAll('input[name="meetingCode[]"]').forEach(i=>i.checked=false);form.customCodes.value="";updatePreview()});
+document.getElementById("fullscreenGrid").addEventListener("click",fullscreenGrid);
+document.getElementById("hideConfig").addEventListener("click",closeConfig);
+document.getElementById("showConfig").addEventListener("click",openConfig);
+configBackdrop.addEventListener("click",closeConfig);
+document.getElementById("resetConfig").addEventListener("click",()=>{localStorage.removeItem(storageKey);location.reload()});
+const saved=localStorage.getItem(storageKey);if(saved){try{writeConfig(JSON.parse(saved))}catch(e){}}
+closeConfig();updatePreview();render(false);
 })();
