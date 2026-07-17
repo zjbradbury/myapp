@@ -3,74 +3,86 @@ declare(strict_types=1);
 
 /*
 |--------------------------------------------------------------------------
-| TAB Racing Information Display Selector
+| TAB SA Racing Display
 |--------------------------------------------------------------------------
-| Upload this folder to your PHP website.
+| Jurisdiction is permanently set to SA.
 |
-| Meeting locations:
-| Add or edit entries below. The "page" value is the TAB display page code
-| seen in the TAB display URL, for example:
-|   .../racing-results-next-to-go?...&page=MR7
-|
-| The location list is deliberately editable because TAB page codes can vary
-| by meeting and day.
+| The checked meeting codes are combined into one hyphen-separated value:
+| MR + MG + MH becomes page=MR-MG-MH
+|--------------------------------------------------------------------------
 */
 
-$jurisdictions = [
-    'NSW' => 'New South Wales',
-    'VIC' => 'Victoria',
-    'QLD' => 'Queensland',
-    'SA'  => 'South Australia',
-    'WA'  => 'Western Australia',
-    'TAS' => 'Tasmania',
-    'NT'  => 'Northern Territory',
-    'ACT' => 'Australian Capital Territory',
-];
-
-$displayTypes = [
-    'next-to-go' => [
-        'label' => 'Next to Jump',
-        'path'  => '/racing-next-to-go',
-        'supports_page' => false,
+$codeGroups = [
+    'Primary / Metropolitan' => [
+        'MR' => 'Metropolitan thoroughbreds',
+        'MG' => 'Primary greyhounds',
+        'MH' => 'Primary harness',
     ],
-    'results-next-to-go' => [
-        'label' => 'Race / Runner Display',
-        'path'  => '/racing-results-next-to-go',
-        'supports_page' => true,
+    'Sydney / NSW' => [
+        'SR' => 'Sydney / NSW thoroughbreds',
+        'SG' => 'Sydney / NSW greyhounds',
+        'SH' => 'Sydney / NSW harness',
     ],
-    'upcoming' => [
-        'label' => 'Upcoming Races',
-        'path'  => '/racing-upcoming-races',
-        'supports_page' => false,
+    'Brisbane / Queensland' => [
+        'BR' => 'Brisbane / Queensland thoroughbreds',
+        'BG' => 'Brisbane / Queensland greyhounds',
+        'BH' => 'Brisbane / Queensland harness',
     ],
-    'gallery' => [
-        'label' => 'Racing Gallery',
-        'path'  => '/racing-gallery',
-        'supports_page' => false,
+    'Adelaide / South Australia' => [
+        'AR' => 'Adelaide / SA thoroughbreds',
+        'AG' => 'Adelaide / SA greyhounds',
+        'AH' => 'Adelaide / SA harness',
+    ],
+    'Country / Other Australian' => [
+        'CR' => 'Country / additional thoroughbreds',
+        'CG' => 'Country / additional greyhounds',
+        'CH' => 'Country / additional harness',
+        'PR' => 'Provincial thoroughbreds',
+        'PG' => 'Provincial greyhounds',
+        'PH' => 'Provincial harness',
+    ],
+    'Tasmania' => [
+        'TR' => 'Tasmanian thoroughbreds',
+        'TG' => 'Tasmanian greyhounds',
+        'TH' => 'Tasmanian harness',
+    ],
+    'Western Australia' => [
+        'WR' => 'WA thoroughbreds',
+        'WG' => 'WA greyhounds',
+        'WH' => 'WA harness',
+    ],
+    'New Zealand / International' => [
+        'NR' => 'Additional / NZ thoroughbreds',
+        'NG' => 'Additional / NZ greyhounds',
+        'NH' => 'Additional / NZ harness',
+        'YR' => 'New Zealand thoroughbreds',
+        'YG' => 'New Zealand greyhounds',
+        'YH' => 'New Zealand harness',
+        'ER' => 'International thoroughbreds',
+        'EG' => 'International greyhounds',
+        'EH' => 'International harness',
+        'FR' => 'International thoroughbreds 2',
+        'FG' => 'International greyhounds 2',
+        'FH' => 'International harness 2',
+        'GR' => 'International thoroughbreds 3',
+        'GG' => 'International greyhounds 3',
+        'GH' => 'International harness 3',
+        'UR' => 'International thoroughbreds 4',
+        'UG' => 'International greyhounds 4',
+        'UH' => 'International harness 4',
+        'VR' => 'International thoroughbreds 5',
+        'VG' => 'International greyhounds 5',
+        'VH' => 'International harness 5',
+        'XR' => 'International thoroughbreds 6',
+        'XG' => 'International greyhounds 6',
+        'XH' => 'International harness 6',
     ],
 ];
 
 /*
-|--------------------------------------------------------------------------
-| Meeting location presets
-|--------------------------------------------------------------------------
-| Add your regular meeting/page codes here.
-| Example format:
-| [
-|   'id' => 'bendigo-r7',
-|   'label' => 'Bendigo Race 7',
-|   'jurisdiction' => 'VIC',
-|   'page' => 'MR7',
-| ]
-*/
-$meetingLocations = [
-    [
-        'id' => 'example-vic-mr7',
-        'label' => 'Example VIC Meeting / Race 7',
-        'jurisdiction' => 'VIC',
-        'page' => 'MR7',
-    ],
-];
+ * TAB can rotate or reuse codes depending on the day's meeting schedule.
+ * The custom-code input allows any current code to be added without editing PHP.
+ */
 
 function h(string $value): string
 {
@@ -78,10 +90,11 @@ function h(string $value): string
 }
 
 $config = [
-    'baseUrl' => 'https://infodisplay.tab.com.au',
-    'jurisdictions' => $jurisdictions,
-    'displayTypes' => $displayTypes,
-    'meetingLocations' => $meetingLocations,
+    'jurisdiction' => 'SA',
+    'channelType' => 'retail',
+    'racingDetailUrl' => 'https://infodisplay.tab.com.au/racing-detail',
+    'galleryUrl' => 'https://infodisplay.tab.com.au/deck-gallery-racing-with-triple-results',
+    'codeGroups' => $codeGroups,
 ];
 ?>
 <!doctype html>
@@ -89,161 +102,125 @@ $config = [
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TAB Racing Display Selector</title>
+    <title>TAB SA Racing Display</title>
     <link rel="stylesheet" href="tab-display.css">
 </head>
 <body>
-<div class="app-shell">
-    <aside class="config-panel" aria-label="Racing display configuration">
+<div class="page-shell">
+    <aside class="config-panel" id="configPanel">
         <div class="panel-heading">
             <div>
-                <p class="eyebrow">Display setup</p>
-                <h1>TAB Racing</h1>
+                <p class="eyebrow">South Australia</p>
+                <h1>TAB display setup</h1>
             </div>
-            <button class="icon-button" id="collapseConfig" type="button" title="Hide configuration">×</button>
+            <button type="button" class="icon-button" id="hideConfig" aria-label="Hide configuration">×</button>
         </div>
 
         <form id="displayConfig">
             <section class="config-section">
-                <div class="section-title-row">
-                    <h2>Display items</h2>
-                    <button class="text-button" type="button" data-toggle-group="displayType">Toggle all</button>
-                </div>
-
+                <h2>Displays</h2>
                 <div class="check-grid">
-                    <?php foreach ($displayTypes as $key => $display): ?>
-                        <label class="check-card">
-                            <input
-                                type="checkbox"
-                                name="displayType[]"
-                                value="<?= h($key) ?>"
-                                <?= $key === 'next-to-go' ? 'checked' : '' ?>
-                            >
-                            <span class="custom-check"></span>
-                            <span><?= h($display['label']) ?></span>
-                        </label>
-                    <?php endforeach; ?>
+                    <label class="check-card">
+                        <input type="checkbox" name="showNextToJump" checked>
+                        <span class="custom-check"></span>
+                        <span>
+                            <strong>Next to jump</strong>
+                            <small>Uses racing-detail with the selected meeting codes</small>
+                        </span>
+                    </label>
+
+                    <label class="check-card">
+                        <input type="checkbox" name="showGallery">
+                        <span class="custom-check"></span>
+                        <span>
+                            <strong>Gallery with triple results</strong>
+                            <small>Fixed SA gallery; meeting-code checkboxes do not apply</small>
+                        </span>
+                    </label>
                 </div>
             </section>
 
             <section class="config-section">
                 <div class="section-title-row">
-                    <h2>Jurisdiction</h2>
-                    <button class="text-button" type="button" data-toggle-group="jurisdiction">Toggle all</button>
+                    <div>
+                        <h2>Meeting codes</h2>
+                        <p class="help-text">Checked codes are joined with hyphens.</p>
+                    </div>
+                    <button type="button" class="text-button" id="clearCodes">Clear</button>
                 </div>
 
-                <div class="check-grid two-column">
-                    <?php foreach ($jurisdictions as $code => $name): ?>
-                        <label class="check-card compact">
-                            <input
-                                type="checkbox"
-                                name="jurisdiction[]"
-                                value="<?= h($code) ?>"
-                                <?= in_array($code, ['NSW', 'VIC', 'QLD', 'SA'], true) ? 'checked' : '' ?>
-                            >
-                            <span class="custom-check"></span>
-                            <span>
-                                <strong><?= h($code) ?></strong>
-                                <small><?= h($name) ?></small>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-
-            <section class="config-section">
-                <div class="section-title-row">
-                    <h2>Meeting locations</h2>
-                    <button class="text-button" type="button" data-toggle-group="meeting">Toggle all</button>
+                <div class="preset-row">
+                    <button type="button" class="preset-button" data-codes="MR,MG,MH">MR-MG-MH</button>
+                    <button type="button" class="preset-button" data-codes="AR,AG,AH">AR-AG-AH</button>
+                    <button type="button" class="preset-button" data-codes="MR,MG,MH,AR,AG,AH">Main + SA</button>
                 </div>
 
+                <?php foreach ($codeGroups as $groupName => $codes): ?>
+                    <details class="code-group" <?= $groupName === 'Primary / Metropolitan' || $groupName === 'Adelaide / South Australia' ? 'open' : '' ?>>
+                        <summary><?= h($groupName) ?></summary>
+                        <div class="code-grid">
+                            <?php foreach ($codes as $code => $description): ?>
+                                <label class="code-card">
+                                    <input
+                                        type="checkbox"
+                                        name="meetingCode[]"
+                                        value="<?= h($code) ?>"
+                                        <?= in_array($code, ['MR', 'MG', 'MH'], true) ? 'checked' : '' ?>
+                                    >
+                                    <span class="custom-check"></span>
+                                    <span>
+                                        <strong><?= h($code) ?></strong>
+                                        <small><?= h($description) ?></small>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </details>
+                <?php endforeach; ?>
+
+                <label class="field-label" for="customCodes">Additional TAB codes</label>
+                <input
+                    id="customCodes"
+                    name="customCodes"
+                    class="text-input"
+                    type="text"
+                    placeholder="Example: LR,LG,LH"
+                    autocomplete="off"
+                >
                 <p class="help-text">
-                    These are editable page-code presets from the PHP configuration.
+                    Separate additional codes with commas, spaces or hyphens.
                 </p>
 
-                <div class="check-grid">
-                    <?php foreach ($meetingLocations as $meeting): ?>
-                        <label class="check-card meeting-card">
-                            <input
-                                type="checkbox"
-                                name="meeting[]"
-                                value="<?= h($meeting['id']) ?>"
-                            >
-                            <span class="custom-check"></span>
-                            <span>
-                                <strong><?= h($meeting['label']) ?></strong>
-                                <small><?= h($meeting['jurisdiction']) ?> · <?= h($meeting['page']) ?></small>
-                            </span>
-                        </label>
-                    <?php endforeach; ?>
-
-                    <?php if (!$meetingLocations): ?>
-                        <div class="empty-note">No meeting presets have been configured.</div>
-                    <?php endif; ?>
+                <div class="page-preview">
+                    <span>Page parameter</span>
+                    <strong id="pageCodePreview">MR-MG-MH</strong>
                 </div>
             </section>
 
             <section class="config-section">
-                <h2>Information shown</h2>
-
-                <div class="check-grid two-column">
-                    <label class="check-card compact">
-                        <input type="checkbox" name="showHeader" checked>
-                        <span class="custom-check"></span>
-                        <span>Panel heading</span>
-                    </label>
-
-                    <label class="check-card compact">
-                        <input type="checkbox" name="showJurisdiction" checked>
-                        <span class="custom-check"></span>
-                        <span>Jurisdiction label</span>
-                    </label>
-
-                    <label class="check-card compact">
-                        <input type="checkbox" name="showRefresh" checked>
-                        <span class="custom-check"></span>
-                        <span>Last refreshed</span>
-                    </label>
-
-                    <label class="check-card compact">
-                        <input type="checkbox" name="showOpenLink">
-                        <span class="custom-check"></span>
-                        <span>Open TAB link</span>
-                    </label>
-                </div>
-            </section>
-
-            <section class="config-section">
-                <h2>Layout</h2>
-
-                <label class="field-label" for="columns">Columns</label>
-                <select id="columns" name="columns">
-                    <option value="1">1 column</option>
-                    <option value="2" selected>2 columns</option>
-                    <option value="3">3 columns</option>
-                </select>
+                <h2>Panel options</h2>
 
                 <label class="field-label" for="panelHeight">Panel height</label>
                 <select id="panelHeight" name="panelHeight">
-                    <option value="520">Compact — 520 px</option>
-                    <option value="700" selected>Standard — 700 px</option>
-                    <option value="900">Tall — 900 px</option>
-                    <option value="1100">Extra tall — 1100 px</option>
+                    <option value="540">540 px</option>
+                    <option value="700" selected>700 px</option>
+                    <option value="850">850 px</option>
+                    <option value="1000">1000 px</option>
+                    <option value="1200">1200 px</option>
                 </select>
 
-                <label class="field-label" for="refreshSeconds">Auto refresh</label>
-                <select id="refreshSeconds" name="refreshSeconds">
-                    <option value="0">Off</option>
-                    <option value="30">Every 30 seconds</option>
-                    <option value="60" selected>Every minute</option>
-                    <option value="120">Every 2 minutes</option>
-                    <option value="300">Every 5 minutes</option>
-                </select>
+                <div class="check-grid">
+                    <label class="check-card">
+                        <input type="checkbox" name="showPanelHeading" checked>
+                        <span class="custom-check"></span>
+                        <span>Show panel headings</span>
+                    </label>
+                </div>
             </section>
 
             <div class="action-row">
-                <button class="primary-button" type="submit">Apply display</button>
-                <button class="secondary-button" id="resetConfig" type="button">Reset</button>
+                <button type="submit" class="primary-button">Apply display</button>
+                <button type="button" class="secondary-button" id="resetConfig">Reset</button>
             </div>
         </form>
     </aside>
@@ -251,22 +228,16 @@ $config = [
     <main class="display-area">
         <header class="display-toolbar">
             <div>
-                <p class="eyebrow">Live information panels</p>
-                <h2 id="displayTitle">Racing display</h2>
+                <p class="eyebrow">Jurisdiction fixed to SA</p>
+                <h2 id="displayTitle">TAB racing display</h2>
             </div>
 
             <div class="toolbar-actions">
-                <button class="secondary-button" id="showConfig" type="button">Configuration</button>
-                <button class="secondary-button" id="refreshNow" type="button">Refresh now</button>
-                <button class="secondary-button" id="fullscreenButton" type="button">Fullscreen</button>
+                <button type="button" class="secondary-button" id="showConfig">Configuration</button>
             </div>
         </header>
 
-        <div class="notice">
-            The panels below embed TAB’s public information display pages. TAB controls the content and availability.
-        </div>
-
-        <div id="displayGrid" class="display-grid" aria-live="polite"></div>
+        <div id="displayGrid" class="display-grid"></div>
     </main>
 </div>
 
