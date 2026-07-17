@@ -4,7 +4,23 @@
     const form = document.getElementById("displayConfig");
     const displayGrid = document.getElementById("displayGrid");
     const configPanel = document.getElementById("configPanel");
+    const configBackdrop = document.getElementById("configBackdrop");
     const storageKey = "tab-sa-racing-display-v3";
+
+    function openConfig() {
+        configPanel.classList.add("is-open");
+        configPanel.classList.remove("is-hidden");
+        configBackdrop.hidden = false;
+        document.body.classList.add("config-open");
+    }
+
+    function closeConfig() {
+        configPanel.classList.remove("is-open");
+        configPanel.classList.add("is-hidden");
+        configBackdrop.hidden = true;
+        document.body.classList.remove("config-open");
+    }
+
 
     function normaliseCodes(value) {
         return String(value || "")
@@ -208,9 +224,7 @@
         event.preventDefault();
         render(true);
 
-        if (window.innerWidth <= 800) {
-            configPanel.classList.add("is-hidden");
-        }
+        closeConfig();
     });
 
     form.addEventListener("input", updatePreview);
@@ -235,12 +249,14 @@
         updatePreview();
     });
 
-    document.getElementById("hideConfig").addEventListener("click", () => {
-        configPanel.classList.add("is-hidden");
-    });
+    document.getElementById("hideConfig").addEventListener("click", closeConfig);
+    document.getElementById("showConfig").addEventListener("click", openConfig);
+    configBackdrop.addEventListener("click", closeConfig);
 
-    document.getElementById("showConfig").addEventListener("click", () => {
-        configPanel.classList.remove("is-hidden");
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            closeConfig();
+        }
     });
 
     document.getElementById("resetConfig").addEventListener("click", () => {
@@ -257,6 +273,7 @@
         }
     }
 
+    closeConfig();
     updatePreview();
     render(false);
 })();
