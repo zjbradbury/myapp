@@ -13,7 +13,7 @@ declare(strict_types=1);
 */
 
 $codeGroups = [
-    'Melbourne / Victoria => [
+    'Melbourne / Victoria' => [
         'MR' => 'Melbourne / VIC thoroughbreds',
         'MG' => 'Melbourne / VIC greyhounds',
         'MH' => 'Melbourne / VIC harness',
@@ -94,6 +94,9 @@ $config = [
     'channelType' => 'retail',
     'racingDetailUrl' => 'https://infodisplay.tab.com.au/racing-detail',
     'galleryUrl' => 'https://infodisplay.tab.com.au/deck-gallery-racing-with-triple-results',
+    'allNextToJumpUrl' => 'https://infodisplay.tab.com.au/racing-detail?jurisdiction=SA&channelType=retail&page=0',
+    'allSecondNextToJumpUrl' => 'https://infodisplay.tab.com.au/racing-detail?jurisdiction=SA&channelType=retail&page=1',
+    'tripleResultsUrl' => 'https://infodisplay.tab.com.au/racing-triple-results?jurisdiction=SA&channelType=retail',
     'codeGroups' => $codeGroups,
 ];
 ?>
@@ -121,23 +124,11 @@ $config = [
             <section class="config-section">
                 <h2>Displays</h2>
                 <div class="check-grid">
-                    <label class="check-card">
-                        <input type="checkbox" name="showNextToJump" checked>
-                        <span class="custom-check"></span>
-                        <span>
-                            <strong>Next to jump</strong>
-                            <small>Uses racing-detail with the selected meeting codes</small>
-                        </span>
-                    </label>
-
-                    <label class="check-card">
-                        <input type="checkbox" name="showGallery">
-                        <span class="custom-check"></span>
-                        <span>
-                            <strong>Gallery with triple results</strong>
-                            <small>Fixed SA gallery; meeting-code checkboxes do not apply</small>
-                        </span>
-                    </label>
+                    <label class="check-card"><input type="checkbox" name="showSelectableNextToJump" checked><span class="custom-check"></span><span><strong>Selectable Next To Jump</strong><small>Uses selected meeting codes</small></span></label>
+                    <label class="check-card"><input type="checkbox" name="showAllNextToJump"><span class="custom-check"></span><span><strong>All Races Next To Jump</strong><small>Fixed page 0; meeting codes do not apply</small></span></label>
+                    <label class="check-card"><input type="checkbox" name="showAllSecondNextToJump"><span class="custom-check"></span><span><strong>All Second Next To Jump</strong><small>Fixed page 1; meeting codes do not apply</small></span></label>
+                    <label class="check-card"><input type="checkbox" name="showTripleResults"><span class="custom-check"></span><span><strong>All Triple Race Results</strong><small>Fixed page; meeting codes do not apply</small></span></label>
+                    <label class="check-card"><input type="checkbox" name="showGallery"><span class="custom-check"></span><span><strong>Gallery with Triple Results</strong><small>Fixed gallery; meeting codes do not apply</small></span></label>
                 </div>
             </section>
 
@@ -201,6 +192,14 @@ $config = [
             <section class="config-section">
                 <h2>Panel options</h2>
 
+                <label class="field-label" for="gridColumns">Grid layout</label>
+                <select id="gridColumns" name="gridColumns">
+                    <option value="1">1 column</option>
+                    <option value="2" selected>2 columns</option>
+                    <option value="4">4 columns</option>
+                </select>
+                <p class="help-text">Select up to four pages for a 2 × 2 grid.</p>
+
                 <label class="field-label" for="panelHeight">Panel height</label>
                 <select id="panelHeight" name="panelHeight">
                     <option value="540">540 px</option>
@@ -235,6 +234,7 @@ $config = [
 
             <div class="toolbar-actions">
                 <button type="button" class="secondary-button" id="showConfig">Configuration</button>
+                <button type="button" class="secondary-button" id="fullscreenGrid">Fullscreen grid</button>
             </div>
         </header>
 
