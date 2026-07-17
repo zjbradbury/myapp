@@ -2,263 +2,240 @@
     "use strict";
 
     const form = document.getElementById("displayConfig");
-    const grid = document.getElementById("displayGrid");
-    const configPanel = document.querySelector(".config-panel");
-    const storageKey = "tab-racing-display-config-v1";
-    let refreshTimer = null;
+    const displayGrid = document.getElementById("displayGrid");
+    const configPanel = document.getElementById("configPanel");
+    const storageKey = "tab-sa-racing-display-v3";
 
-    const meetingMap = new Map(
-        TAB_CONFIG.meetingLocations.map(item => [item.id, item])
-    );
+    function normaliseCodes(value) {
+        return String(value || "")
+            .toUpperCase()
+            .split(/[\s,\-]+/)
+            .map(code => code.trim())
+            .filter(code => /^[A-Z0-9]{2,4}$/.test(code));
+    }
 
-    function checkedValues(name) {
-        return [...form.querySelectorAll(`input[name="${name}[]"]:checked`)]
-            .map(input => input.value);
+    function selectedCheckboxCodes() {
+        return [...form.querySelectorAll('input[name="meetingCode[]"]:checked')]
+            .map(input => input.value.toUpperCase());
+    }
+
+    function selectedCodes() {
+        return [...new Set([
+            ...selectedCheckboxCodes(),
+            ...normaliseCodes(form.customCodes.value),
+        ])];
     }
 
     function readConfig() {
         return {
-            displayTypes: checkedValues("displayType"),
-            jurisdictions: checkedValues("jurisdiction"),
-            meetings: checkedValues("meeting"),
-            showHeader: form.showHeader.checked,
-            showJurisdiction: form.showJurisdiction.checked,
-            showRefresh: form.showRefresh.checked,
-            showOpenLink: form.showOpenLink.checked,
-            columns: Number(form.columns.value),
+            showNextToJump: form.showNextToJump.checked,
+            showGallery: form.showGallery.checked,
+            meetingCodes: selectedCheckboxCodes(),
+            customCodes: form.customCodes.value,
             panelHeight: Number(form.panelHeight.value),
-            refreshSeconds: Number(form.refreshSeconds.value),
+            showPanelHeading: form.showPanelHeading.checked,
         };
     }
 
     function writeConfig(config) {
-        const groups = {
-            displayType: config.displayTypes || [],
-            jurisdiction: config.jurisdictions || [],
-            meeting: config.meetings || [],
-        };
+        if (typeof config.showNextToJump === "boolean") {
+            form.showNextToJump.checked = config.showNextToJump;
+        }
+        if (typeof config.showGallery === "boolean") {
+            form.showGallery.checked = config.showGallery;
+        }
+        if (typeof config.showPanelHeading === "boolean") {
+            form.showPanelHeading.checked = config.showPanelHeading;
+        }
 
-        Object.entries(groups).forEach(([name, values]) => {
-            form.querySelectorAll(`input[name="${name}[]"]`).forEach(input => {
-                input.checked = values.includes(input.value);
-            });
+        const savedCodes = Array.isArray(config.meetingCodes) ? config.meetingCodes : [];
+        form.querySelectorAll('input[name="meetingCode[]"]').forEach(input => {
+            input.checked = savedCodes.includes(input.value);
         });
 
-        ["showHeader", "showJurisdiction", "showRefresh", "showOpenLink"].forEach(name => {
-            if (typeof config[name] === "boolean") {
-                form[name].checked = config[name];
-            }
-        });
+        form.customCodes.value = config.customCodes || "";
 
-        if (config.columns) form.columns.value = String(config.columns);
-        if (config.panelHeight) form.panelHeight.value = String(config.panelHeight);
-        if (Number.isFinite(config.refreshSeconds)) {
-            form.refreshSeconds.value = String(config.refreshSeconds);
+        if (config.panelHeight) {
+            form.panelHeight.value = String(config.panelHeight);
         }
     }
 
-    function buildUrl(displayKey, jurisdiction, page = "") {
-        const display = TAB_CONFIG.displayTypes[displayKey];
-        if (!display) return null;
+    function buildUrl(baseUrl, pageCodes = []) {
+        const url = new URL(baseUrl);
+        url.searchParams.set("jurisdiction", TAB_CONFIG.jurisdiction);
+        url.searchParams.set("channelType", TAB_CONFIG.channelType);
 
-        const url = new URL(display.path, TAB_CONFIG.baseUrl);
-        url.searchParams.set("channelType", "retail");
-        url.searchParams.set("jurisdiction", jurisdiction);
-
-        if (page && display.supports_page) {
-            url.searchParams.set("page", page);
+        if (pageCodes.length) {
+            url.searchParams.set("page", pageCodes.join("-"));
         }
 
         return url.toString();
     }
 
-    function createPanel({ title, subtitle, url, config }) {
+    function updatePreview() {
+        const codes = selectedCodes();
+        document.getElementById("pageCodePreview").textContent =
+            codes.length ? codes.join("-") : "No codes selected";
+    }
+
+    function enterPanelFullscreen(card) {
+        if (card.requestFullscreen) {
+            card.requestFullscreen();
+        } else if (card.webkitRequestFullscreen) {
+            card.webkitRequestFullscreen();
+        }
+    }
+
+    function createDisplayCard(title, url, config, subtitle) {
         const card = document.createElement("section");
         card.className = "display-card";
+        card.style.setProperty("--panel-height", `${config.panelHeight}px`);
 
-        if (config.showHeader) {
+        if (config.showPanelHeading) {
             const header = document.createElement("div");
             header.className = "display-card-header";
 
-            const titleWrap = document.createElement("div");
-            titleWrap.className = "display-card-title";
+            const headingWrap = document.createElement("div");
+            headingWrap.className = "card-heading";
 
-            const strong = document.createElement("strong");
-            strong.textContent = title;
-            titleWrap.appendChild(strong);
+            const heading = document.createElement("strong");
+            heading.textContent = title;
 
-            const details = [];
-            if (config.showJurisdiction && subtitle) details.push(subtitle);
-            if (config.showRefresh) details.push(`Refreshed ${new Date().toLocaleTimeString()}`);
+            const subheading = document.createElement("small");
+            subheading.textContent = subtitle || "SA · retail";
 
-            if (details.length) {
-                const small = document.createElement("small");
-                small.textContent = details.join(" · ");
-                titleWrap.appendChild(small);
-            }
+            headingWrap.append(heading, subheading);
 
             const actions = document.createElement("div");
-            actions.className = "display-card-actions";
+            actions.className = "card-actions";
 
-            const reloadButton = document.createElement("button");
-            reloadButton.type = "button";
-            reloadButton.className = "mini-button";
-            reloadButton.textContent = "Reload";
-            reloadButton.addEventListener("click", () => {
-                frame.src = frame.src;
-            });
-            actions.appendChild(reloadButton);
+            const fullscreenButton = document.createElement("button");
+            fullscreenButton.type = "button";
+            fullscreenButton.className = "mini-button";
+            fullscreenButton.textContent = "Fullscreen";
+            fullscreenButton.title = "Fullscreen this TAB panel only";
+            fullscreenButton.addEventListener("click", () => enterPanelFullscreen(card));
 
-            if (config.showOpenLink) {
-                const openButton = document.createElement("button");
-                openButton.type = "button";
-                openButton.className = "mini-button";
-                openButton.textContent = "Open";
-                openButton.addEventListener("click", () => {
-                    window.open(url, "_blank", "noopener,noreferrer");
-                });
-                actions.appendChild(openButton);
-            }
-
-            header.append(titleWrap, actions);
+            actions.appendChild(fullscreenButton);
+            header.append(headingWrap, actions);
             card.appendChild(header);
         }
 
+        const frameWrap = document.createElement("div");
+        frameWrap.className = "frame-wrap";
+
         const frame = document.createElement("iframe");
-        frame.className = "display-frame";
+        frame.className = "tab-frame";
         frame.src = url;
         frame.title = title;
-        frame.loading = "lazy";
-        frame.referrerPolicy = "strict-origin-when-cross-origin";
         frame.allow = "fullscreen";
-        card.appendChild(frame);
+        frame.loading = "eager";
+        frame.referrerPolicy = "strict-origin-when-cross-origin";
+
+        frameWrap.appendChild(frame);
+        card.appendChild(frameWrap);
+
+        if (!config.showPanelHeading) {
+            const floatingFullscreen = document.createElement("button");
+            floatingFullscreen.type = "button";
+            floatingFullscreen.className = "floating-fullscreen";
+            floatingFullscreen.textContent = "Fullscreen";
+            floatingFullscreen.addEventListener("click", () => enterPanelFullscreen(card));
+            card.appendChild(floatingFullscreen);
+        }
 
         return card;
     }
 
-    function createPanels(config) {
-        const panels = [];
-
-        config.displayTypes.forEach(displayKey => {
-            const display = TAB_CONFIG.displayTypes[displayKey];
-            if (!display) return;
-
-            config.jurisdictions.forEach(jurisdiction => {
-                const url = buildUrl(displayKey, jurisdiction);
-                if (!url) return;
-
-                panels.push({
-                    title: display.label,
-                    subtitle: TAB_CONFIG.jurisdictions[jurisdiction] || jurisdiction,
-                    url,
-                });
-            });
-
-            if (display.supports_page) {
-                config.meetings.forEach(meetingId => {
-                    const meeting = meetingMap.get(meetingId);
-                    if (!meeting) return;
-
-                    const url = buildUrl(
-                        displayKey,
-                        meeting.jurisdiction,
-                        meeting.page
-                    );
-
-                    if (!url) return;
-
-                    panels.push({
-                        title: `${display.label}: ${meeting.label}`,
-                        subtitle: `${meeting.jurisdiction} · ${meeting.page}`,
-                        url,
-                    });
-                });
-            }
-        });
-
-        return panels;
-    }
-
     function render(save = true) {
         const config = readConfig();
+        const codes = selectedCodes();
 
         if (save) {
             localStorage.setItem(storageKey, JSON.stringify(config));
         }
 
-        grid.replaceChildren();
-        grid.style.setProperty("--columns", String(config.columns));
-        grid.style.setProperty("--panel-height", `${config.panelHeight}px`);
+        displayGrid.replaceChildren();
+        let panelCount = 0;
 
-        const panels = createPanels(config);
+        if (config.showNextToJump) {
+            if (codes.length) {
+                const url = buildUrl(TAB_CONFIG.racingDetailUrl, codes);
+                displayGrid.appendChild(
+                    createDisplayCard(
+                        `Next to jump — ${codes.join("-")}`,
+                        url,
+                        config,
+                        `SA · retail · page=${codes.join("-")}`
+                    )
+                );
+                panelCount++;
+            } else {
+                const error = document.createElement("div");
+                error.className = "empty-state";
+                error.textContent = "Select at least one meeting code for Next to jump.";
+                displayGrid.appendChild(error);
+            }
+        }
 
-        if (!panels.length) {
+        if (config.showGallery) {
+            const url = buildUrl(TAB_CONFIG.galleryUrl);
+            displayGrid.appendChild(
+                createDisplayCard(
+                    "Gallery with triple results",
+                    url,
+                    config,
+                    "SA · retail · fixed gallery"
+                )
+            );
+            panelCount++;
+        }
+
+        if (!config.showNextToJump && !config.showGallery) {
             const empty = document.createElement("div");
             empty.className = "empty-state";
-            empty.innerHTML = "<strong>No display panels selected.</strong><br>Select at least one display item and jurisdiction or meeting location.";
-            grid.appendChild(empty);
-        } else {
-            panels.forEach(panel => {
-                grid.appendChild(createPanel({ ...panel, config }));
-            });
+            empty.textContent = "Select at least one TAB display.";
+            displayGrid.appendChild(empty);
         }
 
         document.getElementById("displayTitle").textContent =
-            `${panels.length} racing panel${panels.length === 1 ? "" : "s"}`;
+            `${panelCount} TAB panel${panelCount === 1 ? "" : "s"}`;
 
-        clearInterval(refreshTimer);
-        if (config.refreshSeconds > 0) {
-            refreshTimer = setInterval(() => refreshFrames(), config.refreshSeconds * 1000);
-        }
-    }
-
-    function refreshFrames() {
-        document.querySelectorAll(".display-frame").forEach(frame => {
-            frame.src = frame.src;
-        });
-
-        document.querySelectorAll(".display-card-title small").forEach(small => {
-            const parts = small.textContent.split(" · ").filter(
-                part => !part.startsWith("Refreshed ")
-            );
-            parts.push(`Refreshed ${new Date().toLocaleTimeString()}`);
-            small.textContent = parts.join(" · ");
-        });
+        updatePreview();
     }
 
     form.addEventListener("submit", event => {
         event.preventDefault();
         render(true);
 
-        if (window.innerWidth <= 760) {
+        if (window.innerWidth <= 800) {
             configPanel.classList.add("is-hidden");
         }
     });
 
-    document.querySelectorAll("[data-toggle-group]").forEach(button => {
+    form.addEventListener("input", updatePreview);
+    form.addEventListener("change", updatePreview);
+
+    document.querySelectorAll("[data-codes]").forEach(button => {
         button.addEventListener("click", () => {
-            const group = button.dataset.toggleGroup;
-            const inputs = [...form.querySelectorAll(`input[name="${group}[]"]`)];
-            const shouldCheck = inputs.some(input => !input.checked);
-            inputs.forEach(input => input.checked = shouldCheck);
+            const codes = button.dataset.codes.split(",");
+            form.querySelectorAll('input[name="meetingCode[]"]').forEach(input => {
+                input.checked = codes.includes(input.value);
+            });
+            form.customCodes.value = "";
+            updatePreview();
         });
     });
 
-    document.getElementById("refreshNow").addEventListener("click", refreshFrames);
-
-    document.getElementById("fullscreenButton").addEventListener("click", async () => {
-        try {
-            if (!document.fullscreenElement) {
-                await document.documentElement.requestFullscreen();
-            } else {
-                await document.exitFullscreen();
-            }
-        } catch (error) {
-            console.error("Fullscreen unavailable", error);
-        }
+    document.getElementById("clearCodes").addEventListener("click", () => {
+        form.querySelectorAll('input[name="meetingCode[]"]').forEach(input => {
+            input.checked = false;
+        });
+        form.customCodes.value = "";
+        updatePreview();
     });
 
-    document.getElementById("collapseConfig").addEventListener("click", () => {
+    document.getElementById("hideConfig").addEventListener("click", () => {
         configPanel.classList.add("is-hidden");
     });
 
@@ -276,9 +253,10 @@
         try {
             writeConfig(JSON.parse(saved));
         } catch (error) {
-            console.warn("Saved TAB display configuration was invalid.", error);
+            console.warn("Could not load saved TAB display configuration.", error);
         }
     }
 
+    updatePreview();
     render(false);
 })();
