@@ -106,6 +106,7 @@ $config = [
     <link rel="stylesheet" href="tab-display.css">
 </head>
 <body>
+<div class="config-backdrop" id="configBackdrop" hidden></div>
 <div class="page-shell">
     <aside class="config-panel" id="configPanel">
         <div class="panel-heading">
@@ -150,7 +151,7 @@ $config = [
                 </div>
 
                 <div class="preset-row">
-                    <button type="button" class="preset-button" data-codes="MR,MG,MH">MR-MG-MH</button>
+                    <button type="button" class="preset-button" data-codes="MR,SR,BR,AR">MR-SR-BR-AR</button>
                     <button type="button" class="preset-button" data-codes="AR,AG,AH">AR-AG-AH</button>
                     <button type="button" class="preset-button" data-codes="MR,MG,MH,AR,AG,AH">Main + SA</button>
                 </div>
@@ -165,7 +166,7 @@ $config = [
                                         type="checkbox"
                                         name="meetingCode[]"
                                         value="<?= h($code) ?>"
-                                        <?= in_array($code, ['MR', 'MG', 'MH'], true) ? 'checked' : '' ?>
+                                        <?= in_array($code, ['MR', 'SR', 'BR', 'AR'], true) ? 'checked' : '' ?>
                                     >
                                     <span class="custom-check"></span>
                                     <span>
@@ -193,7 +194,7 @@ $config = [
 
                 <div class="page-preview">
                     <span>Page parameter</span>
-                    <strong id="pageCodePreview">MR-MG-MH</strong>
+                    <strong id="pageCodePreview">MR-SR-BR-AR</strong>
                 </div>
             </section>
 
