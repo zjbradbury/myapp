@@ -13,10 +13,10 @@ declare(strict_types=1);
 */
 
 $codeGroups = [
-    'Primary / Metropolitan' => [
-        'MR' => 'Metropolitan thoroughbreds',
-        'MG' => 'Primary greyhounds',
-        'MH' => 'Primary harness',
+    'Melbourne / Victoria => [
+        'MR' => 'Melbourne / VIC thoroughbreds',
+        'MG' => 'Melbourne / VIC greyhounds',
+        'MH' => 'Melbourne / VIC harness',
     ],
     'Sydney / NSW' => [
         'SR' => 'Sydney / NSW thoroughbreds',
