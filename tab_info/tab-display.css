@@ -313,6 +313,7 @@ select {
 
 .display-grid {
     display: grid;
+    grid-template-columns: repeat(var(--grid-columns, 2), minmax(0, 1fr));
     gap: 18px;
 }
 
@@ -424,3 +425,9 @@ select {
 body.config-open {
     overflow: hidden;
 }
+
+.display-grid:fullscreen{width:100vw;height:100vh;padding:12px;overflow:auto;background:var(--background);grid-template-columns:repeat(var(--grid-columns,2),minmax(0,1fr))}
+.display-grid:fullscreen .frame-wrap{height:calc((100vh - 42px)/2)}
+.display-grid:fullscreen .display-card:only-child .frame-wrap{height:calc(100vh - 24px)}
+@media(max-width:1300px){.display-grid{grid-template-columns:repeat(min(var(--grid-columns,2),2),minmax(0,1fr))}}
+@media(max-width:800px){.display-grid,.display-grid:fullscreen{grid-template-columns:1fr}.display-grid:fullscreen .frame-wrap{height:70vh}}
