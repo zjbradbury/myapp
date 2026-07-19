@@ -166,6 +166,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
                     <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
 
+<a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
+
             <?php endif; ?>
 
             <div class="hamburger-divider"></div>
