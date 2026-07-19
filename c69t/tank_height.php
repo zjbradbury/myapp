@@ -2,7 +2,7 @@
 require_once "config.php";
 requireRole(['admin']);
 
-$canEdit = in_array(currentRole(), ['admin'], true);
+$canEdit = true;
 
 /*
 |--------------------------------------------------------------------------
@@ -189,10 +189,14 @@ $settings = loadHeightSettings($pdo);
 $latest = latestTricanterFlow($pdo);
 $flowRows = selectedFlowRows($pdo);
 
-$refreshStmt = $pdo->prepare("SELECT value FROM settings WHERE `key` = ? LIMIT 1");
-$refreshStmt->execute(['monitor_refresh_seconds']);
-$refreshSeconds = (int)($refreshStmt->fetchColumn() ?: 30);
-$refreshSeconds = max(5, min(300, $refreshSeconds));
+/*
+|--------------------------------------------------------------------------
+| LIVE REFRESH
+|--------------------------------------------------------------------------
+| Uses the dashboard's standard 30-second live refresh interval.
+| This avoids depending on differing settings-table column names.
+*/
+$refreshSeconds = 30;
 
 $startFlow = isset($settings['start_flow_total']) && $settings['start_flow_total'] !== null
     ? (float)$settings['start_flow_total']
@@ -546,4 +550,3 @@ setInterval(refreshTankHeight, refreshSeconds * 1000);
 </script>
 </body>
 </html>
-
