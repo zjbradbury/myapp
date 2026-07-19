@@ -260,6 +260,23 @@ try {
             ]
         ],
 
+        'RECOVERED_WATER_PUMP' => [
+            'table' => 'recovered_water_pump_logs',
+            'columns' => [
+                'Date' => 'log_date',
+                'Time' => 'log_time',
+                'Start Level' => 'start_level',
+                'Stop Level' => 'stop_level',
+                'Amount' => 'amount',
+                'Comments' => 'comments'
+            ],
+            'numeric_columns' => [
+                'start_level',
+                'stop_level',
+                'amount'
+            ]
+        ],
+
         'NITROGEN' => [
             'table' => 'nitrogen_logs',
             'columns' => [
@@ -323,6 +340,8 @@ try {
 
         $solidStart = null;
         $solidStop = null;
+        $recoveredWaterStart = null;
+        $recoveredWaterStop = null;
 
         foreach ($record['data'] as $key => $value) {
             $originalKey = trim((string) $key);
@@ -341,6 +360,25 @@ try {
 
                 if (in_array($normalizedKey, ['stop', 'stop_value', 'stop_level', 'stoplevel'], true)) {
                     $solidStop = parse_number($value);
+                    continue;
+                }
+
+                if ($normalizedKey === 'amount') {
+                    $insertData['amount'] = parse_number($value);
+                    continue;
+                }
+            }
+
+            if ($section === 'RECOVERED_WATER_PUMP') {
+                if (in_array($normalizedKey, ['start', 'start_value', 'start_level', 'startlevel'], true)) {
+                    $recoveredWaterStart = parse_number($value);
+                    $insertData['start_level'] = $recoveredWaterStart;
+                    continue;
+                }
+
+                if (in_array($normalizedKey, ['stop', 'stop_value', 'stop_level', 'stoplevel'], true)) {
+                    $recoveredWaterStop = parse_number($value);
+                    $insertData['stop_level'] = $recoveredWaterStop;
                     continue;
                 }
 
@@ -385,6 +423,12 @@ try {
         if ($section === 'SOLID_WASTE' && !isset($insertData['amount'])) {
             if ($solidStart !== null && $solidStop !== null) {
                 $insertData['amount'] = $solidStart - $solidStop;
+            }
+        }
+
+        if ($section === 'RECOVERED_WATER_PUMP' && !isset($insertData['amount'])) {
+            if ($recoveredWaterStart !== null && $recoveredWaterStop !== null) {
+                $insertData['amount'] = $recoveredWaterStop - $recoveredWaterStart;
             }
         }
 
