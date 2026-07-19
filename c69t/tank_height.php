@@ -44,9 +44,9 @@ function latestTricanterFlow(PDO $pdo): ?array
     return $row ?: null;
 }
 
-function selectedFlowRows(PDO $pdo, int $limit = 250): array
+function selectedFlowRows(PDO $pdo, int $limit = 5000): array
 {
-    $limit = max(10, min(1000, $limit));
+    $limit = max(10, min(20000, $limit));
 
     $stmt = $pdo->query("
         SELECT id, log_date, log_time, total_tricanter
