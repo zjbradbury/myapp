@@ -88,9 +88,9 @@ $navItems = [
         </section>
 
         <footer class="footer">
-            <span>Contract Resources</span>
+            <span>Zack Bradbury</span>
             <span class="footer-separator">•</span>
-            <span>Moomba Site Portal</span>
+            <span>Site Portal</span>
         </footer>
     </main>
 
