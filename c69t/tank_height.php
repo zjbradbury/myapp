@@ -1,8 +1,8 @@
 <?php
 require_once "config.php";
-requireRole(['admin', 'operator', 'viewer']);
+requireRole(['admin']);
 
-$canEdit = in_array(currentRole(), ['admin', 'operator'], true);
+$canEdit = in_array(currentRole(), ['admin'], true);
 
 /*
 |--------------------------------------------------------------------------
