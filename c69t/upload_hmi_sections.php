@@ -267,13 +267,11 @@ try {
                 'Time' => 'log_time',
                 'Start Level' => 'start_level',
                 'Stop Level' => 'stop_level',
-                'Amount' => 'amount',
                 'Comments' => 'comments'
             ],
             'numeric_columns' => [
                 'start_level',
-                'stop_level',
-                'amount'
+                'stop_level'
             ]
         ],
 
@@ -381,11 +379,6 @@ try {
                     $insertData['stop_level'] = $recoveredWaterStop;
                     continue;
                 }
-
-                if ($normalizedKey === 'amount') {
-                    $insertData['amount'] = parse_number($value);
-                    continue;
-                }
             }
 
             if (!isset($allowedColumns[$originalKey])) {
@@ -426,11 +419,6 @@ try {
             }
         }
 
-        if ($section === 'RECOVERED_WATER_PUMP' && !isset($insertData['amount'])) {
-            if ($recoveredWaterStart !== null && $recoveredWaterStop !== null) {
-                $insertData['amount'] = $recoveredWaterStop - $recoveredWaterStart;
-            }
-        }
 
         if (count($insertData) <= 1) {
             continue;
