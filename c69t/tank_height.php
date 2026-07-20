@@ -1,8 +1,8 @@
 <?php
 require_once "config.php";
-requireRole(['admin']);
+requireRole(['admin', 'operator']);
 
-$canEdit = true;
+$canEdit = currentRole() === 'admin';
 
 /*
 |--------------------------------------------------------------------------
@@ -16,12 +16,22 @@ $pdo->exec("
         start_project_flow_id BIGINT UNSIGNED NULL,
         start_flow_total DECIMAL(14,4) NULL,
         start_height_mm DECIMAL(12,2) NULL,
+        target_height_mm DECIMAL(12,2) NULL,
         conversion_factor DECIMAL(10,4) NOT NULL DEFAULT 2.8000,
         updated_by BIGINT UNSIGNED NULL,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
             ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 ");
+
+
+try {
+    $pdo->exec("ALTER TABLE tricanter_height_settings ADD COLUMN target_height_mm DECIMAL(12,2) NULL AFTER start_height_mm");
+} catch (PDOException $e) {
+    if ((string)$e->getCode() !== '42S21') {
+        throw $e;
+    }
+}
 
 $pdo->exec("
     INSERT IGNORE INTO tricanter_height_settings
@@ -36,6 +46,20 @@ function latestTricanterFlow(PDO $pdo): ?array
         SELECT id, log_date, log_time, total_tricanter
         FROM project_flow_logs
         WHERE total_tricanter IS NOT NULL
+        ORDER BY log_date DESC, log_time DESC, id DESC
+        LIMIT 1
+    ");
+
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $row ?: null;
+}
+
+function latestTricanterRate(PDO $pdo): ?array
+{
+    $stmt = $pdo->query("
+        SELECT id, log_date, log_time, feed_rate
+        FROM tricanter_logs
+        WHERE feed_rate IS NOT NULL
         ORDER BY log_date DESC, log_time DESC, id DESC
         LIMIT 1
     ");
@@ -85,9 +109,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'save') {
         $startHeight = filter_input(INPUT_POST, 'start_height_mm', FILTER_VALIDATE_FLOAT);
         $flowRowId = filter_input(INPUT_POST, 'start_project_flow_id', FILTER_VALIDATE_INT);
+        $targetHeight = filter_input(INPUT_POST, 'target_height_mm', FILTER_VALIDATE_FLOAT);
 
         if ($startHeight === false || $startHeight === null || $startHeight < 0) {
             $error = 'Enter a valid starting height in millimetres.';
+        } elseif ($targetHeight === false || $targetHeight === null || $targetHeight < 0 || $targetHeight >= $startHeight) {
+            $error = 'Enter a target height that is lower than the starting height.';
         } elseif (!$flowRowId) {
             $error = 'Select a tricanter project-flow starting point.';
         } else {
@@ -111,6 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SET start_project_flow_id = ?,
                         start_flow_total = ?,
                         start_height_mm = ?,
+                        target_height_mm = ?,
                         conversion_factor = 2.8000,
                         updated_by = ?,
                         updated_at = NOW()
@@ -120,6 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     (int)$flowRow['id'],
                     (float)$flowRow['total_tricanter'],
                     (float)$startHeight,
+                    (float)$targetHeight,
                     $userId
                 ]);
 
@@ -131,10 +160,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'use_latest') {
         $startHeight = filter_input(INPUT_POST, 'start_height_mm', FILTER_VALIDATE_FLOAT);
+        $targetHeight = filter_input(INPUT_POST, 'target_height_mm', FILTER_VALIDATE_FLOAT);
         $latest = latestTricanterFlow($pdo);
 
         if ($startHeight === false || $startHeight === null || $startHeight < 0) {
             $error = 'Enter a valid starting height in millimetres.';
+        } elseif ($targetHeight === false || $targetHeight === null || $targetHeight < 0 || $targetHeight >= $startHeight) {
+            $error = 'Enter a target height that is lower than the starting height.';
         } elseif (!$latest) {
             $error = 'No tricanter project-flow total is available.';
         } else {
@@ -145,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 SET start_project_flow_id = ?,
                     start_flow_total = ?,
                     start_height_mm = ?,
+                    target_height_mm = ?,
                     conversion_factor = 2.8000,
                     updated_by = ?,
                     updated_at = NOW()
@@ -154,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (int)$latest['id'],
                 (float)$latest['total_tricanter'],
                 (float)$startHeight,
+                (float)$targetHeight,
                 $userId
             ]);
 
@@ -168,6 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             SET start_project_flow_id = NULL,
                 start_flow_total = NULL,
                 start_height_mm = NULL,
+                target_height_mm = NULL,
                 updated_by = ?,
                 updated_at = NOW()
             WHERE id = 1
@@ -187,6 +222,7 @@ if (isset($_GET['saved'])) {
 
 $settings = loadHeightSettings($pdo);
 $latest = latestTricanterFlow($pdo);
+$latestRate = latestTricanterRate($pdo);
 $flowRows = selectedFlowRows($pdo);
 
 /*
@@ -205,6 +241,10 @@ $startHeight = isset($settings['start_height_mm']) && $settings['start_height_mm
     ? (float)$settings['start_height_mm']
     : null;
 $currentFlow = $latest ? (float)$latest['total_tricanter'] : null;
+$targetHeight = isset($settings['target_height_mm']) && $settings['target_height_mm'] !== null
+    ? (float)$settings['target_height_mm']
+    : null;
+$tricanterRate = $latestRate ? (float)$latestRate['feed_rate'] : null;
 
 $flowUsed = ($startFlow !== null && $currentFlow !== null)
     ? $currentFlow - $startFlow
@@ -212,6 +252,13 @@ $flowUsed = ($startFlow !== null && $currentFlow !== null)
 $heightUsed = $flowUsed !== null ? $flowUsed / 2.8 : null;
 $currentHeight = ($startHeight !== null && $heightUsed !== null)
     ? $startHeight - $heightUsed
+    : null;
+$heightRemaining = ($currentHeight !== null && $targetHeight !== null)
+    ? max(0.0, $currentHeight - $targetHeight)
+    : null;
+$volumeRemaining = $heightRemaining !== null ? $heightRemaining * 2.8 : null;
+$hoursToTarget = ($volumeRemaining !== null && $tricanterRate !== null && $tricanterRate > 0)
+    ? $volumeRemaining / $tricanterRate
     : null;
 
 function numberOrDash(?float $value, int $decimals = 2): string
@@ -307,6 +354,16 @@ function numberOrDash(?float $value, int $decimals = 2): string
             font-weight:700;
         }
 
+        .target-card{
+            padding:22px;
+            border-radius:16px;
+            border:1px solid rgba(255,193,7,.28);
+            background:linear-gradient(180deg, rgba(70,54,12,.55), rgba(24,22,12,.65));
+        }
+
+        .target-card strong{display:block;font-size:clamp(34px,5vw,58px);line-height:1.05;color:#fff;}
+        .target-card span{color:#ffd86b;font-weight:700;}
+
         .height-kpis{
             display:grid;
             grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -354,7 +411,17 @@ function numberOrDash(?float $value, int $decimals = 2): string
         }
 
         @media (max-width:600px){
-            .height-kpis{
+            .target-card{
+            padding:22px;
+            border-radius:16px;
+            border:1px solid rgba(255,193,7,.28);
+            background:linear-gradient(180deg, rgba(70,54,12,.55), rgba(24,22,12,.65));
+        }
+
+        .target-card strong{display:block;font-size:clamp(34px,5vw,58px);line-height:1.05;color:#fff;}
+        .target-card span{color:#ffd86b;font-weight:700;}
+
+        .height-kpis{
                 grid-template-columns:1fr;
             }
         }
@@ -413,6 +480,19 @@ function numberOrDash(?float $value, int $decimals = 2): string
                     </div>
 
                     <div class="field-group">
+                        <label for="target_height_mm">Lower target height (mm)</label>
+                        <input
+                            type="number"
+                            id="target_height_mm"
+                            name="target_height_mm"
+                            min="0"
+                            step="0.01"
+                            required
+                            value="<?= $targetHeight !== null ? h(number_format($targetHeight, 2, '.', '')) : '' ?>"
+                            <?= !$canEdit ? 'disabled' : '' ?>>
+                    </div>
+
+                    <div class="field-group">
                         <label for="start_project_flow_id">Tricanter project-flow starting point</label>
                         <select
                             id="start_project_flow_id"
@@ -451,7 +531,7 @@ function numberOrDash(?float $value, int $decimals = 2): string
                             </button>
                         </div>
                     <?php else: ?>
-                        <div class="height-note">Viewer accounts can view the live calculation but cannot change its saved starting values.</div>
+                        <div class="height-note">Operator accounts can view the live calculation but cannot change its saved starting values.</div>
                     <?php endif; ?>
                 </form>
 
@@ -465,6 +545,13 @@ function numberOrDash(?float $value, int $decimals = 2): string
                     <small>Calculated current height</small>
                     <strong id="currentHeight"><?= numberOrDash($currentHeight, 1) ?></strong>
                     <span>mm</span>
+                </div>
+
+                <div class="target-card">
+                    <small>Estimated time to target height</small>
+                    <strong id="hoursToTarget"><?= numberOrDash($hoursToTarget, 1) ?></strong>
+                    <span>hours until <span id="targetHeightDisplay"><?= numberOrDash($targetHeight, 1) ?></span> mm</span>
+                    <div class="height-note">Using latest tricanter flow rate: <b id="tricanterRateDisplay"><?= numberOrDash($tricanterRate, 2) ?> m³/hr</b></div>
                 </div>
 
                 <div class="height-kpis kpis">
@@ -541,6 +628,12 @@ async function refreshTankHeight() {
             formatNumber(data.height_used_mm, 1) + ' mm';
         document.getElementById('latestReadingDisplay').textContent =
             data.latest_reading || '-';
+        document.getElementById('hoursToTarget').textContent =
+            formatNumber(data.hours_to_target, 1);
+        document.getElementById('targetHeightDisplay').textContent =
+            formatNumber(data.target_height_mm, 1);
+        document.getElementById('tricanterRateDisplay').textContent =
+            formatNumber(data.tricanter_flow_rate, 2) + ' m³/hr';
     } catch (error) {
         console.error(error);
     }
