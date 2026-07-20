@@ -534,10 +534,7 @@ function numberOrDash(?float $value, int $decimals = 2): string
                         <div class="height-note">Operator accounts can view the live calculation but cannot change its saved starting values.</div>
                     <?php endif; ?>
                 </form>
-
-                <div class="height-note">
-                    Calculation: current tricanter total minus the saved starting total, divided by 2.8, then subtracted from the saved starting height.
-                </div>
+ 
             </div>
 
             <div class="height-result">
