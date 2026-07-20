@@ -1,3 +1,4 @@
+
 <?php
 require_once "config.php";
 requireRole(['admin', 'operator', 'viewer']);
@@ -353,6 +354,44 @@ function render_solid_waste_rows(array $rows): string
                 <td><?= h($r['log_date']) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
+                <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
+                <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
+            </tr>
+        <?php endforeach;
+    endif;
+
+    return ob_get_clean();
+}
+
+function recovered_water_diff_minutes_rows(array $rows): array
+{
+    return solid_diff_minutes_rows($rows);
+}
+
+function render_recovered_water_kpis(array $latestRow): string
+{
+    ob_start();
+    ?>
+    <div class="kpi"><small>Start Level</small><b><?= fmt($latestRow['start_level'] ?? null, 2) ?></b></div>
+    <div class="kpi"><small>Stop Level</small><b><?= fmt($latestRow['stop_level'] ?? null, 2) ?></b></div>
+    <div class="kpi"><small>Last Entry</small><b><?= !empty($latestRow['log_time']) ? h(date('H:i', strtotime($latestRow['log_time']))) : '-' ?></b></div>
+    <?php
+    return ob_get_clean();
+}
+
+function render_recovered_water_rows(array $rows): string
+{
+    ob_start();
+
+    if (!$rows): ?>
+        <tr><td colspan="6">No recovered water pump data in selected range.</td></tr>
+    <?php else:
+        foreach ($rows as $r): ?>
+            <tr class="recovered-water-row" data-id="<?= (int)$r['id'] ?>">
+                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h($r['log_time'] ?? '') ?></td>
+                <td><?= fmt($r['start_level'] ?? null, 2) ?></td>
+                <td><?= fmt($r['stop_level'] ?? null, 2) ?></td>
                 <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
@@ -787,6 +826,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $nozzle = fetch_log_rows($pdo, 'nozzle_logs', $range, 'id DESC');
         $tricanter = fetch_log_rows($pdo, 'tricanter_logs', $range, 'id DESC');
         $solidWaste = fetch_log_rows($pdo, 'solid_waste_logs', $range, 'id DESC');
+        $recoveredWater = tableExists($pdo, 'recovered_water_pump_logs') ? fetch_log_rows($pdo, 'recovered_water_pump_logs', $range, 'id DESC') : [];
         $sample = tableExists($pdo, 'sample_logs') ? fetch_log_rows($pdo, 'sample_logs', $range, 'id DESC') : [];
         $gasTest = tableExists($pdo, 'gas_test_logs') ? fetch_log_rows($pdo, 'gas_test_logs', $range, 'id DESC') : [];
         $projectFlow = tableExists($pdo, 'project_flow_logs') ? fetch_log_rows($pdo, 'project_flow_logs', $range, 'id DESC') : [];
@@ -796,6 +836,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
         $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
         $latestSolidWasteOverall = fetch_latest_row($pdo, 'solid_waste_logs') ?: [];
+        $latestRecoveredWaterOverall = tableExists($pdo, 'recovered_water_pump_logs') ? (fetch_latest_row($pdo, 'recovered_water_pump_logs') ?: []) : [];
         $latestSampleOverall = tableExists($pdo, 'sample_logs') ? (fetch_latest_row($pdo, 'sample_logs') ?: []) : [];
         $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
         $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
@@ -806,6 +847,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     }
 
     $solidWaste = solid_diff_minutes_rows($solidWaste);
+    $recoveredWater = recovered_water_diff_minutes_rows($recoveredWater);
 
     $tricanter = filter_rows_to_minute_increments($tricanter, 15);
     $nozzle = filter_rows_to_minute_increments($nozzle, 15);
@@ -817,6 +859,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     // The chart helpers preserve a value (including null) for every timestamp.
     $tricanterChart = dashboard_chart_rows($tricanter);
     $solidWasteChart = dashboard_chart_rows($solidWaste);
+    $recoveredWaterChart = dashboard_chart_rows($recoveredWater);
     $nozzleChart = dashboard_chart_rows($nozzle);
     $pumpValuesChart = dashboard_chart_rows($pumpValues);
     $nitrogenChart = dashboard_chart_rows($nitrogen);
@@ -824,6 +867,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
     $latestSolidWaste = $solidWaste[0] ?? [];
+    $latestRecoveredWater = $recoveredWater[0] ?? [];
     $latestSample = $sample[0] ?? [];
     $latestGasTest = $gasTest[0] ?? [];
     $latestProjectFlow = $projectFlow[0] ?? [];
@@ -841,6 +885,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $latestNozzleOverall,
         $latestTricanterOverall,
         $latestSolidWasteOverall,
+        $latestRecoveredWaterOverall,
         $latestSampleOverall,
         $latestGasTestOverall,
         $latestProjectFlowOverall,
@@ -873,7 +918,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         ? 'NO DATA'
         : ((time() - $latestEntryTimestamp) <= 1800 ? 'ONLINE' : 'OFFLINE');
 
-    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
+    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -887,6 +932,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             'nozzle' => row_stamp($latestNozzleOverall),
             'tricanter' => row_stamp($latestTricanterOverall),
             'solid_waste' => row_stamp($latestSolidWasteOverall),
+            'recovered_water' => row_stamp($latestRecoveredWaterOverall),
             'sample' => row_stamp($latestSampleOverall),
             'gas_test' => row_stamp($latestGasTestOverall),
             'project_flow' => row_stamp($latestProjectFlowOverall),
@@ -921,6 +967,16 @@ function build_dashboard_data(PDO $pdo, array $range): array
                     'datasets' => [
                         ['label' => 'Amount', 'data' => dashboard_chart_numeric($solidWasteChart, 'amount')],
                         ['label' => 'Diff (min)', 'data' => array_map(static fn(array $row) => isset($row['_diff_minutes']) && is_numeric($row['_diff_minutes']) ? (float)$row['_diff_minutes'] : null, $solidWasteChart)],
+                    ],
+                ],
+            ],
+            'recovered_water' => [
+                'kpis_html' => render_recovered_water_kpis($latestRecoveredWater),
+                'rows_html' => render_recovered_water_rows($recoveredWater),
+                'chart' => [
+                    'labels' => dashboard_chart_labels($recoveredWaterChart),
+                    'datasets' => [
+                        ['label' => 'Diff (min)', 'data' => array_map(static fn(array $row) => isset($row['_diff_minutes']) && is_numeric($row['_diff_minutes']) ? (float)$row['_diff_minutes'] : null, $recoveredWaterChart)],
                     ],
                 ],
             ],
