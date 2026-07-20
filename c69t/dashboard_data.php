@@ -1,5 +1,6 @@
 
 <?php
+ini_set('display_errors', '0');
 require_once "config.php";
 requireRole(['admin', 'operator', 'viewer']);
 
@@ -1052,11 +1053,11 @@ try {
         'monitor_html' => render_monitor_shell($dashboard['monitor']),
         'topbar_html' => render_topbar($dashboard),
         'panels' => $dashboard['panels'],
-    ]);
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
         'error' => $e->getMessage(),
-    ]);
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
 }
