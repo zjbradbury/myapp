@@ -1595,7 +1595,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                     <div class="panel-sub">Pump start and stop levels with time between entries</div>
                 </div>
                 <div class="panel-actions">
-                    <a class="btn" href="logs.php?table=recovered_water_pump_logs">View Logs</a>
+                    <a class="btn" href="logs.php?table=recovered_water">View Logs</a>
                 </div>
             </div>
 
@@ -2057,12 +2057,26 @@ function makeChart(canvasId, config) {
 }
 
 function updateChart(chart, config) {
-    if (!chart || !config) return;
+    if (!chart || !config) return chart;
     const usable = validDatasets(config.datasets || []);
     chart.data.labels = config.labels || [];
     chart.data.datasets = usable.map(chartDatasetObject);
-    chart.options.plugins.tricanterStatusHighlight.statusData = config.status || [];
+
+    if (chart.options?.plugins?.tricanterStatusHighlight) {
+        chart.options.plugins.tricanterStatusHighlight.statusData = config.status || [];
+    }
+
     chart.update('none');
+    return chart;
+}
+
+function updateOrCreateChart(chartKey, canvasId, config) {
+    if (!config) return;
+    if (!charts[chartKey]) {
+        charts[chartKey] = makeChart(canvasId, config);
+        return;
+    }
+    charts[chartKey] = updateChart(charts[chartKey], config);
 }
 
 function updateContainer(id, html) {
@@ -2220,74 +2234,100 @@ function buildAjaxUrl() {
 async function fetchDashboardUpdate() {
     const response = await fetch(buildAjaxUrl(), {
         method: 'GET',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
         cache: 'no-store'
     });
 
-    if (!response.ok) throw new Error('Refresh failed');
-    return response.json();
+    const responseText = await response.text();
+
+    if (!response.ok) {
+        throw new Error('Refresh failed (' + response.status + '): ' + responseText.slice(0, 300));
+    }
+
+    try {
+        return JSON.parse(responseText);
+    } catch (error) {
+        throw new Error('dashboard_data.php returned invalid JSON: ' + responseText.slice(0, 300));
+    }
+}
+
+function safelyUpdatePanel(panelName, callback) {
+    try {
+        callback();
+    } catch (error) {
+        console.error('Dashboard panel update failed:', panelName, error);
+    }
 }
 
 function applyPayload(payload) {
-    if (!payload || !payload.ok) return;
+    if (!payload || payload.ok !== true) {
+        if (payload?.error) console.error('Dashboard refresh error:', payload.error);
+        return;
+    }
 
-    updateContainer('monitorShell', payload.monitor_html);
-    updateContainer('topbarWrap', payload.topbar_html);
+    safelyUpdatePanel('monitor', () => updateContainer('monitorShell', payload.monitor_html));
+    safelyUpdatePanel('topbar', () => updateContainer('topbarWrap', payload.topbar_html));
 
-    if (payload.panels?.tricanter) {
+    if (payload.panels?.tricanter) safelyUpdatePanel('tricanter', () => {
         updateContainer('tricanter-kpis', payload.panels.tricanter.kpis_html);
         updateTbody('tricanter-tbody', payload.panels.tricanter.rows_html, 'triLastSeen');
-        updateChart(charts.tricanter, payload.panels.tricanter.chart);
-    }
+        updateOrCreateChart('tricanter', 'tricanterCombinedChart', payload.panels.tricanter.chart);
+    });
 
-    if (payload.panels?.solid_waste) {
+    if (payload.panels?.solid_waste) safelyUpdatePanel('solid_waste', () => {
         updateContainer('solid-waste-kpis', payload.panels.solid_waste.kpis_html);
         updateTbody('solid-waste-tbody', payload.panels.solid_waste.rows_html, 'solidLastSeen');
-        updateChart(charts.solidWaste, payload.panels.solid_waste.chart);
-    }
+        updateOrCreateChart('solidWaste', 'solidWasteCombinedChart', payload.panels.solid_waste.chart);
+    });
 
-    if (payload.panels?.recovered_water) {
+    if (payload.panels?.recovered_water) safelyUpdatePanel('recovered_water', () => {
         updateContainer('recovered-water-kpis', payload.panels.recovered_water.kpis_html);
         updateTbody('recovered-water-tbody', payload.panels.recovered_water.rows_html, 'recoveredWaterLastSeen');
-        updateChart(charts.recoveredWater, payload.panels.recovered_water.chart);
-    }
+        updateOrCreateChart('recoveredWater', 'recoveredWaterCombinedChart', payload.panels.recovered_water.chart);
+    });
 
-    if (payload.panels?.nozzle) {
+    if (payload.panels?.nozzle) safelyUpdatePanel('nozzle', () => {
         updateContainer('nozzle-kpis', payload.panels.nozzle.kpis_html);
         updateTbody('nozzle-tbody', payload.panels.nozzle.rows_html, 'nozzleLastSeen');
-        updateChart(charts.nozzle, payload.panels.nozzle.chart);
-    }
+        updateOrCreateChart('nozzle', 'nozzleCombinedChart', payload.panels.nozzle.chart);
+    });
 
-    if (payload.panels?.sample) {
+    if (payload.panels?.sample) safelyUpdatePanel('sample', () => {
         updateContainer('sample-kpis', payload.panels.sample.kpis_html);
         updateTbody('sample-tbody', payload.panels.sample.rows_html, 'sampleLastSeen');
-    }
+    });
 
-    if (payload.panels?.gas_test) {
+    if (payload.panels?.gas_test) safelyUpdatePanel('gas_test', () => {
         updateContainer('gas-test-kpis', payload.panels.gas_test.kpis_html);
         updateTbody('gas-test-tbody', payload.panels.gas_test.rows_html, 'gasLastSeen');
-    }
+    });
 
-    if (payload.panels?.project_flow) {
+    if (payload.panels?.project_flow) safelyUpdatePanel('project_flow', () => {
         updateContainer('project-flow-kpis', payload.panels.project_flow.kpis_html);
         updateTbody('project-flow-tbody', payload.panels.project_flow.rows_html, 'projectFlowLastSeen');
-    }
+    });
 
-    if (payload.panels?.pump_values) {
+    if (payload.panels?.pump_values) safelyUpdatePanel('pump_values', () => {
         updateContainer('pump-values-kpis', payload.panels.pump_values.kpis_html);
         updateTbody('pump-values-tbody', payload.panels.pump_values.rows_html, 'pumpValuesLastSeen');
-        updateChart(charts.pumpValues, payload.panels.pump_values.chart);
-    }
+        updateOrCreateChart('pumpValues', 'pumpValuesPressureChart', payload.panels.pump_values.chart);
+    });
 
-    if (payload.panels?.nitrogen) {
+    if (payload.panels?.nitrogen) safelyUpdatePanel('nitrogen', () => {
         updateContainer('nitrogen-kpis', payload.panels.nitrogen.kpis_html);
         updateTbody('nitrogen-tbody', payload.panels.nitrogen.rows_html, 'nitrogenLastSeen');
-        updateChart(charts.nitrogen, payload.panels.nitrogen.chart);
-    }
+        updateOrCreateChart('nitrogen', 'nitrogenCombinedChart', payload.panels.nitrogen.chart);
+    });
+
+    schedulePolling();
 }
 
 let refreshTimer = null;
 let refreshInFlight = false;
+let activeRefreshMs = null;
 
 function getRefreshSeconds() {
     const shell = document.querySelector('#monitorShell [data-refresh-seconds]');
@@ -2295,34 +2335,37 @@ function getRefreshSeconds() {
     return Number.isNaN(secs) ? 30 : Math.max(5, secs);
 }
 
-function schedulePolling() {
-    if (refreshTimer) {
-        clearInterval(refreshTimer);
+async function runDashboardRefresh() {
+    if (refreshInFlight) return;
+    refreshInFlight = true;
+
+    try {
+        const payload = await fetchDashboardUpdate();
+        applyPayload(payload);
+    } catch (err) {
+        console.error('Dashboard refresh failed:', err);
+    } finally {
+        refreshInFlight = false;
     }
-
-    const ms = getRefreshSeconds() * 1000;
-
-    refreshTimer = setInterval(async () => {
-        if (refreshInFlight) return;
-        refreshInFlight = true;
-
-        try {
-            const payload = await fetchDashboardUpdate();
-            applyPayload(payload);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            refreshInFlight = false;
-        }
-    }, ms);
 }
 
-charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle.chart);
-charts.tricanter = makeChart('tricanterCombinedChart', initialPanels.tricanter.chart);
-charts.solidWaste = makeChart('solidWasteCombinedChart', initialPanels.solid_waste.chart);
+function schedulePolling() {
+    const ms = getRefreshSeconds() * 1000;
+
+    if (refreshTimer && activeRefreshMs === ms) return;
+
+    if (refreshTimer) clearInterval(refreshTimer);
+
+    activeRefreshMs = ms;
+    refreshTimer = setInterval(runDashboardRefresh, ms);
+}
+
+charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle?.chart || { labels: [], datasets: [] });
+charts.tricanter = makeChart('tricanterCombinedChart', initialPanels.tricanter?.chart || { labels: [], datasets: [] });
+charts.solidWaste = makeChart('solidWasteCombinedChart', initialPanels.solid_waste?.chart || { labels: [], datasets: [] });
 charts.recoveredWater = makeChart('recoveredWaterCombinedChart', initialPanels.recovered_water?.chart || { labels: [], datasets: [] });
-charts.pumpValues = makeChart('pumpValuesPressureChart', initialPanels.pump_values.chart);
-charts.nitrogen = makeChart('nitrogenCombinedChart', initialPanels.nitrogen.chart);
+charts.pumpValues = makeChart('pumpValuesPressureChart', initialPanels.pump_values?.chart || { labels: [], datasets: [] });
+charts.nitrogen = makeChart('nitrogenCombinedChart', initialPanels.nitrogen?.chart || { labels: [], datasets: [] });
 
 markNewRows('tricanter-tbody', 'triLastSeen');
 markNewRows('solid-waste-tbody', 'solidLastSeen');
