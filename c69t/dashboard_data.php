@@ -1,6 +1,4 @@
-
 <?php
-ini_set('display_errors', '0');
 require_once "config.php";
 requireRole(['admin', 'operator', 'viewer']);
 
@@ -363,6 +361,7 @@ function render_solid_waste_rows(array $rows): string
 
     return ob_get_clean();
 }
+
 
 function recovered_water_diff_minutes_rows(array $rows): array
 {
@@ -977,6 +976,8 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'chart' => [
                     'labels' => dashboard_chart_labels($recoveredWaterChart),
                     'datasets' => [
+                        ['label' => 'Start Level', 'data' => dashboard_chart_numeric($recoveredWaterChart, 'start_level')],
+                        ['label' => 'Stop Level', 'data' => dashboard_chart_numeric($recoveredWaterChart, 'stop_level')],
                         ['label' => 'Diff (min)', 'data' => array_map(static fn(array $row) => isset($row['_diff_minutes']) && is_numeric($row['_diff_minutes']) ? (float)$row['_diff_minutes'] : null, $recoveredWaterChart)],
                     ],
                 ],
@@ -1053,11 +1054,11 @@ try {
         'monitor_html' => render_monitor_shell($dashboard['monitor']),
         'topbar_html' => render_topbar($dashboard),
         'panels' => $dashboard['panels'],
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
+    ]);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'ok' => false,
         'error' => $e->getMessage(),
-    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
+    ]);
 }
