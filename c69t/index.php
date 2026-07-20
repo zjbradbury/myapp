@@ -392,6 +392,7 @@ function render_solid_waste_rows(array $rows): string
     return ob_get_clean();
 }
 
+
 function recovered_water_diff_minutes_rows(array $rows): array
 {
     return solid_diff_minutes_rows($rows);
@@ -429,7 +430,6 @@ function render_recovered_water_rows(array $rows): string
 
     return ob_get_clean();
 }
-
 
 function render_nozzle_kpis(array $row): string
 {
@@ -856,9 +856,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $nozzle = fetch_log_rows($pdo, 'nozzle_logs', $range, 'id DESC');
         $tricanter = fetch_log_rows($pdo, 'tricanter_logs', $range, 'id DESC');
         $solidWaste = fetch_log_rows($pdo, 'solid_waste_logs', $range, 'id DESC');
-        $recoveredWater = tableExists($pdo, 'recovered_water_pump_logs')
-            ? fetch_log_rows($pdo, 'recovered_water_pump_logs', $range, 'id DESC')
-            : [];
+        $recoveredWater = tableExists($pdo, 'recovered_water_pump_logs') ? fetch_log_rows($pdo, 'recovered_water_pump_logs', $range, 'id DESC') : [];
         $sample = tableExists($pdo, 'sample_logs') ? fetch_log_rows($pdo, 'sample_logs', $range, 'id DESC') : [];
         $gasTest = tableExists($pdo, 'gas_test_logs') ? fetch_log_rows($pdo, 'gas_test_logs', $range, 'id DESC') : [];
         $projectFlow = tableExists($pdo, 'project_flow_logs') ? fetch_log_rows($pdo, 'project_flow_logs', $range, 'id DESC') : [];
@@ -906,9 +904,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $latestNozzleOverall = fetch_latest_row($pdo, 'nozzle_logs') ?: [];
     $latestTricanterOverall = fetch_latest_row($pdo, 'tricanter_logs') ?: [];
     $latestSolidWasteOverall = fetch_latest_row($pdo, 'solid_waste_logs') ?: [];
-        $latestRecoveredWaterOverall = tableExists($pdo, 'recovered_water_pump_logs')
-            ? (fetch_latest_row($pdo, 'recovered_water_pump_logs') ?: [])
-            : [];
+    $latestRecoveredWaterOverall = tableExists($pdo, 'recovered_water_pump_logs') ? (fetch_latest_row($pdo, 'recovered_water_pump_logs') ?: []) : [];
     $latestSampleOverall = tableExists($pdo, 'sample_logs') ? (fetch_latest_row($pdo, 'sample_logs') ?: []) : [];
     $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
     $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
@@ -1011,6 +1007,8 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'chart' => [
                     'labels' => dashboard_chart_labels($recoveredWaterChart),
                     'datasets' => [
+                        ['label' => 'Start Level', 'data' => dashboard_chart_numeric($recoveredWaterChart, 'start_level')],
+                        ['label' => 'Stop Level', 'data' => dashboard_chart_numeric($recoveredWaterChart, 'stop_level')],
                         ['label' => 'Diff (min)', 'data' => array_map(static fn(array $row) => isset($row['_diff_minutes']) && is_numeric($row['_diff_minutes']) ? (float)$row['_diff_minutes'] : null, $recoveredWaterChart)],
                     ],
                 ],
@@ -1588,21 +1586,23 @@ $dashboard = build_dashboard_data($pdo, $range);
             </div>
         </div>
 
+
         <div class="panel">
             <div class="panel-head">
                 <div>
                     <h2>Recovered Water Pump</h2>
-                    <div class="panel-sub">Pump start and stop levels with time between entries</div>
+                    <div class="panel-sub">Pump start and stop levels with time between every result</div>
                 </div>
                 <div class="panel-actions">
                     <a class="btn" href="logs.php?table=recovered_water">View Logs</a>
+                    <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=recovered_water">Add Record</a><?php endif; ?>
                 </div>
             </div>
 
-            <div id="recovered-water-kpis" class="kpis"><?= $dashboard['panels']['recovered_water']['kpis_html'] ?? '' ?></div>
+            <div id="recovered-water-kpis" class="kpis"><?= $dashboard['panels']['recovered_water']['kpis_html'] ?></div>
 
             <div class="chart-card">
-                <div class="chart-title">Recovered Water Pump Cycle Spacing</div>
+                <div class="chart-title">Recovered Water Pump Trends</div>
                 <div class="chart-wrap"><canvas id="recoveredWaterCombinedChart"></canvas></div>
             </div>
 
@@ -1618,11 +1618,10 @@ $dashboard = build_dashboard_data($pdo, $range);
                             <th>Comments</th>
                         </tr>
                     </thead>
-                    <tbody id="recovered-water-tbody"><?= $dashboard['panels']['recovered_water']['rows_html'] ?? '' ?></tbody>
+                    <tbody id="recovered-water-tbody"><?= $dashboard['panels']['recovered_water']['rows_html'] ?></tbody>
                 </table>
             </div>
         </div>
-
 
         <div class="panel">
             <div class="panel-head">
@@ -1870,6 +1869,8 @@ const chartPalette = {
     'Torque': '#ff7e67',
     'Temp': '#ffb36b',
     'Amount': '#00ff88',
+    'Start Level': '#00e5ff',
+    'Stop Level': '#ff9bd6',
     'Diff (min)': '#ffd24d',
     'Mercury': '#00e5ff',
     'Benzene': '#ffd24d',
@@ -2057,26 +2058,12 @@ function makeChart(canvasId, config) {
 }
 
 function updateChart(chart, config) {
-    if (!chart || !config) return chart;
+    if (!chart || !config) return;
     const usable = validDatasets(config.datasets || []);
     chart.data.labels = config.labels || [];
     chart.data.datasets = usable.map(chartDatasetObject);
-
-    if (chart.options?.plugins?.tricanterStatusHighlight) {
-        chart.options.plugins.tricanterStatusHighlight.statusData = config.status || [];
-    }
-
+    chart.options.plugins.tricanterStatusHighlight.statusData = config.status || [];
     chart.update('none');
-    return chart;
-}
-
-function updateOrCreateChart(chartKey, canvasId, config) {
-    if (!config) return;
-    if (!charts[chartKey]) {
-        charts[chartKey] = makeChart(canvasId, config);
-        return;
-    }
-    charts[chartKey] = updateChart(charts[chartKey], config);
 }
 
 function updateContainer(id, html) {
@@ -2234,100 +2221,74 @@ function buildAjaxUrl() {
 async function fetchDashboardUpdate() {
     const response = await fetch(buildAjaxUrl(), {
         method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         cache: 'no-store'
     });
 
-    const responseText = await response.text();
-
-    if (!response.ok) {
-        throw new Error('Refresh failed (' + response.status + '): ' + responseText.slice(0, 300));
-    }
-
-    try {
-        return JSON.parse(responseText);
-    } catch (error) {
-        throw new Error('dashboard_data.php returned invalid JSON: ' + responseText.slice(0, 300));
-    }
-}
-
-function safelyUpdatePanel(panelName, callback) {
-    try {
-        callback();
-    } catch (error) {
-        console.error('Dashboard panel update failed:', panelName, error);
-    }
+    if (!response.ok) throw new Error('Refresh failed');
+    return response.json();
 }
 
 function applyPayload(payload) {
-    if (!payload || payload.ok !== true) {
-        if (payload?.error) console.error('Dashboard refresh error:', payload.error);
-        return;
-    }
+    if (!payload || !payload.ok) return;
 
-    safelyUpdatePanel('monitor', () => updateContainer('monitorShell', payload.monitor_html));
-    safelyUpdatePanel('topbar', () => updateContainer('topbarWrap', payload.topbar_html));
+    updateContainer('monitorShell', payload.monitor_html);
+    updateContainer('topbarWrap', payload.topbar_html);
 
-    if (payload.panels?.tricanter) safelyUpdatePanel('tricanter', () => {
+    if (payload.panels?.tricanter) {
         updateContainer('tricanter-kpis', payload.panels.tricanter.kpis_html);
         updateTbody('tricanter-tbody', payload.panels.tricanter.rows_html, 'triLastSeen');
-        updateOrCreateChart('tricanter', 'tricanterCombinedChart', payload.panels.tricanter.chart);
-    });
+        updateChart(charts.tricanter, payload.panels.tricanter.chart);
+    }
 
-    if (payload.panels?.solid_waste) safelyUpdatePanel('solid_waste', () => {
+    if (payload.panels?.solid_waste) {
         updateContainer('solid-waste-kpis', payload.panels.solid_waste.kpis_html);
         updateTbody('solid-waste-tbody', payload.panels.solid_waste.rows_html, 'solidLastSeen');
-        updateOrCreateChart('solidWaste', 'solidWasteCombinedChart', payload.panels.solid_waste.chart);
-    });
+        updateChart(charts.solidWaste, payload.panels.solid_waste.chart);
+    }
 
-    if (payload.panels?.recovered_water) safelyUpdatePanel('recovered_water', () => {
+    if (payload.panels?.recovered_water) {
         updateContainer('recovered-water-kpis', payload.panels.recovered_water.kpis_html);
         updateTbody('recovered-water-tbody', payload.panels.recovered_water.rows_html, 'recoveredWaterLastSeen');
-        updateOrCreateChart('recoveredWater', 'recoveredWaterCombinedChart', payload.panels.recovered_water.chart);
-    });
+        updateChart(charts.recoveredWater, payload.panels.recovered_water.chart);
+    }
 
-    if (payload.panels?.nozzle) safelyUpdatePanel('nozzle', () => {
+    if (payload.panels?.nozzle) {
         updateContainer('nozzle-kpis', payload.panels.nozzle.kpis_html);
         updateTbody('nozzle-tbody', payload.panels.nozzle.rows_html, 'nozzleLastSeen');
-        updateOrCreateChart('nozzle', 'nozzleCombinedChart', payload.panels.nozzle.chart);
-    });
+        updateChart(charts.nozzle, payload.panels.nozzle.chart);
+    }
 
-    if (payload.panels?.sample) safelyUpdatePanel('sample', () => {
+    if (payload.panels?.sample) {
         updateContainer('sample-kpis', payload.panels.sample.kpis_html);
         updateTbody('sample-tbody', payload.panels.sample.rows_html, 'sampleLastSeen');
-    });
+    }
 
-    if (payload.panels?.gas_test) safelyUpdatePanel('gas_test', () => {
+    if (payload.panels?.gas_test) {
         updateContainer('gas-test-kpis', payload.panels.gas_test.kpis_html);
         updateTbody('gas-test-tbody', payload.panels.gas_test.rows_html, 'gasLastSeen');
-    });
+    }
 
-    if (payload.panels?.project_flow) safelyUpdatePanel('project_flow', () => {
+    if (payload.panels?.project_flow) {
         updateContainer('project-flow-kpis', payload.panels.project_flow.kpis_html);
         updateTbody('project-flow-tbody', payload.panels.project_flow.rows_html, 'projectFlowLastSeen');
-    });
+    }
 
-    if (payload.panels?.pump_values) safelyUpdatePanel('pump_values', () => {
+    if (payload.panels?.pump_values) {
         updateContainer('pump-values-kpis', payload.panels.pump_values.kpis_html);
         updateTbody('pump-values-tbody', payload.panels.pump_values.rows_html, 'pumpValuesLastSeen');
-        updateOrCreateChart('pumpValues', 'pumpValuesPressureChart', payload.panels.pump_values.chart);
-    });
+        updateChart(charts.pumpValues, payload.panels.pump_values.chart);
+    }
 
-    if (payload.panels?.nitrogen) safelyUpdatePanel('nitrogen', () => {
+    if (payload.panels?.nitrogen) {
         updateContainer('nitrogen-kpis', payload.panels.nitrogen.kpis_html);
         updateTbody('nitrogen-tbody', payload.panels.nitrogen.rows_html, 'nitrogenLastSeen');
-        updateOrCreateChart('nitrogen', 'nitrogenCombinedChart', payload.panels.nitrogen.chart);
-    });
-
-    schedulePolling();
+        updateChart(charts.nitrogen, payload.panels.nitrogen.chart);
+    }
 }
 
 let refreshTimer = null;
 let refreshInFlight = false;
-let activeRefreshMs = null;
 
 function getRefreshSeconds() {
     const shell = document.querySelector('#monitorShell [data-refresh-seconds]');
@@ -2335,37 +2296,34 @@ function getRefreshSeconds() {
     return Number.isNaN(secs) ? 30 : Math.max(5, secs);
 }
 
-async function runDashboardRefresh() {
-    if (refreshInFlight) return;
-    refreshInFlight = true;
-
-    try {
-        const payload = await fetchDashboardUpdate();
-        applyPayload(payload);
-    } catch (err) {
-        console.error('Dashboard refresh failed:', err);
-    } finally {
-        refreshInFlight = false;
-    }
-}
-
 function schedulePolling() {
+    if (refreshTimer) {
+        clearInterval(refreshTimer);
+    }
+
     const ms = getRefreshSeconds() * 1000;
 
-    if (refreshTimer && activeRefreshMs === ms) return;
+    refreshTimer = setInterval(async () => {
+        if (refreshInFlight) return;
+        refreshInFlight = true;
 
-    if (refreshTimer) clearInterval(refreshTimer);
-
-    activeRefreshMs = ms;
-    refreshTimer = setInterval(runDashboardRefresh, ms);
+        try {
+            const payload = await fetchDashboardUpdate();
+            applyPayload(payload);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            refreshInFlight = false;
+        }
+    }, ms);
 }
 
-charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle?.chart || { labels: [], datasets: [] });
-charts.tricanter = makeChart('tricanterCombinedChart', initialPanels.tricanter?.chart || { labels: [], datasets: [] });
-charts.solidWaste = makeChart('solidWasteCombinedChart', initialPanels.solid_waste?.chart || { labels: [], datasets: [] });
-charts.recoveredWater = makeChart('recoveredWaterCombinedChart', initialPanels.recovered_water?.chart || { labels: [], datasets: [] });
-charts.pumpValues = makeChart('pumpValuesPressureChart', initialPanels.pump_values?.chart || { labels: [], datasets: [] });
-charts.nitrogen = makeChart('nitrogenCombinedChart', initialPanels.nitrogen?.chart || { labels: [], datasets: [] });
+charts.nozzle = makeChart('nozzleCombinedChart', initialPanels.nozzle.chart);
+charts.tricanter = makeChart('tricanterCombinedChart', initialPanels.tricanter.chart);
+charts.solidWaste = makeChart('solidWasteCombinedChart', initialPanels.solid_waste.chart);
+charts.recoveredWater = makeChart('recoveredWaterCombinedChart', initialPanels.recovered_water.chart);
+charts.pumpValues = makeChart('pumpValuesPressureChart', initialPanels.pump_values.chart);
+charts.nitrogen = makeChart('nitrogenCombinedChart', initialPanels.nitrogen.chart);
 
 markNewRows('tricanter-tbody', 'triLastSeen');
 markNewRows('solid-waste-tbody', 'solidLastSeen');
