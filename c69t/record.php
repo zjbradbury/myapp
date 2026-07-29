@@ -569,6 +569,7 @@ $pageTitle = $actionTitle . ' ' . $schema['label'] . ' Record';
         textarea,
         select {
             width: 100%;
+            box-sizing: border-box;
             margin: 0;
             background: #0a1a29;
             border: 1px solid #2a5377;

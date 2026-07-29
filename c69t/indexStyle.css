@@ -627,6 +627,11 @@ th {
     max-width: 1600px;
 }
 
+.container:not(.wide)>form {
+    display: grid;
+    gap: 12px;
+}
+
 .upload-wrap {
     max-width: 900px;
 }
