@@ -692,7 +692,7 @@ th {
     resize: vertical;
 }
 
-.app-page button,
+.app-page :where(.container, .upload-wrap, .dashboard-shell) button,
 .app-page .btn {
     display: inline-block;
     width: auto;
@@ -709,12 +709,12 @@ th {
     cursor: pointer;
 }
 
-.app-page button:hover,
+.app-page :where(.container, .upload-wrap, .dashboard-shell) button:hover,
 .app-page .btn:hover {
     background: #295d89;
 }
 
-.app-page button:disabled {
+.app-page :where(.container, .upload-wrap, .dashboard-shell) button:disabled {
     cursor: not-allowed;
     opacity: .5;
 }
