@@ -553,14 +553,18 @@ th {
     background: rgba(239, 68, 68, 0.42);
 }
 
+.kpi.tricanter-status-alert,
 .kpi.nozzle-status-alert,
-.nozzle-row.nozzle-status-alert>td {
+.kpi.nitrogen-status-alert,
+.nozzle-row.nozzle-status-alert>td,
+.nitrogen-row.nitrogen-status-alert>td {
     background: rgba(220, 38, 38, 0.30);
     color: #ffe5e5;
     border-color: rgba(255, 120, 120, 0.55);
 }
 
-.nozzle-row.nozzle-status-alert:hover>td {
+.nozzle-row.nozzle-status-alert:hover>td,
+.nitrogen-row.nitrogen-status-alert:hover>td {
     background: rgba(239, 68, 68, 0.42);
 }
 

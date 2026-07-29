@@ -878,7 +878,32 @@ $csvParams = [
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($rows as $row): ?>
-                                    <tr>
+                                    <?php
+                                    $rowAlertClass = '';
+                                    if (
+                                        $selectedKey === 'tricanter'
+                                        && isset($row['tricanter_status'])
+                                        && $row['tricanter_status'] !== ''
+                                        && (int)$row['tricanter_status'] !== 5
+                                    ) {
+                                        $rowAlertClass = 'tri-row tricanter-status-alert';
+                                    } elseif (
+                                        $selectedKey === 'nozzle'
+                                        && isset($row['nozzle_status'])
+                                        && $row['nozzle_status'] !== ''
+                                        && (int)$row['nozzle_status'] === 0
+                                    ) {
+                                        $rowAlertClass = 'nozzle-row nozzle-status-alert';
+                                    } elseif (
+                                        $selectedKey === 'nitrogen'
+                                        && isset($row['nitrogen_active'])
+                                        && $row['nitrogen_active'] !== ''
+                                        && (int)$row['nitrogen_active'] === 0
+                                    ) {
+                                        $rowAlertClass = 'nitrogen-row nitrogen-status-alert';
+                                    }
+                                    ?>
+                                    <tr class="<?= h($rowAlertClass) ?>">
                                         <?php if ($canDelete): ?>
                                             <td class="checkbox-cell">
                                                 <input type="checkbox" name="selected_ids[]" value="<?= (int)$row['id'] ?>">

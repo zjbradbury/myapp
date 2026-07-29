@@ -294,17 +294,21 @@ function render_topbar(array $dashboard): string
 
 function render_tricanter_kpis(array $row): string
 {
+    $hasState = array_key_exists('tricanter_status', $row)
+        && $row['tricanter_status'] !== null
+        && $row['tricanter_status'] !== '';
+    $alertClass = $hasState && (int)$row['tricanter_status'] !== 5 ? ' tricanter-status-alert' : '';
     ob_start();
 ?>
-    <div class="kpi"><small>Bowl Speed</small><b><?= fmt($row['bowl_speed'] ?? null, 0) ?> %</b></div>
-    <div class="kpi"><small>Screw Speed</small><b><?= fmt($row['screw_speed'] ?? null, 2) ?> %</b></div>
-    <div class="kpi"><small>Bowl RPM</small><b><?= fmt($row['bowl_rpm'] ?? null, 0) ?> RPM</b></div>
-    <div class="kpi"><small>Screw RPM</small><b><?= fmt($row['screw_rpm'] ?? null, 2) ?> RPM</b></div>
-    <div class="kpi"><small>Impeller</small><b><?= fmt($row['impeller'] ?? null, 0) ?></b></div>
-    <div class="kpi"><small>Feed Rate</small><b><?= fmt($row['feed_rate'] ?? null, 2) ?> M3/hr</b></div>
-    <div class="kpi"><small>Torque</small><b><?= fmt($row['torque'] ?? null, 1) ?> %</b></div>
-    <div class="kpi"><small>Temp</small><b><?= fmt($row['temp'] ?? null, 1) ?> °C</b></div>
-    <div class="kpi"><small>Pressure</small><b><?= fmt($row['pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Bowl Speed</small><b><?= fmt($row['bowl_speed'] ?? null, 0) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Screw Speed</small><b><?= fmt($row['screw_speed'] ?? null, 2) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Bowl RPM</small><b><?= fmt($row['bowl_rpm'] ?? null, 0) ?> RPM</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Screw RPM</small><b><?= fmt($row['screw_rpm'] ?? null, 2) ?> RPM</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Impeller</small><b><?= fmt($row['impeller'] ?? null, 0) ?></b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Feed Rate</small><b><?= fmt($row['feed_rate'] ?? null, 2) ?> M3/hr</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Torque</small><b><?= fmt($row['torque'] ?? null, 1) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Temp</small><b><?= fmt($row['temp'] ?? null, 1) ?> °C</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Pressure</small><b><?= fmt($row['pressure'] ?? null, 3) ?> BAR</b></div>
     <?php
     return ob_get_clean();
 }
@@ -319,7 +323,7 @@ function render_tricanter_rows(array $rows): string
         </tr>
         <?php else:
         foreach ($rows as $r): ?>
-            <tr class="tri-row<?= ((int)($r['tricanter_status'] ?? 0) === 1) ? ' tricanter-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
+            <tr class="tri-row<?= isset($r['tricanter_status']) && $r['tricanter_status'] !== '' && (int)$r['tricanter_status'] !== 5 ? ' tricanter-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
@@ -635,17 +639,22 @@ function nitrogen_trip_text($value): string
 
 function render_nitrogen_kpis(array $row): string
 {
+    $isOff = array_key_exists('nitrogen_active', $row)
+        && $row['nitrogen_active'] !== null
+        && $row['nitrogen_active'] !== ''
+        && (int)$row['nitrogen_active'] === 0;
+    $alertClass = $isOff ? ' nitrogen-status-alert' : '';
     ob_start();
     ?>
-    <div class="kpi"><small>Nitrogen Active</small><b><?= h(nitrogen_bool_text($row['nitrogen_active'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Trip Status</small><b><?= h(nitrogen_trip_text($row['trip_status'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 2) ?> M3/hr</b></div>
-    <div class="kpi"><small>Outlet Purity</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> % O2</b></div>
-    <div class="kpi"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Outlet Pressure</small><b><?= fmt($row['outlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>Pre Heat Temp</small><b><?= fmt($row['pre_heat_temp'] ?? null, 1) ?> °C</b></div>
-    <div class="kpi"><small>Post Heat Temp</small><b><?= fmt($row['post_heat_temp'] ?? null, 1) ?> °C</b></div>
-    <div class="kpi"><small>Interior O2</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Nitrogen Active</small><b><?= h(nitrogen_bool_text($row['nitrogen_active'] ?? null)) ?></b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Trip Status</small><b><?= h(nitrogen_trip_text($row['trip_status'] ?? null)) ?></b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 2) ?> M3/hr</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Purity</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> % O2</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Pressure</small><b><?= fmt($row['outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Pre Heat Temp</small><b><?= fmt($row['pre_heat_temp'] ?? null, 1) ?> °C</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Post Heat Temp</small><b><?= fmt($row['post_heat_temp'] ?? null, 1) ?> °C</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Interior O2</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
     <?php
     return ob_get_clean();
 }
@@ -660,7 +669,7 @@ function render_nitrogen_rows(array $rows): string
         </tr>
         <?php else:
         foreach ($rows as $r): ?>
-            <tr class="nitrogen-row" data-id="<?= (int)$r['id'] ?>">
+            <tr class="nitrogen-row<?= isset($r['nitrogen_active']) && $r['nitrogen_active'] !== '' && (int)$r['nitrogen_active'] === 0 ? ' nitrogen-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date'] ?? '') ?></td>
                 <td><?= h($r['log_time'] ?? '') ?></td>
                 <td><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
@@ -996,6 +1005,8 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'chart' => [
                     'labels' => dashboard_chart_labels($tricanterChart),
                     'status' => dashboard_chart_numeric($tricanterChart, 'tricanter_status'),
+                    'alertStatus' => 5,
+                    'alertWhenNotEqual' => true,
                     'datasets' => [
                         ['label' => 'Bowl Speed', 'data' => dashboard_chart_numeric($tricanterChart, 'bowl_speed')],
                         ['label' => 'Screw Speed', 'data' => dashboard_chart_numeric($tricanterChart, 'screw_speed')],
@@ -1080,6 +1091,8 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'rows_html' => render_nitrogen_rows($nitrogen),
                 'chart' => [
                     'labels' => dashboard_chart_labels($nitrogenChart),
+                    'status' => dashboard_chart_numeric($nitrogenChart, 'nitrogen_active'),
+                    'alertStatus' => 0,
                     'datasets' => [
                         ['label' => 'Outlet Flow', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_flow')],
                         ['label' => 'Outlet Purity', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_purity')],
