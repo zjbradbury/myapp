@@ -375,6 +375,7 @@ $tanks = $pdo->query("
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Project Tank Levels</title>
     <link rel="stylesheet" href="style.css">
@@ -452,41 +453,41 @@ $tanks = $pdo->query("
 </head>
 
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="container wide">
-    <h1>Project Tank Levels</h1>
+    <div class="container wide">
+        <h1>Project Tank Levels</h1>
 
-    <div class="info-box">
-        <strong>Latest Project Flow:</strong>
-        <?php if ($latestFlow): ?>
-            <?= h($latestFlow["flow_value"]) ?>
-            at <?= h($latestFlow["flow_datetime"]) ?>
-        <?php else: ?>
-            No project flow value found.
-        <?php endif; ?>
+        <div class="info-box">
+            <strong>Latest Project Flow:</strong>
+            <?php if ($latestFlow): ?>
+                <?= h($latestFlow["flow_value"]) ?>
+                at <?= h($latestFlow["flow_datetime"]) ?>
+            <?php else: ?>
+                No project flow value found.
+            <?php endif; ?>
 
-        <br>
+            <br>
 
-        <strong>Latest Tricanter Feed Rate:</strong>
-        <?php if ($latestFeedRate): ?>
-            <?= number_format((float)$latestFeedRate["feed_rate"], 2) ?> m3/hr
-            at <?= h($latestFeedRate["feed_datetime"]) ?>
-        <?php else: ?>
-            No tricanter feed rate found.
-        <?php endif; ?>
+            <strong>Latest Tricanter Feed Rate:</strong>
+            <?php if ($latestFeedRate): ?>
+                <?= number_format((float)$latestFeedRate["feed_rate"], 2) ?> m3/hr
+                at <?= h($latestFeedRate["feed_datetime"]) ?>
+            <?php else: ?>
+                No tricanter feed rate found.
+            <?php endif; ?>
 
-        <?php if ($canEdit): ?>
-            <form method="post" style="margin-top:12px;">
-                <input type="hidden" name="action" value="deactivate_all">
-                <button type="submit">Clear Active Tank</button>
-            </form>
-        <?php endif; ?>
-    </div>
+            <?php if ($canEdit): ?>
+                <form method="post" style="margin-top:12px;">
+                    <input type="hidden" name="action" value="deactivate_all">
+                    <button type="submit">Clear Active Tank</button>
+                </form>
+            <?php endif; ?>
+        </div>
 
-    <div class="tank-grid">
-        <?php foreach ($tanks as $tank): ?>
-            <?php
+        <div class="tank-grid">
+            <?php foreach ($tanks as $tank): ?>
+                <?php
                 $tankNo = (int)$tank["tank_no"];
                 $capacity = $tankCapacities[$tankNo] ?? 55.0;
 
@@ -502,66 +503,67 @@ $tanks = $pdo->query("
                 $feedRate = $etaCalc["feed_rate"];
                 $remainingCapacity = $etaCalc["remaining"];
                 $etaDisplay = $etaCalc["eta"];
-            ?>
+                ?>
 
-            <div class="tank-card <?= (int)$tank["is_active"] === 1 ? "active" : "" ?>">
-                <div class="tank-title">
-                    <?= h($tank["tank_name"]) ?>
+                <div class="tank-card <?= (int)$tank["is_active"] === 1 ? "active" : "" ?>">
+                    <div class="tank-title">
+                        <?= h($tank["tank_name"]) ?>
 
-                    <?php if ((int)$tank["is_active"] === 1): ?>
-                        <span class="active-badge">ACTIVE</span>
-                    <?php endif; ?>
-                </div>
+                        <?php if ((int)$tank["is_active"] === 1): ?>
+                            <span class="active-badge">ACTIVE</span>
+                        <?php endif; ?>
+                    </div>
 
-                <div class="tank-level">
-                    <?= number_format($estimatedLevel, 1) ?>m3
-                </div>
+                    <div class="tank-level">
+                        <?= number_format($estimatedLevel, 1) ?>m3
+                    </div>
 
-                <div class="tank-meta">
-                    Saved level: <?= number_format($startLevel, 1) ?>m3<br>
-                    Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
-                    Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
-                    Flow used: <?= number_format($flowDelta, 3) ?>m3<br>
-                    Capacity: <?= number_format($capacity, 3) ?>m3<br>
-                    Remaining: <?= number_format($remainingCapacity, 1) ?>m3<br>
-                    Feed rate: <?= $feedRate > 0 ? number_format($feedRate, 2) . " m3/hr" : "Not available" ?><br>
-                    Est. full time: <?= h($etaDisplay) ?><br>
-                    Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?><br>
-                    Status: <?= (int)$tank["is_active"] === 1 ? "Active / counting" : "Inactive / held" ?>
-                </div>
+                    <div class="tank-meta">
+                        Saved level: <?= number_format($startLevel, 1) ?>m3<br>
+                        Estimated gain: <?= number_format($estimatedGain, 1) ?>m3<br>
+                        Start flow: <?= $startFlow !== null ? number_format($startFlow, 3) : "Not set" ?><br>
+                        Flow used: <?= number_format($flowDelta, 3) ?>m3<br>
+                        Capacity: <?= number_format($capacity, 3) ?>m3<br>
+                        Remaining: <?= number_format($remainingCapacity, 1) ?>m3<br>
+                        Feed rate: <?= $feedRate > 0 ? number_format($feedRate, 2) . " m3/hr" : "Not available" ?><br>
+                        Est. full time: <?= h($etaDisplay) ?><br>
+                        Started: <?= $tank["start_datetime"] ? h($tank["start_datetime"]) : "Not set" ?><br>
+                        Status: <?= (int)$tank["is_active"] === 1 ? "Active / counting" : "Inactive / held" ?>
+                    </div>
 
-                <?php if ($canEdit): ?>
-                    <?php if ((int)$tank["is_active"] === 1): ?>
+                    <?php if ($canEdit): ?>
+                        <?php if ((int)$tank["is_active"] === 1): ?>
+                            <form class="tank-form" method="post">
+                                <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
+                                <input type="hidden" name="action" value="set_inactive">
+                                <button type="submit">Set Inactive</button>
+                            </form>
+                        <?php else: ?>
+                            <form class="tank-form" method="post">
+                                <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
+                                <input type="hidden" name="action" value="set_active">
+                                <button type="submit">Set Active Tank</button>
+                            </form>
+                        <?php endif; ?>
+
                         <form class="tank-form" method="post">
                             <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                            <input type="hidden" name="action" value="set_inactive">
-                            <button type="submit">Set Inactive</button>
+                            <input type="hidden" name="action" value="set_level">
+                            <input type="number" step="0.1" name="start_level" placeholder="Set level m3" required>
+                            <button type="submit">Set Level</button>
                         </form>
-                    <?php else: ?>
+
                         <form class="tank-form" method="post">
                             <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                            <input type="hidden" name="action" value="set_active">
-                            <button type="submit">Set Active Tank</button>
+                            <input type="hidden" name="action" value="reset">
+                            <button type="submit" onclick="return confirm('Reset this tank level?')">Reset Level</button>
                         </form>
                     <?php endif; ?>
-
-                    <form class="tank-form" method="post">
-                        <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="set_level">
-                        <input type="number" step="0.1" name="start_level" placeholder="Set level m3" required>
-                        <button type="submit">Set Level</button>
-                    </form>
-
-                    <form class="tank-form" method="post">
-                        <input type="hidden" name="tank_no" value="<?= $tankNo ?>">
-                        <input type="hidden" name="action" value="reset">
-                        <button type="submit" onclick="return confirm('Reset this tank level?')">Reset Level</button>
-                    </form>
-                <?php endif; ?>
-            </div>
-        <?php endforeach; ?>
+                </div>
+            <?php endforeach; ?>
+        </div>
     </div>
-</div>
 
 </body>
+
 </html>

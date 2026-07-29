@@ -309,6 +309,7 @@ $gasTestLocations = $pdo->query("
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Manage Dropdowns</title>
     <link rel="stylesheet" href="style.css">
@@ -346,7 +347,7 @@ $gasTestLocations = $pdo->query("
         }
 
         .manage-row {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
             padding: 12px;
         }
@@ -427,12 +428,12 @@ $gasTestLocations = $pdo->query("
         }
 
         .manage-list::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.25);
             border-radius: 999px;
         }
 
         .manage-list::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.06);
             border-radius: 999px;
         }
 
@@ -447,228 +448,230 @@ $gasTestLocations = $pdo->query("
         }
     </style>
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="container wide">
-    <h2>Manage Dropdowns</h2>
+    <div class="container wide">
+        <h2>Manage Dropdowns</h2>
 
-    <?php if ($message !== ''): ?>
-        <div class="msg-ok"><?= h($message) ?></div>
-    <?php endif; ?>
+        <?php if ($message !== ''): ?>
+            <div class="msg-ok"><?= h($message) ?></div>
+        <?php endif; ?>
 
-    <?php if ($error !== ''): ?>
-        <div class="msg-error"><?= h($error) ?></div>
-    <?php endif; ?>
+        <?php if ($error !== ''): ?>
+            <div class="msg-error"><?= h($error) ?></div>
+        <?php endif; ?>
 
-    <div class="manage-grid">
-        <div class="manage-card">
-            <h3>Devices</h3>
-
-            <form method="post">
-                <input type="hidden" name="action" value="add_device">
-                <input type="text" name="name" placeholder="New device name" required>
-
-                <div class="device-form-grid">
-                    <label class="check-row"><input type="checkbox" name="allow_mercury" checked><span>Mercury</span></label>
-                    <label class="check-row"><input type="checkbox" name="allow_benzene" checked><span>Benzene</span></label>
-                    <label class="check-row"><input type="checkbox" name="allow_lel" checked><span>LEL</span></label>
-                    <label class="check-row"><input type="checkbox" name="allow_h2s" checked><span>H2S</span></label>
-                    <label class="check-row"><input type="checkbox" name="allow_o2" checked><span>O2</span></label>
-                    <label class="check-row"><input type="checkbox" name="allow_product_details" checked><span>Product Details</span></label>
-                    <label class="check-row"><input type="checkbox" name="allow_action_taken" checked><span>Actions Taken</span></label>
-                </div>
-
-                <div class="row-actions">
-                    <button type="submit">Add Device</button>
-                </div>
-            </form>
-
-            <div class="manage-list">
-                <?php if (!$devices): ?>
-                    <div class="manage-row">No devices found.</div>
-                <?php endif; ?>
-
-                <?php foreach ($devices as $row): ?>
-                    <div class="manage-row">
-                        <form method="post">
-                            <input type="hidden" name="action" value="update_device">
-                            <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-
-                            <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
-
-                            <div class="device-form-grid">
-                                <label class="check-row"><input type="checkbox" name="allow_mercury" <?= ((int)$row["allow_mercury"] === 1) ? 'checked' : '' ?>><span>Mercury</span></label>
-                                <label class="check-row"><input type="checkbox" name="allow_benzene" <?= ((int)$row["allow_benzene"] === 1) ? 'checked' : '' ?>><span>Benzene</span></label>
-                                <label class="check-row"><input type="checkbox" name="allow_lel" <?= ((int)$row["allow_lel"] === 1) ? 'checked' : '' ?>><span>LEL</span></label>
-                                <label class="check-row"><input type="checkbox" name="allow_h2s" <?= ((int)$row["allow_h2s"] === 1) ? 'checked' : '' ?>><span>H2S</span></label>
-                                <label class="check-row"><input type="checkbox" name="allow_o2" <?= ((int)$row["allow_o2"] === 1) ? 'checked' : '' ?>><span>O2</span></label>
-                                <label class="check-row"><input type="checkbox" name="allow_product_details" <?= ((int)$row["allow_product_details"] === 1) ? 'checked' : '' ?>><span>Product Details</span></label>
-                                <label class="check-row"><input type="checkbox" name="allow_action_taken" <?= ((int)$row["allow_action_taken"] === 1) ? 'checked' : '' ?>><span>Actions Taken</span></label>
-                            </div>
-
-                            <div class="row-actions">
-                                <button type="submit">Save Device</button>
-                            </div>
-                        </form>
-
-                        <form method="post" class="inline-form" onsubmit="return confirm('Delete this device?');">
-                            <input type="hidden" name="action" value="delete_device">
-                            <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                            <button type="submit" class="btn danger">Delete</button>
-                        </form>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-        <div class="stack-grid">
+        <div class="manage-grid">
             <div class="manage-card">
-                <h3>Operators</h3>
+                <h3>Devices</h3>
 
                 <form method="post">
-                    <input type="hidden" name="action" value="add_operator">
-                    <input type="text" name="name" placeholder="New operator name" required>
+                    <input type="hidden" name="action" value="add_device">
+                    <input type="text" name="name" placeholder="New device name" required>
 
-                    <label class="check-row" style="margin-top:10px;">
-                        <input type="checkbox" name="active" checked>
-                        <span>Active</span>
-                    </label>
+                    <div class="device-form-grid">
+                        <label class="check-row"><input type="checkbox" name="allow_mercury" checked><span>Mercury</span></label>
+                        <label class="check-row"><input type="checkbox" name="allow_benzene" checked><span>Benzene</span></label>
+                        <label class="check-row"><input type="checkbox" name="allow_lel" checked><span>LEL</span></label>
+                        <label class="check-row"><input type="checkbox" name="allow_h2s" checked><span>H2S</span></label>
+                        <label class="check-row"><input type="checkbox" name="allow_o2" checked><span>O2</span></label>
+                        <label class="check-row"><input type="checkbox" name="allow_product_details" checked><span>Product Details</span></label>
+                        <label class="check-row"><input type="checkbox" name="allow_action_taken" checked><span>Actions Taken</span></label>
+                    </div>
 
                     <div class="row-actions">
-                        <button type="submit">Add Operator</button>
+                        <button type="submit">Add Device</button>
                     </div>
                 </form>
 
                 <div class="manage-list">
-                    <?php if (!$operators): ?>
-                        <div class="manage-row">No operators found.</div>
+                    <?php if (!$devices): ?>
+                        <div class="manage-row">No devices found.</div>
                     <?php endif; ?>
 
-                    <?php foreach ($operators as $row): ?>
+                    <?php foreach ($devices as $row): ?>
                         <div class="manage-row">
                             <form method="post">
-                                <input type="hidden" name="action" value="update_operator">
+                                <input type="hidden" name="action" value="update_device">
                                 <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
 
                                 <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
 
-                                <label class="check-row" style="margin-top:10px;">
-                                    <input type="checkbox" name="active" <?= ((int)$row["active"] === 1) ? 'checked' : '' ?>>
-                                    <span>Active</span>
-                                </label>
-
-                                <div style="margin-top:8px;">
-                                    <span class="status-pill <?= ((int)$row["active"] === 1) ? 'active' : 'inactive' ?>">
-                                        <?= ((int)$row["active"] === 1) ? 'Active' : 'Inactive' ?>
-                                    </span>
+                                <div class="device-form-grid">
+                                    <label class="check-row"><input type="checkbox" name="allow_mercury" <?= ((int)$row["allow_mercury"] === 1) ? 'checked' : '' ?>><span>Mercury</span></label>
+                                    <label class="check-row"><input type="checkbox" name="allow_benzene" <?= ((int)$row["allow_benzene"] === 1) ? 'checked' : '' ?>><span>Benzene</span></label>
+                                    <label class="check-row"><input type="checkbox" name="allow_lel" <?= ((int)$row["allow_lel"] === 1) ? 'checked' : '' ?>><span>LEL</span></label>
+                                    <label class="check-row"><input type="checkbox" name="allow_h2s" <?= ((int)$row["allow_h2s"] === 1) ? 'checked' : '' ?>><span>H2S</span></label>
+                                    <label class="check-row"><input type="checkbox" name="allow_o2" <?= ((int)$row["allow_o2"] === 1) ? 'checked' : '' ?>><span>O2</span></label>
+                                    <label class="check-row"><input type="checkbox" name="allow_product_details" <?= ((int)$row["allow_product_details"] === 1) ? 'checked' : '' ?>><span>Product Details</span></label>
+                                    <label class="check-row"><input type="checkbox" name="allow_action_taken" <?= ((int)$row["allow_action_taken"] === 1) ? 'checked' : '' ?>><span>Actions Taken</span></label>
                                 </div>
 
                                 <div class="row-actions">
-                                    <button type="submit">Save Operator</button>
+                                    <button type="submit">Save Device</button>
                                 </div>
                             </form>
 
-                            <div class="row-actions">
-                                <form method="post" class="inline-form">
-                                    <input type="hidden" name="action" value="toggle_operator">
+                            <form method="post" class="inline-form" onsubmit="return confirm('Delete this device?');">
+                                <input type="hidden" name="action" value="delete_device">
+                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                <button type="submit" class="btn danger">Delete</button>
+                            </form>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
+            <div class="stack-grid">
+                <div class="manage-card">
+                    <h3>Operators</h3>
+
+                    <form method="post">
+                        <input type="hidden" name="action" value="add_operator">
+                        <input type="text" name="name" placeholder="New operator name" required>
+
+                        <label class="check-row" style="margin-top:10px;">
+                            <input type="checkbox" name="active" checked>
+                            <span>Active</span>
+                        </label>
+
+                        <div class="row-actions">
+                            <button type="submit">Add Operator</button>
+                        </div>
+                    </form>
+
+                    <div class="manage-list">
+                        <?php if (!$operators): ?>
+                            <div class="manage-row">No operators found.</div>
+                        <?php endif; ?>
+
+                        <?php foreach ($operators as $row): ?>
+                            <div class="manage-row">
+                                <form method="post">
+                                    <input type="hidden" name="action" value="update_operator">
                                     <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                                    <button type="submit"><?= ((int)$row["active"] === 1) ? 'Set Inactive' : 'Set Active' ?></button>
+
+                                    <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
+
+                                    <label class="check-row" style="margin-top:10px;">
+                                        <input type="checkbox" name="active" <?= ((int)$row["active"] === 1) ? 'checked' : '' ?>>
+                                        <span>Active</span>
+                                    </label>
+
+                                    <div style="margin-top:8px;">
+                                        <span class="status-pill <?= ((int)$row["active"] === 1) ? 'active' : 'inactive' ?>">
+                                            <?= ((int)$row["active"] === 1) ? 'Active' : 'Inactive' ?>
+                                        </span>
+                                    </div>
+
+                                    <div class="row-actions">
+                                        <button type="submit">Save Operator</button>
+                                    </div>
                                 </form>
 
-                                <form method="post" class="inline-form" onsubmit="return confirm('Delete this operator?');">
-                                    <input type="hidden" name="action" value="delete_operator">
+                                <div class="row-actions">
+                                    <form method="post" class="inline-form">
+                                        <input type="hidden" name="action" value="toggle_operator">
+                                        <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                        <button type="submit"><?= ((int)$row["active"] === 1) ? 'Set Inactive' : 'Set Active' ?></button>
+                                    </form>
+
+                                    <form method="post" class="inline-form" onsubmit="return confirm('Delete this operator?');">
+                                        <input type="hidden" name="action" value="delete_operator">
+                                        <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                        <button type="submit" class="btn danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+
+                <div class="manage-card">
+                    <h3>Sample Locations</h3>
+
+                    <form method="post">
+                        <input type="hidden" name="action" value="add_sample_location">
+                        <input type="text" name="name" placeholder="New sample location" required>
+
+                        <div class="row-actions">
+                            <button type="submit">Add Sample Location</button>
+                        </div>
+                    </form>
+
+                    <div class="manage-list">
+                        <?php if (!$sampleLocations): ?>
+                            <div class="manage-row">No sample locations found.</div>
+                        <?php endif; ?>
+
+                        <?php foreach ($sampleLocations as $row): ?>
+                            <div class="manage-row">
+                                <form method="post">
+                                    <input type="hidden" name="action" value="update_sample_location">
+                                    <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+
+                                    <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
+
+                                    <div class="row-actions">
+                                        <button type="submit">Save Location</button>
+                                    </div>
+                                </form>
+
+                                <form method="post" class="inline-form" onsubmit="return confirm('Delete this sample location?');">
+                                    <input type="hidden" name="action" value="delete_sample_location">
                                     <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
                                     <button type="submit" class="btn danger">Delete</button>
                                 </form>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="manage-card">
-                <h3>Sample Locations</h3>
-
-                <form method="post">
-                    <input type="hidden" name="action" value="add_sample_location">
-                    <input type="text" name="name" placeholder="New sample location" required>
-
-                    <div class="row-actions">
-                        <button type="submit">Add Sample Location</button>
+                        <?php endforeach; ?>
                     </div>
-                </form>
-
-                <div class="manage-list">
-                    <?php if (!$sampleLocations): ?>
-                        <div class="manage-row">No sample locations found.</div>
-                    <?php endif; ?>
-
-                    <?php foreach ($sampleLocations as $row): ?>
-                        <div class="manage-row">
-                            <form method="post">
-                                <input type="hidden" name="action" value="update_sample_location">
-                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-
-                                <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
-
-                                <div class="row-actions">
-                                    <button type="submit">Save Location</button>
-                                </div>
-                            </form>
-
-                            <form method="post" class="inline-form" onsubmit="return confirm('Delete this sample location?');">
-                                <input type="hidden" name="action" value="delete_sample_location">
-                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                                <button type="submit" class="btn danger">Delete</button>
-                            </form>
-                        </div>
-                    <?php endforeach; ?>
                 </div>
-            </div>
 
-            <div class="manage-card">
-                <h3>Gas Test Locations</h3>
+                <div class="manage-card">
+                    <h3>Gas Test Locations</h3>
 
-                <form method="post">
-                    <input type="hidden" name="action" value="add_gas_test_location">
-                    <input type="text" name="name" placeholder="New gas test location" required>
+                    <form method="post">
+                        <input type="hidden" name="action" value="add_gas_test_location">
+                        <input type="text" name="name" placeholder="New gas test location" required>
 
-                    <div class="row-actions">
-                        <button type="submit">Add Gas Test Location</button>
-                    </div>
-                </form>
-
-                <div class="manage-list">
-                    <?php if (!$gasTestLocations): ?>
-                        <div class="manage-row">No gas test locations found.</div>
-                    <?php endif; ?>
-
-                    <?php foreach ($gasTestLocations as $row): ?>
-                        <div class="manage-row">
-                            <form method="post">
-                                <input type="hidden" name="action" value="update_gas_test_location">
-                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-
-                                <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
-
-                                <div class="row-actions">
-                                    <button type="submit">Save Location</button>
-                                </div>
-                            </form>
-
-                            <form method="post" class="inline-form" onsubmit="return confirm('Delete this gas test location?');">
-                                <input type="hidden" name="action" value="delete_gas_test_location">
-                                <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                                <button type="submit" class="btn danger">Delete</button>
-                            </form>
+                        <div class="row-actions">
+                            <button type="submit">Add Gas Test Location</button>
                         </div>
-                    <?php endforeach; ?>
+                    </form>
+
+                    <div class="manage-list">
+                        <?php if (!$gasTestLocations): ?>
+                            <div class="manage-row">No gas test locations found.</div>
+                        <?php endif; ?>
+
+                        <?php foreach ($gasTestLocations as $row): ?>
+                            <div class="manage-row">
+                                <form method="post">
+                                    <input type="hidden" name="action" value="update_gas_test_location">
+                                    <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+
+                                    <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
+
+                                    <div class="row-actions">
+                                        <button type="submit">Save Location</button>
+                                    </div>
+                                </form>
+
+                                <form method="post" class="inline-form" onsubmit="return confirm('Delete this gas test location?');">
+                                    <input type="hidden" name="action" value="delete_gas_test_location">
+                                    <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
+                                    <button type="submit" class="btn danger">Delete</button>
+                                </form>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
 </body>
+
 </html>

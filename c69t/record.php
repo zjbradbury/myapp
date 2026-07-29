@@ -5,13 +5,15 @@ requireRole(["admin", "operator"]);
 $currentUser = $_SESSION['username'] ?? 'unknown';
 
 if (!function_exists('h')) {
-    function h($value): string {
+    function h($value): string
+    {
         return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
     }
 }
 
 if (!function_exists('nullIfBlank')) {
-    function nullIfBlank($value) {
+    function nullIfBlank($value)
+    {
         if ($value === null) return null;
         $value = trim((string)$value);
         return $value === '' ? null : $value;
@@ -382,8 +384,8 @@ function render_field(array $field, array $row, array $lists): string
     }
 
     ob_start();
-    ?>
-    <label class="form-field<?= h($gasClass) ?>"<?= $gasAttr ?>>
+?>
+    <label class="form-field<?= h($gasClass) ?>" <?= $gasAttr ?>>
         <span class="field-label"><?= h($label) ?></span>
         <?php if ($type === 'textarea'): ?>
             <textarea name="<?= h($name) ?>" <?= $required ?>><?= h($value) ?></textarea>
@@ -407,7 +409,7 @@ function render_field(array $field, array $row, array $lists): string
             </div>
         <?php endif; ?>
     </label>
-    <?php
+<?php
     return ob_get_clean();
 }
 
@@ -421,371 +423,373 @@ $pageTitle = $actionTitle . ' ' . $schema['label'] . ' Record';
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title><?= h($pageTitle) ?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
     <style>
-        :root{
-            --bg-1:#08131f;
-            --bg-2:#0e2235;
-            --card:#10273c;
-            --card-2:#122c44;
-            --line:#214968;
-            --line-soft:rgba(138,188,230,.14);
-            --text:#e6f2ff;
-            --muted:#9cc1de;
-            --glow:0 10px 35px rgba(0,0,0,.28);
-            --radius:16px;
+        :root {
+            --bg-1: #08131f;
+            --bg-2: #0e2235;
+            --card: #10273c;
+            --card-2: #122c44;
+            --line: #214968;
+            --line-soft: rgba(138, 188, 230, .14);
+            --text: #e6f2ff;
+            --muted: #9cc1de;
+            --glow: 0 10px 35px rgba(0, 0, 0, .28);
+            --radius: 16px;
         }
 
-        body{
-            padding-top:70px;
+        body {
+            padding-top: 70px;
             background:
-                radial-gradient(circle at top left, rgba(0,255,255,.06), transparent 22%),
-                radial-gradient(circle at top right, rgba(0,135,255,.08), transparent 24%),
+                radial-gradient(circle at top left, rgba(0, 255, 255, .06), transparent 22%),
+                radial-gradient(circle at top right, rgba(0, 135, 255, .08), transparent 24%),
                 linear-gradient(180deg, var(--bg-1), #091726 40%, #0a1828 100%);
-            color:var(--text);
+            color: var(--text);
         }
 
-        .record-shell{
-            max-width:1280px;
-            margin:0 auto;
+        .record-shell {
+            max-width: 1280px;
+            margin: 0 auto;
         }
 
-        .record-card{
-            background:linear-gradient(180deg, rgba(18,44,68,.94), rgba(14,34,53,.96));
-            border:1px solid var(--line-soft);
-            border-radius:var(--radius);
-            box-shadow:var(--glow);
-            padding:16px;
+        .record-card {
+            background: linear-gradient(180deg, rgba(18, 44, 68, .94), rgba(14, 34, 53, .96));
+            border: 1px solid var(--line-soft);
+            border-radius: var(--radius);
+            box-shadow: var(--glow);
+            padding: 16px;
         }
 
-        .record-head{
-            display:flex;
-            justify-content:space-between;
-            gap:16px;
-            align-items:flex-start;
-            margin-bottom:16px;
-            flex-wrap:wrap;
+        .record-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
-        .section-kicker{
-            font-size:11px;
-            letter-spacing:1.1px;
-            text-transform:uppercase;
-            color:#8abce6;
-            margin-bottom:4px;
+        .section-kicker {
+            font-size: 11px;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+            color: #8abce6;
+            margin-bottom: 4px;
         }
 
-        .record-head h1{
-            margin:0;
-            text-align:left;
-            font-size:28px;
-            line-height:1.1;
+        .record-head h1 {
+            margin: 0;
+            text-align: left;
+            font-size: 28px;
+            line-height: 1.1;
         }
 
-        .record-sub{
-            color:var(--muted);
-            font-size:13px;
-            margin-top:6px;
+        .record-sub {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 6px;
         }
 
-        .record-actions{
-            display:flex;
-            gap:8px;
-            flex-wrap:wrap;
+        .record-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
-        .btn{
-            border-radius:10px;
-            background:linear-gradient(180deg, #1f4f74, #173d5b);
-            border:1px solid rgba(255,255,255,.06);
-            transition:transform .18s ease, background .18s ease, box-shadow .18s ease;
+        .btn {
+            border-radius: 10px;
+            background: linear-gradient(180deg, #1f4f74, #173d5b);
+            border: 1px solid rgba(255, 255, 255, .06);
+            transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
         }
 
-        .btn:hover{
-            background:linear-gradient(180deg, #255f8c, #1d4a6d);
-            transform:translateY(-1px);
-            box-shadow:0 6px 18px rgba(0,0,0,.18);
+        .btn:hover {
+            background: linear-gradient(180deg, #255f8c, #1d4a6d);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
         }
 
-        .btn.danger{
-            background:linear-gradient(180deg, #b64242, #832f2f);
+        .btn.danger {
+            background: linear-gradient(180deg, #b64242, #832f2f);
         }
 
-        .record-tabs{
-            display:flex;
-            gap:8px;
-            flex-wrap:wrap;
-            margin-bottom:16px;
+        .record-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
         }
 
-        .record-tab{
-            color:#dcecff;
-            text-decoration:none;
-            padding:8px 11px;
-            border-radius:999px;
-            border:1px solid rgba(255,255,255,.08);
-            background:rgba(255,255,255,.045);
-            font-size:12px;
-            font-weight:700;
+        .record-tab {
+            color: #dcecff;
+            text-decoration: none;
+            padding: 8px 11px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            background: rgba(255, 255, 255, .045);
+            font-size: 12px;
+            font-weight: 700;
         }
 
-        .record-tab.active{
-            background:rgba(0,229,255,.13);
-            border-color:rgba(0,229,255,.35);
-            color:#bff7ff;
+        .record-tab.active {
+            background: rgba(0, 229, 255, .13);
+            border-color: rgba(0, 229, 255, .35);
+            color: #bff7ff;
         }
 
-        .record-form{
-            display:grid;
-            grid-template-columns:repeat(3, minmax(0, 1fr));
-            gap:12px;
+        .record-form {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
         }
 
-        .form-field{
-            display:block;
-            background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.03));
-            border:1px solid rgba(255,255,255,.06);
-            border-radius:12px;
-            padding:10px;
-            min-width:0;
+        .form-field {
+            display: block;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .03));
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 12px;
+            padding: 10px;
+            min-width: 0;
         }
 
-        .field-label{
-            display:block;
-            color:var(--muted);
-            text-transform:uppercase;
-            letter-spacing:.7px;
-            font-size:10px;
-            margin-bottom:7px;
+        .field-label {
+            display: block;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            font-size: 10px;
+            margin-bottom: 7px;
         }
 
         input,
         textarea,
-        select{
-            width:100%;
-            margin:0;
-            background:#0a1a29;
-            border:1px solid #2a5377;
-            border-radius:10px;
-            color:#fff;
-            padding:9px 10px;
-            min-height:40px;
+        select {
+            width: 100%;
+            margin: 0;
+            background: #0a1a29;
+            border: 1px solid #2a5377;
+            border-radius: 10px;
+            color: #fff;
+            padding: 9px 10px;
+            min-height: 40px;
         }
 
-        textarea{
-            min-height:96px;
+        textarea {
+            min-height: 96px;
         }
 
-        .form-field:has(textarea){
-            grid-column:span 3;
+        .form-field:has(textarea) {
+            grid-column: span 3;
         }
 
-        .unit-wrap{
-            position:relative;
+        .unit-wrap {
+            position: relative;
         }
 
-        .unit-wrap input{
-            padding-right:82px;
+        .unit-wrap input {
+            padding-right: 82px;
         }
 
-        .unit{
-            position:absolute;
-            right:12px;
-            top:50%;
-            transform:translateY(-50%);
-            color:#92acc3;
-            font-size:12px;
-            pointer-events:none;
+        .unit {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #92acc3;
+            font-size: 12px;
+            pointer-events: none;
         }
 
-        .form-footer{
-            display:flex;
-            justify-content:flex-end;
-            gap:10px;
-            margin-top:16px;
-            flex-wrap:wrap;
+        .form-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
         }
 
-        .delete-card{
-            background:rgba(182,66,66,.11);
-            border:1px solid rgba(255,120,120,.22);
-            border-radius:14px;
-            padding:14px;
-            margin-top:12px;
+        .delete-card {
+            background: rgba(182, 66, 66, .11);
+            border: 1px solid rgba(255, 120, 120, .22);
+            border-radius: 14px;
+            padding: 14px;
+            margin-top: 12px;
         }
 
-        .delete-details{
-            display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-            gap:10px;
-            margin-top:12px;
+        .delete-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
         }
 
-        .delete-detail{
-            background:rgba(255,255,255,.045);
-            border:1px solid rgba(255,255,255,.06);
-            border-radius:10px;
-            padding:10px;
+        .delete-detail {
+            background: rgba(255, 255, 255, .045);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 10px;
         }
 
-        .delete-detail small{
-            display:block;
-            color:var(--muted);
-            text-transform:uppercase;
-            letter-spacing:.7px;
-            font-size:10px;
-            margin-bottom:4px;
+        .delete-detail small {
+            display: block;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            font-size: 10px;
+            margin-bottom: 4px;
         }
 
-        .gas-disabled{
-            opacity:.38;
+        .gas-disabled {
+            opacity: .38;
         }
 
         .gas-disabled input,
-        .gas-disabled textarea{
-            pointer-events:none;
-            background:#08131f;
+        .gas-disabled textarea {
+            pointer-events: none;
+            background: #08131f;
         }
 
-        @media (max-width:1000px){
-            .record-form{
-                grid-template-columns:repeat(2, minmax(0, 1fr));
+        @media (max-width:1000px) {
+            .record-form {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
-            .form-field:has(textarea){
-                grid-column:span 2;
+            .form-field:has(textarea) {
+                grid-column: span 2;
             }
         }
 
-        @media (max-width:700px){
-            .record-form{
-                grid-template-columns:1fr;
+        @media (max-width:700px) {
+            .record-form {
+                grid-template-columns: 1fr;
             }
 
-            .form-field:has(textarea){
-                grid-column:span 1;
+            .form-field:has(textarea) {
+                grid-column: span 1;
             }
 
-            .record-head h1{
-                font-size:23px;
+            .record-head h1 {
+                font-size: 23px;
             }
         }
     </style>
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="record-shell">
-    <div class="record-card">
-        <div class="record-head">
-            <div>
-                <div class="section-kicker">log record manager</div>
-                <h1><?= h($pageTitle) ?></h1>
-                <div class="record-sub">
-                    <?= h($schema['label']) ?> data entry, editing, and delete confirmation in one page.
+    <div class="record-shell">
+        <div class="record-card">
+            <div class="record-head">
+                <div>
+                    <div class="section-kicker">log record manager</div>
+                    <h1><?= h($pageTitle) ?></h1>
+                    <div class="record-sub">
+                        <?= h($schema['label']) ?> data entry, editing, and delete confirmation in one page.
+                    </div>
+                </div>
+
+                <div class="record-actions">
+                    <a class="btn" href="<?= h($listUrl) ?>">Back to Logs</a>
+                    <a class="btn" href="record.php?table=<?= h($tableKey) ?>&action=add">Add New</a>
                 </div>
             </div>
 
-            <div class="record-actions">
-                <a class="btn" href="<?= h($listUrl) ?>">Back to Logs</a>
-                <a class="btn" href="record.php?table=<?= h($tableKey) ?>&action=add">Add New</a>
+            <div class="record-tabs">
+                <?php foreach ($schemas as $key => $s): ?>
+                    <?php if (!safe_table_exists($pdo, $s['table'])) continue; ?>
+                    <a class="record-tab <?= $key === $tableKey ? 'active' : '' ?>"
+                        href="record.php?table=<?= h($key) ?>&action=<?= h($action === 'delete' ? 'add' : $action) ?>">
+                        <?= h($s['label']) ?>
+                    </a>
+                <?php endforeach; ?>
             </div>
-        </div>
 
-        <div class="record-tabs">
-            <?php foreach ($schemas as $key => $s): ?>
-                <?php if (!safe_table_exists($pdo, $s['table'])) continue; ?>
-                <a class="record-tab <?= $key === $tableKey ? 'active' : '' ?>"
-                   href="record.php?table=<?= h($key) ?>&action=<?= h($action === 'delete' ? 'add' : $action) ?>">
-                    <?= h($s['label']) ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
+            <?php if ($action === 'delete'): ?>
+                <div class="delete-card">
+                    <h2>Delete this <?= h($schema['label']) ?> record?</h2>
+                    <p>This cannot be undone. The record will be permanently removed from <b><?= h($dbTable) ?></b>.</p>
 
-        <?php if ($action === 'delete'): ?>
-            <div class="delete-card">
-                <h2>Delete this <?= h($schema['label']) ?> record?</h2>
-                <p>This cannot be undone. The record will be permanently removed from <b><?= h($dbTable) ?></b>.</p>
+                    <div class="delete-details">
+                        <div class="delete-detail"><small>ID</small><?= (int)$id ?></div>
+                        <div class="delete-detail"><small>Date</small><?= h($row['log_date'] ?? '-') ?></div>
+                        <div class="delete-detail"><small>Time</small><?= h($row['log_time'] ?? '-') ?></div>
+                        <div class="delete-detail"><small>Source</small><?= h($row['source_file'] ?? '-') ?></div>
+                    </div>
 
-                <div class="delete-details">
-                    <div class="delete-detail"><small>ID</small><?= (int)$id ?></div>
-                    <div class="delete-detail"><small>Date</small><?= h($row['log_date'] ?? '-') ?></div>
-                    <div class="delete-detail"><small>Time</small><?= h($row['log_time'] ?? '-') ?></div>
-                    <div class="delete-detail"><small>Source</small><?= h($row['source_file'] ?? '-') ?></div>
+                    <form method="post" class="form-footer">
+                        <input type="hidden" name="table" value="<?= h($tableKey) ?>">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="id" value="<?= (int)$id ?>">
+                        <input type="hidden" name="confirm_delete" value="yes">
+                        <a class="btn" href="<?= h($listUrl) ?>">Cancel</a>
+                        <button class="btn danger" type="submit">Delete Record</button>
+                    </form>
                 </div>
-
-                <form method="post" class="form-footer">
+            <?php else: ?>
+                <form method="post">
                     <input type="hidden" name="table" value="<?= h($tableKey) ?>">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="<?= (int)$id ?>">
-                    <input type="hidden" name="confirm_delete" value="yes">
-                    <a class="btn" href="<?= h($listUrl) ?>">Cancel</a>
-                    <button class="btn danger" type="submit">Delete Record</button>
+                    <input type="hidden" name="action" value="<?= h($action) ?>">
+                    <?php if ($id > 0): ?><input type="hidden" name="id" value="<?= (int)$id ?>"><?php endif; ?>
+
+                    <div class="record-form">
+                        <?php foreach ($schema['fields'] as $field): ?>
+                            <?= render_field($field, $row, []) ?>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <div class="form-footer">
+                        <a class="btn" href="<?= h($listUrl) ?>">Cancel</a>
+                        <button class="btn" type="submit"><?= h($actionTitle) ?> Record</button>
+                    </div>
                 </form>
-            </div>
-        <?php else: ?>
-            <form method="post">
-                <input type="hidden" name="table" value="<?= h($tableKey) ?>">
-                <input type="hidden" name="action" value="<?= h($action) ?>">
-                <?php if ($id > 0): ?><input type="hidden" name="id" value="<?= (int)$id ?>"><?php endif; ?>
-
-                <div class="record-form">
-                    <?php foreach ($schema['fields'] as $field): ?>
-                        <?= render_field($field, $row, []) ?>
-                    <?php endforeach; ?>
-                </div>
-
-                <div class="form-footer">
-                    <a class="btn" href="<?= h($listUrl) ?>">Cancel</a>
-                    <button class="btn" type="submit"><?= h($actionTitle) ?> Record</button>
-                </div>
-            </form>
-        <?php endif; ?>
+            <?php endif; ?>
+        </div>
     </div>
-</div>
 
-<datalist id="list_operators"><?= datalist_options($operators) ?></datalist>
-<datalist id="list_sample_locations"><?= datalist_options($sampleLocations) ?></datalist>
-<datalist id="list_gas_locations"><?= datalist_options($gasLocations) ?></datalist>
-<datalist id="list_gas_devices"><?= datalist_options($gasDeviceNames) ?></datalist>
+    <datalist id="list_operators"><?= datalist_options($operators) ?></datalist>
+    <datalist id="list_sample_locations"><?= datalist_options($sampleLocations) ?></datalist>
+    <datalist id="list_gas_locations"><?= datalist_options($gasLocations) ?></datalist>
+    <datalist id="list_gas_devices"><?= datalist_options($gasDeviceNames) ?></datalist>
 
-<?php if ($tableKey === 'gas_test'): ?>
-<script>
-const gasDeviceConfig = <?= json_encode($gasDeviceConfig, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+    <?php if ($tableKey === 'gas_test'): ?>
+        <script>
+            const gasDeviceConfig = <?= json_encode($gasDeviceConfig, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
 
-function updateGasFields() {
-    const deviceInput = document.querySelector('[name="device"]');
-    if (!deviceInput) return;
+            function updateGasFields() {
+                const deviceInput = document.querySelector('[name="device"]');
+                if (!deviceInput) return;
 
-    const device = deviceInput.value || '';
-    const config = gasDeviceConfig[device] || null;
+                const device = deviceInput.value || '';
+                const config = gasDeviceConfig[device] || null;
 
-    document.querySelectorAll('.gas-controlled').forEach(wrapper => {
-        const flag = wrapper.dataset.gasFlag;
-        const enabled = !config || Number(config[flag] ?? 1) === 1;
+                document.querySelectorAll('.gas-controlled').forEach(wrapper => {
+                    const flag = wrapper.dataset.gasFlag;
+                    const enabled = !config || Number(config[flag] ?? 1) === 1;
 
-        wrapper.classList.toggle('gas-disabled', !enabled);
+                    wrapper.classList.toggle('gas-disabled', !enabled);
 
-        wrapper.querySelectorAll('input, textarea, select').forEach(input => {
-            input.disabled = !enabled;
-            if (!enabled) input.value = '';
-        });
-    });
-}
+                    wrapper.querySelectorAll('input, textarea, select').forEach(input => {
+                        input.disabled = !enabled;
+                        if (!enabled) input.value = '';
+                    });
+                });
+            }
 
-document.addEventListener('input', event => {
-    if (event.target && event.target.name === 'device') {
-        updateGasFields();
-    }
-});
+            document.addEventListener('input', event => {
+                if (event.target && event.target.name === 'device') {
+                    updateGasFields();
+                }
+            });
 
-document.addEventListener('DOMContentLoaded', updateGasFields);
-updateGasFields();
-</script>
-<?php endif; ?>
+            document.addEventListener('DOMContentLoaded', updateGasFields);
+            updateGasFields();
+        </script>
+    <?php endif; ?>
 </body>
-</html>
 
+</html>

@@ -21,24 +21,28 @@ $stageRank = [
 ];
 
 if (!function_exists("h")) {
-    function h($v) {
+    function h($v)
+    {
         return htmlspecialchars((string)$v, ENT_QUOTES, "UTF-8");
     }
 }
 
 if (!function_exists("money")) {
-    function money($v) {
+    function money($v)
+    {
         return "$" . number_format((float)$v, 2);
     }
 }
 
-function redirectSelf($msg) {
+function redirectSelf($msg)
+{
     global $selfPage;
     header("Location: {$selfPage}?msg=" . urlencode($msg));
     exit;
 }
 
-function upsertTeam(PDO $pdo, array $team): ?int {
+function upsertTeam(PDO $pdo, array $team): ?int
+{
     if (empty($team["id"]) || empty($team["name"])) return null;
 
     $stmt = $pdo->prepare("SELECT id FROM sweep_teams WHERE api_team_id = ?");
@@ -75,7 +79,8 @@ function upsertTeam(PDO $pdo, array $team): ?int {
     return (int)$pdo->lastInsertId();
 }
 
-function setStage(array &$stages, int $teamId, string $stage, bool $eliminated) {
+function setStage(array &$stages, int $teamId, string $stage, bool $eliminated)
+{
     $rank = [
         "Winner" => 100,
         "Runner Up" => 95,
@@ -103,7 +108,8 @@ function setStage(array &$stages, int $teamId, string $stage, bool $eliminated) 
     }
 }
 
-function autoCalculateTeamStages(PDO $pdo) {
+function autoCalculateTeamStages(PDO $pdo)
+{
     $teams = $pdo->query("SELECT id FROM sweep_teams")->fetchAll(PDO::FETCH_COLUMN);
 
     $stages = [];
@@ -443,6 +449,7 @@ foreach ($teams as $t) {
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>World Cup Sweepstake</title>
     <style>
@@ -459,7 +466,8 @@ foreach ($teams as $t) {
             padding: 24px;
         }
 
-        h1, h2 {
+        h1,
+        h2 {
             margin-top: 0;
         }
 
@@ -480,10 +488,10 @@ foreach ($teams as $t) {
 
         .card {
             background: #111827;
-            border: 1px solid rgba(255,255,255,.08);
+            border: 1px solid rgba(255, 255, 255, .08);
             border-radius: 16px;
             padding: 18px;
-            box-shadow: 0 12px 28px rgba(0,0,0,.28);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, .28);
             overflow-x: auto;
         }
 
@@ -497,27 +505,29 @@ foreach ($teams as $t) {
             text-align: left;
             font-size: 13px;
             padding: 9px;
-            border-bottom: 1px solid rgba(255,255,255,.16);
+            border-bottom: 1px solid rgba(255, 255, 255, .16);
             white-space: nowrap;
         }
 
         td {
             padding: 9px;
-            border-bottom: 1px solid rgba(255,255,255,.08);
+            border-bottom: 1px solid rgba(255, 255, 255, .08);
             font-size: 14px;
             vertical-align: top;
         }
 
-        input, select {
+        input,
+        select {
             background: #020617;
             color: white;
-            border: 1px solid rgba(255,255,255,.18);
+            border: 1px solid rgba(255, 255, 255, .18);
             border-radius: 8px;
             padding: 7px;
             max-width: 170px;
         }
 
-        button, .button {
+        button,
+        .button {
             background: #2563eb;
             color: white;
             border: 0;
@@ -529,7 +539,8 @@ foreach ($teams as $t) {
             font-weight: bold;
         }
 
-        button:hover, .button:hover {
+        button:hover,
+        .button:hover {
             background: #1d4ed8;
         }
 
@@ -547,16 +558,16 @@ foreach ($teams as $t) {
         }
 
         .rank-1 {
-            background: rgba(234,179,8,.22);
+            background: rgba(234, 179, 8, .22);
             font-weight: bold;
         }
 
         .rank-2 {
-            background: rgba(203,213,225,.16);
+            background: rgba(203, 213, 225, .16);
         }
 
         .rank-3 {
-            background: rgba(180,83,9,.18);
+            background: rgba(180, 83, 9, .18);
         }
 
         .muted {
@@ -570,7 +581,8 @@ foreach ($teams as $t) {
             margin-right: 6px;
         }
 
-        .admin-pill, .viewer-pill {
+        .admin-pill,
+        .viewer-pill {
             padding: 6px 10px;
             border-radius: 999px;
             font-size: 13px;
@@ -610,7 +622,7 @@ foreach ($teams as $t) {
             display: none;
             margin-top: 8px;
             background: #020617;
-            border: 1px solid rgba(255,255,255,.18);
+            border: 1px solid rgba(255, 255, 255, .18);
             border-radius: 10px;
             padding: 10px;
             max-width: 260px;
@@ -620,347 +632,349 @@ foreach ($teams as $t) {
 
         .summary-box {
             background: #020617;
-            border: 1px solid rgba(255,255,255,.12);
+            border: 1px solid rgba(255, 255, 255, .12);
             border-radius: 12px;
             padding: 12px;
             margin-bottom: 14px;
         }
     </style>
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="container">
+    <div class="container">
 
-    <div class="topbar">
-        <div>
-            <h1>
-                World Cup Sweepstake
+        <div class="topbar">
+            <div>
+                <h1>
+                    World Cup Sweepstake
+                    <?php if ($canEdit): ?>
+                        <span class="admin-pill">Admin edit mode</span>
+                    <?php else: ?>
+                        <span class="viewer-pill">Public view</span>
+                    <?php endif; ?>
+                </h1>
+                <div class="muted">
+                    Last sync: <?= $lastSync ? h($lastSync) : "Never" ?>
+                </div>
+            </div>
+
+            <div>
                 <?php if ($canEdit): ?>
-                    <span class="admin-pill">Admin edit mode</span>
+                    <form method="post">
+                        <input type="hidden" name="action" value="sync_results">
+                        <button type="submit">Sync Online Results</button>
+                    </form>
                 <?php else: ?>
-                    <span class="viewer-pill">Public view</span>
+                    <a class="button" href="login.php?redirect=<?= urlencode($selfPage) ?>">Admin Login</a>
                 <?php endif; ?>
-            </h1>
-            <div class="muted">
-                Last sync: <?= $lastSync ? h($lastSync) : "Never" ?>
             </div>
         </div>
 
-        <div>
-            <?php if ($canEdit): ?>
-                <form method="post">
-                    <input type="hidden" name="action" value="sync_results">
-                    <button type="submit">Sync Online Results</button>
-                </form>
-            <?php else: ?>
-                <a class="button" href="login.php?redirect=<?= urlencode($selfPage) ?>">Admin Login</a>
-            <?php endif; ?>
-        </div>
-    </div>
+        <?php if ($msg): ?>
+            <div class="msg"><?= h($msg) ?></div>
+        <?php endif; ?>
 
-    <?php if ($msg): ?>
-        <div class="msg"><?= h($msg) ?></div>
-    <?php endif; ?>
+        <div class="grid">
 
-    <div class="grid">
+            <div class="card">
+                <h2>Automatic Placings</h2>
 
-        <div class="card">
-            <h2>Automatic Placings</h2>
+                <div class="summary-box">
+                    Total paid in: <strong><?= money($totalPaid) ?></strong>
+                </div>
 
-            <div class="summary-box">
-                Total paid in: <strong><?= money($totalPaid) ?></strong>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th>Owner</th>
+                            <th>Auto Stage</th>
+                            <th>Pts</th>
+                            <th>GD</th>
+                            <th>Payout</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($teams as $i => $t): ?>
+                            <?php
+                            $placeLabel = "";
+                            $payout = 0;
+
+                            if ($i === 0) {
+                                $placeLabel = "Winner";
+                                $payout = $payoutMap["Winner"]["amount"] ?? 0;
+                            } elseif ($i === 1) {
+                                $placeLabel = "Runner Up";
+                                $payout = $payoutMap["Runner Up"]["amount"] ?? 0;
+                            } elseif ($i === 2) {
+                                $placeLabel = "Third Place";
+                                $payout = $payoutMap["Third Place"]["amount"] ?? 0;
+                            } elseif ($i === 3) {
+                                $placeLabel = "Fourth Place";
+                                $payout = $payoutMap["Fourth Place"]["amount"] ?? 0;
+                            }
+                            ?>
+                            <tr class="rank-<?= $i + 1 ?>">
+                                <td><?= $i + 1 ?></td>
+                                <td>
+                                    <?php if (!empty($t["flag_url"])): ?>
+                                        <img class="flag" src="<?= h($t["flag_url"]) ?>">
+                                    <?php endif; ?>
+                                    <?= h($t["team_name"]) ?>
+                                </td>
+                                <td><?= h($t["player_name"] ?: "Unassigned") ?></td>
+                                <td><?= h($t["stage_reached"]) ?></td>
+                                <td><?= (int)$t["points"] ?></td>
+                                <td><?= (int)$t["goal_diff"] ?></td>
+                                <td>
+                                    <?php if ($placeLabel): ?>
+                                        <span class="winner-money"><?= h($placeLabel) ?> - <?= money($payout) ?></span>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
             </div>
 
+            <div class="card">
+                <h2>Players</h2>
+
+                <?php if ($canEdit): ?>
+                    <form method="post" style="margin-bottom:16px;">
+                        <input type="hidden" name="action" value="add_player">
+                        <input name="name" placeholder="Player name" required>
+                        <input name="paid" type="number" step="0.01" placeholder="Paid amount">
+                        <button>Add Player</button>
+                    </form>
+                <?php endif; ?>
+
+                <div class="summary-box">
+                    Total paid in: <strong><?= money($totalPaid) ?></strong>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Player</th>
+                            <th>Paid</th>
+                            <th>Teams</th>
+                            <?php if ($canEdit): ?>
+                                <th>Save</th>
+                                <th>Delete</th>
+                            <?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($players as $p): ?>
+                            <?php
+                            $teamsForPlayer = $playerTeams[(int)$p["id"]] ?? [];
+                            $teamText = $teamsForPlayer ? implode(", ", $teamsForPlayer) : "No teams assigned";
+                            $popupId = "teams_" . (int)$p["id"];
+                            ?>
+                            <tr>
+                                <?php if ($canEdit): ?>
+                                    <form method="post">
+                                        <input type="hidden" name="action" value="save_player">
+                                        <input type="hidden" name="player_id" value="<?= h($p["id"]) ?>">
+                                        <td><?= h($p["name"]) ?></td>
+                                        <td>
+                                            <input name="paid" type="number" step="0.01" value="<?= h($p["paid"]) ?>">
+                                        </td>
+                                        <td>
+                                            <button type="button" onclick="toggleTeams('<?= h($popupId) ?>')">Show Teams</button>
+                                            <div id="<?= h($popupId) ?>" class="teams-popup">
+                                                <?= h($teamText) ?>
+                                            </div>
+                                        </td>
+                                        <td><button>Save</button></td>
+                                    </form>
+                                    <td>
+                                        <form method="post" onsubmit="return confirm('Delete this player? Teams will become unassigned.');">
+                                            <input type="hidden" name="action" value="delete_player">
+                                            <input type="hidden" name="player_id" value="<?= h($p["id"]) ?>">
+                                            <button class="delete-btn">Delete</button>
+                                        </form>
+                                    </td>
+                                <?php else: ?>
+                                    <td><?= h($p["name"]) ?></td>
+                                    <td><?= money($p["paid"]) ?></td>
+                                    <td>
+                                        <button type="button" onclick="toggleTeams('<?= h($popupId) ?>')">Show Teams</button>
+                                        <div id="<?= h($popupId) ?>" class="teams-popup">
+                                            <?= h($teamText) ?>
+                                        </div>
+                                    </td>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+
+                <h2 style="margin-top:24px;">Payouts</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Placing</th>
+                            <th>Fixed $</th>
+                            <th>% of Paid In</th>
+                            <th>Calculated</th>
+                            <?php if ($canEdit): ?><th>Save</th><?php endif; ?>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($payouts as $p): ?>
+                            <?php
+                            $percent = (float)($p["payout_percent"] ?? 0);
+                            $fixed = (float)$p["amount"];
+                            $calculated = $percent > 0 ? $totalPaid * ($percent / 100) : $fixed;
+                            ?>
+                            <tr>
+                                <?php if ($canEdit): ?>
+                                    <form method="post">
+                                        <input type="hidden" name="action" value="save_payout">
+                                        <input type="hidden" name="payout_id" value="<?= h($p["id"]) ?>">
+                                        <td><?= h($p["placing"]) ?></td>
+                                        <td><input name="amount" type="number" step="0.01" value="<?= h($fixed) ?>"></td>
+                                        <td><input name="payout_percent" type="number" step="0.01" value="<?= h($percent) ?>"></td>
+                                        <td class="winner-money"><?= money($calculated) ?></td>
+                                        <td><button>Save</button></td>
+                                    </form>
+                                <?php else: ?>
+                                    <td><?= h($p["placing"]) ?></td>
+                                    <td><?= money($fixed) ?></td>
+                                    <td><?= number_format($percent, 2) ?>%</td>
+                                    <td class="winner-money"><?= money($calculated) ?></td>
+                                <?php endif; ?>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <div class="card" style="margin-top:18px;">
+            <h2>Team Owners</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>#</th>
                         <th>Team</th>
                         <th>Owner</th>
                         <th>Auto Stage</th>
-                        <th>Pts</th>
-                        <th>GD</th>
-                        <th>Payout</th>
+                        <th>Eliminated</th>
+                        <?php if ($canEdit): ?><th>Save Owner</th><?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($teams as $i => $t): ?>
-                    <?php
-                        $placeLabel = "";
-                        $payout = 0;
-
-                        if ($i === 0) {
-                            $placeLabel = "Winner";
-                            $payout = $payoutMap["Winner"]["amount"] ?? 0;
-                        } elseif ($i === 1) {
-                            $placeLabel = "Runner Up";
-                            $payout = $payoutMap["Runner Up"]["amount"] ?? 0;
-                        } elseif ($i === 2) {
-                            $placeLabel = "Third Place";
-                            $payout = $payoutMap["Third Place"]["amount"] ?? 0;
-                        } elseif ($i === 3) {
-                            $placeLabel = "Fourth Place";
-                            $payout = $payoutMap["Fourth Place"]["amount"] ?? 0;
-                        }
-                    ?>
-                    <tr class="rank-<?= $i + 1 ?>">
-                        <td><?= $i + 1 ?></td>
-                        <td>
-                            <?php if (!empty($t["flag_url"])): ?>
-                                <img class="flag" src="<?= h($t["flag_url"]) ?>">
-                            <?php endif; ?>
-                            <?= h($t["team_name"]) ?>
-                        </td>
-                        <td><?= h($t["player_name"] ?: "Unassigned") ?></td>
-                        <td><?= h($t["stage_reached"]) ?></td>
-                        <td><?= (int)$t["points"] ?></td>
-                        <td><?= (int)$t["goal_diff"] ?></td>
-                        <td>
-                            <?php if ($placeLabel): ?>
-                                <span class="winner-money"><?= h($placeLabel) ?> - <?= money($payout) ?></span>
-                            <?php else: ?>
-                                -
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="card">
-            <h2>Players</h2>
-
-            <?php if ($canEdit): ?>
-                <form method="post" style="margin-bottom:16px;">
-                    <input type="hidden" name="action" value="add_player">
-                    <input name="name" placeholder="Player name" required>
-                    <input name="paid" type="number" step="0.01" placeholder="Paid amount">
-                    <button>Add Player</button>
-                </form>
-            <?php endif; ?>
-
-            <div class="summary-box">
-                Total paid in: <strong><?= money($totalPaid) ?></strong>
-            </div>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Player</th>
-                        <th>Paid</th>
-                        <th>Teams</th>
-                        <?php if ($canEdit): ?>
-                            <th>Save</th>
-                            <th>Delete</th>
-                        <?php endif; ?>
-                    </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($players as $p): ?>
-                    <?php
-                        $teamsForPlayer = $playerTeams[(int)$p["id"]] ?? [];
-                        $teamText = $teamsForPlayer ? implode(", ", $teamsForPlayer) : "No teams assigned";
-                        $popupId = "teams_" . (int)$p["id"];
-                    ?>
-                    <tr>
-                        <?php if ($canEdit): ?>
-                            <form method="post">
-                                <input type="hidden" name="action" value="save_player">
-                                <input type="hidden" name="player_id" value="<?= h($p["id"]) ?>">
-                                <td><?= h($p["name"]) ?></td>
-                                <td>
-                                    <input name="paid" type="number" step="0.01" value="<?= h($p["paid"]) ?>">
-                                </td>
-                                <td>
-                                    <button type="button" onclick="toggleTeams('<?= h($popupId) ?>')">Show Teams</button>
-                                    <div id="<?= h($popupId) ?>" class="teams-popup">
-                                        <?= h($teamText) ?>
-                                    </div>
-                                </td>
-                                <td><button>Save</button></td>
-                            </form>
-                            <td>
-                                <form method="post" onsubmit="return confirm('Delete this player? Teams will become unassigned.');">
-                                    <input type="hidden" name="action" value="delete_player">
-                                    <input type="hidden" name="player_id" value="<?= h($p["id"]) ?>">
-                                    <button class="delete-btn">Delete</button>
+                    <?php foreach ($teams as $t): ?>
+                        <tr>
+                            <?php if ($canEdit): ?>
+                                <form method="post">
+                                    <input type="hidden" name="action" value="assign_team">
+                                    <input type="hidden" name="team_id" value="<?= h($t["id"]) ?>">
+                                    <td>
+                                        <?php if (!empty($t["flag_url"])): ?>
+                                            <img class="flag" src="<?= h($t["flag_url"]) ?>">
+                                        <?php endif; ?>
+                                        <?= h($t["team_name"]) ?>
+                                    </td>
+                                    <td>
+                                        <select name="player_id">
+                                            <option value="">Unassigned</option>
+                                            <?php foreach ($players as $p): ?>
+                                                <option value="<?= h($p["id"]) ?>" <?= $p["id"] == $t["player_id"] ? "selected" : "" ?>>
+                                                    <?= h($p["name"]) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </td>
+                                    <td><?= h($t["stage_reached"]) ?></td>
+                                    <td><?= $t["eliminated"] ? "Yes" : "No" ?></td>
+                                    <td><button>Save</button></td>
                                 </form>
-                            </td>
-                        <?php else: ?>
-                            <td><?= h($p["name"]) ?></td>
-                            <td><?= money($p["paid"]) ?></td>
-                            <td>
-                                <button type="button" onclick="toggleTeams('<?= h($popupId) ?>')">Show Teams</button>
-                                <div id="<?= h($popupId) ?>" class="teams-popup">
-                                    <?= h($teamText) ?>
-                                </div>
-                            </td>
-                        <?php endif; ?>
-                    </tr>
-                <?php endforeach; ?>
+                            <?php else: ?>
+                                <td>
+                                    <?php if (!empty($t["flag_url"])): ?>
+                                        <img class="flag" src="<?= h($t["flag_url"]) ?>">
+                                    <?php endif; ?>
+                                    <?= h($t["team_name"]) ?>
+                                </td>
+                                <td><?= h($t["player_name"] ?: "Unassigned") ?></td>
+                                <td><?= h($t["stage_reached"]) ?></td>
+                                <td><?= $t["eliminated"] ? "Yes" : "No" ?></td>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
+        </div>
 
-            <h2 style="margin-top:24px;">Payouts</h2>
-
+        <div class="card" style="margin-top:18px;">
+            <h2>Matches / Results</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Placing</th>
-                        <th>Fixed $</th>
-                        <th>% of Paid In</th>
-                        <th>Calculated</th>
-                        <?php if ($canEdit): ?><th>Save</th><?php endif; ?>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Stage</th>
+                        <th>Match</th>
+                        <th>Score</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($payouts as $p): ?>
-                    <?php
-                        $percent = (float)($p["payout_percent"] ?? 0);
-                        $fixed = (float)$p["amount"];
-                        $calculated = $percent > 0 ? $totalPaid * ($percent / 100) : $fixed;
-                    ?>
-                    <tr>
-                        <?php if ($canEdit): ?>
-                            <form method="post">
-                                <input type="hidden" name="action" value="save_payout">
-                                <input type="hidden" name="payout_id" value="<?= h($p["id"]) ?>">
-                                <td><?= h($p["placing"]) ?></td>
-                                <td><input name="amount" type="number" step="0.01" value="<?= h($fixed) ?>"></td>
-                                <td><input name="payout_percent" type="number" step="0.01" value="<?= h($percent) ?>"></td>
-                                <td class="winner-money"><?= money($calculated) ?></td>
-                                <td><button>Save</button></td>
-                            </form>
-                        <?php else: ?>
-                            <td><?= h($p["placing"]) ?></td>
-                            <td><?= money($fixed) ?></td>
-                            <td><?= number_format($percent, 2) ?>%</td>
-                            <td class="winner-money"><?= money($calculated) ?></td>
-                        <?php endif; ?>
-                    </tr>
-                <?php endforeach; ?>
+                    <?php foreach ($matches as $m): ?>
+                        <?php
+                        $statusClass = "status-scheduled";
+                        if ($m["status"] === "FINISHED") $statusClass = "status-finished";
+                        elseif ($m["status"] === "TIMED") $statusClass = "status-timed";
+                        ?>
+                        <tr>
+                            <td><?= h($m["match_date"]) ?></td>
+                            <td><?= h(substr((string)$m["match_time"], 0, 5)) ?></td>
+                            <td><?= h($m["stage"]) ?></td>
+                            <td>
+                                <?php if (!empty($m["team1_flag"])): ?>
+                                    <img class="flag" src="<?= h($m["team1_flag"]) ?>">
+                                <?php endif; ?>
+                                <?= h($m["team1"]) ?>
+                                v
+                                <?php if (!empty($m["team2_flag"])): ?>
+                                    <img class="flag" src="<?= h($m["team2_flag"]) ?>">
+                                <?php endif; ?>
+                                <?= h($m["team2"]) ?>
+                            </td>
+                            <td>
+                                <?php if ($m["team1_score"] !== null && $m["team2_score"] !== null): ?>
+                                    <?= h($m["team1_score"]) ?> - <?= h($m["team2_score"]) ?>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
+                            <td class="<?= h($statusClass) ?>"><?= h($m["status"] ?: "Scheduled") ?></td>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
 
     </div>
 
-    <div class="card" style="margin-top:18px;">
-        <h2>Team Owners</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Team</th>
-                    <th>Owner</th>
-                    <th>Auto Stage</th>
-                    <th>Eliminated</th>
-                    <?php if ($canEdit): ?><th>Save Owner</th><?php endif; ?>
-                </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($teams as $t): ?>
-                <tr>
-                    <?php if ($canEdit): ?>
-                        <form method="post">
-                            <input type="hidden" name="action" value="assign_team">
-                            <input type="hidden" name="team_id" value="<?= h($t["id"]) ?>">
-                            <td>
-                                <?php if (!empty($t["flag_url"])): ?>
-                                    <img class="flag" src="<?= h($t["flag_url"]) ?>">
-                                <?php endif; ?>
-                                <?= h($t["team_name"]) ?>
-                            </td>
-                            <td>
-                                <select name="player_id">
-                                    <option value="">Unassigned</option>
-                                    <?php foreach ($players as $p): ?>
-                                        <option value="<?= h($p["id"]) ?>" <?= $p["id"] == $t["player_id"] ? "selected" : "" ?>>
-                                            <?= h($p["name"]) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </td>
-                            <td><?= h($t["stage_reached"]) ?></td>
-                            <td><?= $t["eliminated"] ? "Yes" : "No" ?></td>
-                            <td><button>Save</button></td>
-                        </form>
-                    <?php else: ?>
-                        <td>
-                            <?php if (!empty($t["flag_url"])): ?>
-                                <img class="flag" src="<?= h($t["flag_url"]) ?>">
-                            <?php endif; ?>
-                            <?= h($t["team_name"]) ?>
-                        </td>
-                        <td><?= h($t["player_name"] ?: "Unassigned") ?></td>
-                        <td><?= h($t["stage_reached"]) ?></td>
-                        <td><?= $t["eliminated"] ? "Yes" : "No" ?></td>
-                    <?php endif; ?>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="card" style="margin-top:18px;">
-        <h2>Matches / Results</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Stage</th>
-                    <th>Match</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-            <?php foreach ($matches as $m): ?>
-                <?php
-                    $statusClass = "status-scheduled";
-                    if ($m["status"] === "FINISHED") $statusClass = "status-finished";
-                    elseif ($m["status"] === "TIMED") $statusClass = "status-timed";
-                ?>
-                <tr>
-                    <td><?= h($m["match_date"]) ?></td>
-                    <td><?= h(substr((string)$m["match_time"], 0, 5)) ?></td>
-                    <td><?= h($m["stage"]) ?></td>
-                    <td>
-                        <?php if (!empty($m["team1_flag"])): ?>
-                            <img class="flag" src="<?= h($m["team1_flag"]) ?>">
-                        <?php endif; ?>
-                        <?= h($m["team1"]) ?>
-                        v
-                        <?php if (!empty($m["team2_flag"])): ?>
-                            <img class="flag" src="<?= h($m["team2_flag"]) ?>">
-                        <?php endif; ?>
-                        <?= h($m["team2"]) ?>
-                    </td>
-                    <td>
-                        <?php if ($m["team1_score"] !== null && $m["team2_score"] !== null): ?>
-                            <?= h($m["team1_score"]) ?> - <?= h($m["team2_score"]) ?>
-                        <?php else: ?>
-                            -
-                        <?php endif; ?>
-                    </td>
-                    <td class="<?= h($statusClass) ?>"><?= h($m["status"] ?: "Scheduled") ?></td>
-                </tr>
-            <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-
-</div>
-
-<script>
-function toggleTeams(id) {
-    const box = document.getElementById(id);
-    if (!box) return;
-    box.style.display = box.style.display === "block" ? "none" : "block";
-}
-</script>
+    <script>
+        function toggleTeams(id) {
+            const box = document.getElementById(id);
+            if (!box) return;
+            box.style.display = box.style.display === "block" ? "none" : "block";
+        }
+    </script>
 
 </body>
+
 </html>

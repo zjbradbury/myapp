@@ -457,7 +457,6 @@ try {
         "message" => "Records uploaded",
         "inserted" => $inserted
     ]);
-
 } catch (Throwable $e) {
     fail($e->getMessage(), 500);
 }

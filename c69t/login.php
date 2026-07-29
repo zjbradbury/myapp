@@ -43,12 +43,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
     <div class="container">
 
-<div class="logo-row-login">
-    <img src="MoombaTankCleaningLogoTransparent.PNG">
-    <img src="Contract69TanksLogoTransparent.png">
-</div>
+        <div class="logo-row-login">
+            <img src="MoombaTankCleaningLogoTransparent.PNG">
+            <img src="Contract69TanksLogoTransparent.png">
+        </div>
 
-<h2>Login</h2>
+        <h2>Login</h2>
 
         <?php if ($message !== ""): ?>
             <p class="message error"><?= h($message) ?></p>

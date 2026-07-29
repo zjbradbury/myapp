@@ -404,192 +404,499 @@ $csvParams = [
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title><?= h($config['label']) ?> Logs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="indexStyle.css">
     <style>
-        :root{--bg-1:#08131f;--bg-2:#0e2235;--card:#10273c;--card-2:#122c44;--line:#214968;--line-soft:rgba(138,188,230,.14);--text:#e6f2ff;--muted:#9cc1de;--glow:0 10px 35px rgba(0,0,0,.28);--radius:16px;}
-        body{background:radial-gradient(circle at top left,rgba(0,255,255,.06),transparent 22%),radial-gradient(circle at top right,rgba(0,135,255,.08),transparent 24%),linear-gradient(180deg,var(--bg-1),#091726 40%,#0a1828 100%);color:var(--text);font-family:Arial,sans-serif;margin:0;padding:15px;}
-        .logs-shell{max-width:1800px;margin:0 auto;}.logo-row{display:flex;justify-content:center;align-items:center;gap:20px;margin:6px 0 14px;}.logo-row img{height:110px;width:auto;max-width:100%;filter:drop-shadow(0 10px 28px rgba(0,0,0,.25));}
-        .panel,.info-card{background:linear-gradient(180deg,rgba(18,44,68,.94),rgba(14,34,53,.96));border:1px solid var(--line-soft);border-radius:var(--radius);box-shadow:var(--glow);backdrop-filter:blur(8px);}
-        .logs-hero{padding:16px;margin-bottom:14px;display:grid;grid-template-columns:minmax(280px,1fr) auto;gap:16px;align-items:center;}.section-kicker{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:#8abce6;margin-bottom:4px;}.logs-title{font-size:30px;line-height:1;margin:0 0 6px;font-weight:800;}.logs-subtitle{color:var(--muted);font-size:13px;}.logs-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
-        .btn{background:linear-gradient(180deg,#1f4f74,#173d5b);border:1px solid rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:9px 12px;cursor:pointer;font-size:12px;text-decoration:none;display:inline-block;line-height:1.2;width:auto;transition:transform .18s ease,background .18s ease,box-shadow .18s ease;}.btn:hover{background:linear-gradient(180deg,#255f8c,#1d4a6d);transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.18);}.btn.danger{background:linear-gradient(180deg,#b64242,#7b2828);}.btn.small{padding:6px 9px;font-size:11px;}
-        .tabs-card{padding:10px;margin-bottom:14px;}.log-tabs{display:flex;gap:8px;flex-wrap:wrap;}.log-tab{text-decoration:none;color:#dcecff;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.07);border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;letter-spacing:.2px;text-transform:uppercase;}.log-tab.active{background:rgba(0,229,255,.15);border-color:rgba(0,229,255,.35);color:#bff7ff;box-shadow:0 0 18px rgba(0,229,255,.08);}
-        .filter-card{padding:14px;margin-bottom:14px;}.filter-card .range-layout,.filter-card .list-range-layout{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;}.filter-card input[type="datetime-local"],.filter-card input,.filter-card select{background:#0a1a29;border:1px solid #2a5377;border-radius:10px;color:#fff;padding:8px 10px;box-sizing:border-box;}.filter-card .btn,.filter-card button{margin:0;}.range-active,.list-range-active{margin-top:8px;color:#9ed0f2;font-size:12px;}.range-error,.list-range-error{margin-top:8px;color:#ff9d9d;font-size:12px;}
-        .notice-success,.notice-error{margin:12px 0;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);}.notice-success{background:rgba(40,167,69,.14);color:#94ffb0;}.notice-error{background:rgba(220,53,69,.16);color:#ffb1b1;}
-        .table-panel{padding:14px;margin-bottom:22px;}.table-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;}.record-count{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.7px;}.table-wrap{max-height:70vh;overflow:auto;border-radius:14px;border:1px solid rgba(255,255,255,.05);background:rgba(7,18,28,.42);}table{width:max-content;min-width:100%;border-collapse:collapse;table-layout:auto;}th,td{padding:8px 10px;font-size:12px;border-bottom:1px solid #1f4665;white-space:nowrap;text-align:left;vertical-align:middle;}th{background:#183a56;position:sticky;top:0;z-index:2;color:#dcecff;}tbody tr{transition:background-color .2s ease;}tbody tr:hover{background:rgba(255,255,255,.04);}.checkbox-col{width:44px;text-align:center;}.checkbox-cell{text-align:center;}.comment-cell{white-space:normal;min-width:220px;max-width:420px;}.actions-cell{display:flex;gap:6px;flex-wrap:wrap;}
-        @media (max-width:900px){.logs-hero{grid-template-columns:1fr;}.logs-actions{justify-content:flex-start;}.filter-card .range-layout,.filter-card .list-range-layout{grid-template-columns:1fr;align-items:start;}}@media (max-width:700px){.logs-title{font-size:24px;}.logo-row img{height:78px;}}
+        :root {
+            --bg-1: #08131f;
+            --bg-2: #0e2235;
+            --card: #10273c;
+            --card-2: #122c44;
+            --line: #214968;
+            --line-soft: rgba(138, 188, 230, .14);
+            --text: #e6f2ff;
+            --muted: #9cc1de;
+            --glow: 0 10px 35px rgba(0, 0, 0, .28);
+            --radius: 16px;
+        }
+
+        body {
+            background: radial-gradient(circle at top left, rgba(0, 255, 255, .06), transparent 22%), radial-gradient(circle at top right, rgba(0, 135, 255, .08), transparent 24%), linear-gradient(180deg, var(--bg-1), #091726 40%, #0a1828 100%);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+        }
+
+        .logs-shell {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .logo-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 6px 0 14px;
+        }
+
+        .logo-row img {
+            height: 110px;
+            width: auto;
+            max-width: 100%;
+            filter: drop-shadow(0 10px 28px rgba(0, 0, 0, .25));
+        }
+
+        .panel,
+        .info-card {
+            background: linear-gradient(180deg, rgba(18, 44, 68, .94), rgba(14, 34, 53, .96));
+            border: 1px solid var(--line-soft);
+            border-radius: var(--radius);
+            box-shadow: var(--glow);
+            backdrop-filter: blur(8px);
+        }
+
+        .logs-hero {
+            padding: 16px;
+            margin-bottom: 14px;
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) auto;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .section-kicker {
+            font-size: 11px;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+            color: #8abce6;
+            margin-bottom: 4px;
+        }
+
+        .logs-title {
+            font-size: 30px;
+            line-height: 1;
+            margin: 0 0 6px;
+            font-weight: 800;
+        }
+
+        .logs-subtitle {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .logs-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            background: linear-gradient(180deg, #1f4f74, #173d5b);
+            border: 1px solid rgba(255, 255, 255, .06);
+            color: #fff;
+            border-radius: 10px;
+            padding: 9px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            text-decoration: none;
+            display: inline-block;
+            line-height: 1.2;
+            width: auto;
+            transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(180deg, #255f8c, #1d4a6d);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+        }
+
+        .btn.danger {
+            background: linear-gradient(180deg, #b64242, #7b2828);
+        }
+
+        .btn.small {
+            padding: 6px 9px;
+            font-size: 11px;
+        }
+
+        .tabs-card {
+            padding: 10px;
+            margin-bottom: 14px;
+        }
+
+        .log-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .log-tab {
+            text-decoration: none;
+            color: #dcecff;
+            background: rgba(255, 255, 255, .045);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .2px;
+            text-transform: uppercase;
+        }
+
+        .log-tab.active {
+            background: rgba(0, 229, 255, .15);
+            border-color: rgba(0, 229, 255, .35);
+            color: #bff7ff;
+            box-shadow: 0 0 18px rgba(0, 229, 255, .08);
+        }
+
+        .filter-card {
+            padding: 14px;
+            margin-bottom: 14px;
+        }
+
+        .filter-card .range-layout,
+        .filter-card .list-range-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .filter-card input[type="datetime-local"],
+        .filter-card input,
+        .filter-card select {
+            background: #0a1a29;
+            border: 1px solid #2a5377;
+            border-radius: 10px;
+            color: #fff;
+            padding: 8px 10px;
+            box-sizing: border-box;
+        }
+
+        .filter-card .btn,
+        .filter-card button {
+            margin: 0;
+        }
+
+        .range-active,
+        .list-range-active {
+            margin-top: 8px;
+            color: #9ed0f2;
+            font-size: 12px;
+        }
+
+        .range-error,
+        .list-range-error {
+            margin-top: 8px;
+            color: #ff9d9d;
+            font-size: 12px;
+        }
+
+        .notice-success,
+        .notice-error {
+            margin: 12px 0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .notice-success {
+            background: rgba(40, 167, 69, .14);
+            color: #94ffb0;
+        }
+
+        .notice-error {
+            background: rgba(220, 53, 69, .16);
+            color: #ffb1b1;
+        }
+
+        .table-panel {
+            padding: 14px;
+            margin-bottom: 22px;
+        }
+
+        .table-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .record-count {
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+        }
+
+        .table-wrap {
+            max-height: 70vh;
+            overflow: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, .05);
+            background: rgba(7, 18, 28, .42);
+        }
+
+        table {
+            width: max-content;
+            min-width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }
+
+        th,
+        td {
+            padding: 8px 10px;
+            font-size: 12px;
+            border-bottom: 1px solid #1f4665;
+            white-space: nowrap;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #183a56;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            color: #dcecff;
+        }
+
+        tbody tr {
+            transition: background-color .2s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, .04);
+        }
+
+        .checkbox-col {
+            width: 44px;
+            text-align: center;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .comment-cell {
+            white-space: normal;
+            min-width: 220px;
+            max-width: 420px;
+        }
+
+        .actions-cell {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width:900px) {
+            .logs-hero {
+                grid-template-columns: 1fr;
+            }
+
+            .logs-actions {
+                justify-content: flex-start;
+            }
+
+            .filter-card .range-layout,
+            .filter-card .list-range-layout {
+                grid-template-columns: 1fr;
+                align-items: start;
+            }
+        }
+
+        @media (max-width:700px) {
+            .logs-title {
+                font-size: 24px;
+            }
+
+            .logo-row img {
+                height: 78px;
+            }
+        }
     </style>
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="logs-shell">
-    <div class="logo-row">
-        <img src="MoombaTankCleaningLogoTransparent.PNG" alt="Moomba Tank Cleaning">
-        <img src="Contract69TanksLogoTransparent.png" alt="Contract 69 Tanks">
-    </div>
-
-    <div class="logs-hero info-card">
-        <div>
-            <div class="section-kicker">log viewer</div>
-            <h1 class="logs-title"><?= h($config['label']) ?> Logs</h1>
-            <div class="logs-subtitle"><?= h($config['desc']) ?></div>
+    <div class="logs-shell">
+        <div class="logo-row">
+            <img src="MoombaTankCleaningLogoTransparent.PNG" alt="Moomba Tank Cleaning">
+            <img src="Contract69TanksLogoTransparent.png" alt="Contract 69 Tanks">
         </div>
 
-        <div class="logs-actions">
-            <?php if ($canEdit && !empty($config['add'])): ?>
-                <a class="btn" href="<?= h(url_with_current_state($config['add'])) ?>">Add Record</a>
-            <?php endif; ?>
-            <a class="btn" href="csv_download.php?<?= h(http_build_query($csvParams)) ?>">Download CSV</a>
-        </div>
-    </div>
+        <div class="logs-hero info-card">
+            <div>
+                <div class="section-kicker">log viewer</div>
+                <h1 class="logs-title"><?= h($config['label']) ?> Logs</h1>
+                <div class="logs-subtitle"><?= h($config['desc']) ?></div>
+            </div>
 
-    <div class="tabs-card panel">
-        <div class="log-tabs">
-            <?php foreach ($tables as $key => $tableConfig): ?>
-                <a class="log-tab <?= $key === $selectedKey ? 'active' : '' ?>" href="<?= h(nav_url_for_table($key)) ?>">
-                    <?= h($tableConfig['label']) ?>
-                </a>
-            <?php endforeach; ?>
-        </div>
-    </div>
-
-    <div class="filter-card panel">
-        <?php render_range_filter($range, 'Filtering ' . $config['label'] . ' table to selected range'); ?>
-
-        <form method="get" class="list-extra-filter-form" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
-            <?php foreach ($_GET as $key => $value): ?>
-                <?php if (!in_array($key, ['interval', 'time_search'], true) && !is_array($value)): ?>
-                    <input type="hidden" name="<?= h($key) ?>" value="<?= h((string)$value) ?>">
+            <div class="logs-actions">
+                <?php if ($canEdit && !empty($config['add'])): ?>
+                    <a class="btn" href="<?= h(url_with_current_state($config['add'])) ?>">Add Record</a>
                 <?php endif; ?>
-            <?php endforeach; ?>
+                <a class="btn" href="csv_download.php?<?= h(http_build_query($csvParams)) ?>">Download CSV</a>
+            </div>
+        </div>
 
-            <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9cc1de;">
-                Show interval
-                <select name="interval">
-                    <option value="0" <?= $selectedInterval === 0 ? 'selected' : '' ?>>All records</option>
-                    <option value="1" <?= $selectedInterval === 1 ? 'selected' : '' ?>>Every 1 minute</option>
-                    <option value="5" <?= $selectedInterval === 5 ? 'selected' : '' ?>>Every 5 minutes</option>
-                    <option value="10" <?= $selectedInterval === 10 ? 'selected' : '' ?>>Every 10 minutes</option>
-                    <option value="15" <?= $selectedInterval === 15 ? 'selected' : '' ?>>Every 15 minutes</option>
-                    <option value="30" <?= $selectedInterval === 30 ? 'selected' : '' ?>>Every 30 minutes</option>
-                    <option value="60" <?= $selectedInterval === 60 ? 'selected' : '' ?>>Every 60 minutes</option>
-                    <option value="120" <?= $selectedInterval === 120 ? 'selected' : '' ?>>Every 2 hours</option>
-                    <option value="360" <?= $selectedInterval === 360 ? 'selected' : '' ?>>Every 6 hours</option>
-                    <option value="720" <?= $selectedInterval === 720 ? 'selected' : '' ?>>Every 12 hours</option>
-                </select>
-            </label>
+        <div class="tabs-card panel">
+            <div class="log-tabs">
+                <?php foreach ($tables as $key => $tableConfig): ?>
+                    <a class="log-tab <?= $key === $selectedKey ? 'active' : '' ?>" href="<?= h(nav_url_for_table($key)) ?>">
+                        <?= h($tableConfig['label']) ?>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
-            <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9cc1de;">
-                Time search
-                <input type="text" name="time_search" value="<?= h($timeSearch) ?>" placeholder="06:15 or 06:">
-            </label>
+        <div class="filter-card panel">
+            <?php render_range_filter($range, 'Filtering ' . $config['label'] . ' table to selected range'); ?>
 
-            <button class="btn" type="submit">Apply</button>
-            <a class="btn" href="<?= h(url_with_current_state('logs.php', ['interval' => null, 'time_search' => null])) ?>">Clear Log Filters</a>
+            <form method="get" class="list-extra-filter-form" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+                <?php foreach ($_GET as $key => $value): ?>
+                    <?php if (!in_array($key, ['interval', 'time_search'], true) && !is_array($value)): ?>
+                        <input type="hidden" name="<?= h($key) ?>" value="<?= h((string)$value) ?>">
+                    <?php endif; ?>
+                <?php endforeach; ?>
+
+                <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9cc1de;">
+                    Show interval
+                    <select name="interval">
+                        <option value="0" <?= $selectedInterval === 0 ? 'selected' : '' ?>>All records</option>
+                        <option value="1" <?= $selectedInterval === 1 ? 'selected' : '' ?>>Every 1 minute</option>
+                        <option value="5" <?= $selectedInterval === 5 ? 'selected' : '' ?>>Every 5 minutes</option>
+                        <option value="10" <?= $selectedInterval === 10 ? 'selected' : '' ?>>Every 10 minutes</option>
+                        <option value="15" <?= $selectedInterval === 15 ? 'selected' : '' ?>>Every 15 minutes</option>
+                        <option value="30" <?= $selectedInterval === 30 ? 'selected' : '' ?>>Every 30 minutes</option>
+                        <option value="60" <?= $selectedInterval === 60 ? 'selected' : '' ?>>Every 60 minutes</option>
+                        <option value="120" <?= $selectedInterval === 120 ? 'selected' : '' ?>>Every 2 hours</option>
+                        <option value="360" <?= $selectedInterval === 360 ? 'selected' : '' ?>>Every 6 hours</option>
+                        <option value="720" <?= $selectedInterval === 720 ? 'selected' : '' ?>>Every 12 hours</option>
+                    </select>
+                </label>
+
+                <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:#9cc1de;">
+                    Time search
+                    <input type="text" name="time_search" value="<?= h($timeSearch) ?>" placeholder="06:15 or 06:">
+                </label>
+
+                <button class="btn" type="submit">Apply</button>
+                <a class="btn" href="<?= h(url_with_current_state('logs.php', ['interval' => null, 'time_search' => null])) ?>">Clear Log Filters</a>
+            </form>
+        </div>
+
+        <?php if ($message !== ''): ?>
+            <div class="notice-success"><?= h($message) ?></div>
+        <?php endif; ?>
+
+        <?php if ($error !== ''): ?>
+            <div class="notice-error"><?= h($error) ?></div>
+        <?php endif; ?>
+
+        <form method="post" id="bulkDeleteForm">
+            <input type="hidden" name="bulk_delete" value="1">
+            <input type="hidden" name="table" value="<?= h($selectedKey) ?>">
+
+            <div class="table-panel panel">
+                <div class="table-toolbar">
+                    <div class="record-count"><?= count($rows) ?> record<?= count($rows) === 1 ? '' : 's' ?> loaded</div>
+                    <?php if ($canDelete): ?>
+                        <button class="btn danger" type="submit" onclick="return confirm('Delete selected <?= h($config['label']) ?> record(s)?');">
+                            Delete Selected
+                        </button>
+                    <?php endif; ?>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <?php if ($canDelete): ?>
+                                    <th class="checkbox-col">
+                                        <input type="checkbox" id="selectAllRows" aria-label="Select all rows">
+                                    </th>
+                                <?php endif; ?>
+
+                                <?php foreach ($config['columns'] as $col): ?>
+                                    <th><?= h($col['label']) ?></th>
+                                <?php endforeach; ?>
+
+                                <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>
+                                    <th>Actions</th>
+                                <?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!$rows): ?>
+                                <tr>
+                                    <td colspan="<?= count($config['columns']) + ((($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))) ? 1 : 0) + ($canDelete ? 1 : 0) ?>">
+                                        No records found in selected range.
+                                    </td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($rows as $row): ?>
+                                    <tr>
+                                        <?php if ($canDelete): ?>
+                                            <td class="checkbox-cell">
+                                                <input type="checkbox" name="selected_ids[]" value="<?= (int)$row['id'] ?>">
+                                            </td>
+                                        <?php endif; ?>
+
+                                        <?php foreach ($config['columns'] as $col): ?>
+                                            <td class="<?= h($col['class'] ?? '') ?>"><?= log_cell_value($row, $col) ?></td>
+                                        <?php endforeach; ?>
+
+                                        <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>
+                                            <td>
+                                                <div class="actions-cell">
+                                                    <?php if ($canEdit && !empty($config['edit'])): ?>
+                                                        <a class="btn small" href="<?= h(record_action_url($config['edit'], (int)$row['id'])) ?>">Edit</a>
+                                                    <?php endif; ?>
+
+                                                    <?php if ($canDelete && !empty($config['delete'])): ?>
+                                                        <a class="btn small danger"
+                                                            href="<?= h(record_action_url($config['delete'], (int)$row['id'])) ?>"
+                                                            onclick="return confirm('Delete this record?');">
+                                                            Delete
+                                                        </a>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </td>
+                                        <?php endif; ?>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </form>
     </div>
 
-    <?php if ($message !== ''): ?>
-        <div class="notice-success"><?= h($message) ?></div>
-    <?php endif; ?>
-
-    <?php if ($error !== ''): ?>
-        <div class="notice-error"><?= h($error) ?></div>
-    <?php endif; ?>
-
-    <form method="post" id="bulkDeleteForm">
-        <input type="hidden" name="bulk_delete" value="1">
-        <input type="hidden" name="table" value="<?= h($selectedKey) ?>">
-
-        <div class="table-panel panel">
-            <div class="table-toolbar">
-                <div class="record-count"><?= count($rows) ?> record<?= count($rows) === 1 ? '' : 's' ?> loaded</div>
-                <?php if ($canDelete): ?>
-                    <button class="btn danger" type="submit" onclick="return confirm('Delete selected <?= h($config['label']) ?> record(s)?');">
-                        Delete Selected
-                    </button>
-                <?php endif; ?>
-            </div>
-
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <?php if ($canDelete): ?>
-                                <th class="checkbox-col">
-                                    <input type="checkbox" id="selectAllRows" aria-label="Select all rows">
-                                </th>
-                            <?php endif; ?>
-
-                            <?php foreach ($config['columns'] as $col): ?>
-                                <th><?= h($col['label']) ?></th>
-                            <?php endforeach; ?>
-
-                            <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>
-                                <th>Actions</th>
-                            <?php endif; ?>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!$rows): ?>
-                            <tr>
-                                <td colspan="<?= count($config['columns']) + ((($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))) ? 1 : 0) + ($canDelete ? 1 : 0) ?>">
-                                    No records found in selected range.
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($rows as $row): ?>
-                                <tr>
-                                    <?php if ($canDelete): ?>
-                                        <td class="checkbox-cell">
-                                            <input type="checkbox" name="selected_ids[]" value="<?= (int)$row['id'] ?>">
-                                        </td>
-                                    <?php endif; ?>
-
-                                    <?php foreach ($config['columns'] as $col): ?>
-                                        <td class="<?= h($col['class'] ?? '') ?>"><?= log_cell_value($row, $col) ?></td>
-                                    <?php endforeach; ?>
-
-                                    <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>
-                                        <td>
-                                            <div class="actions-cell">
-                                                <?php if ($canEdit && !empty($config['edit'])): ?>
-                                                    <a class="btn small" href="<?= h(record_action_url($config['edit'], (int)$row['id'])) ?>">Edit</a>
-                                                <?php endif; ?>
-
-                                                <?php if ($canDelete && !empty($config['delete'])): ?>
-                                                    <a class="btn small danger"
-                                                       href="<?= h(record_action_url($config['delete'], (int)$row['id'])) ?>"
-                                                       onclick="return confirm('Delete this record?');">
-                                                        Delete
-                                                    </a>
-                                                <?php endif; ?>
-                                            </div>
-                                        </td>
-                                    <?php endif; ?>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </form>
-</div>
-
-<script>
-const selectAllRows = document.getElementById('selectAllRows');
-if (selectAllRows) {
-    selectAllRows.addEventListener('change', function () {
-        document.querySelectorAll('input[name="selected_ids[]"]').forEach(function (box) {
-            box.checked = selectAllRows.checked;
-        });
-    });
-}
-</script>
+    <script>
+        const selectAllRows = document.getElementById('selectAllRows');
+        if (selectAllRows) {
+            selectAllRows.addEventListener('change', function() {
+                document.querySelectorAll('input[name="selected_ids[]"]').forEach(function(box) {
+                    box.checked = selectAllRows.checked;
+                });
+            });
+        }
+    </script>
 </body>
-</html>
 
+</html>

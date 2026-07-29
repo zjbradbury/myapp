@@ -23,23 +23,25 @@ $navItems = [
         'icon' => '◆',
         'label' => 'Racing',
     ],
-    [
-        'title' => 'World Cup Sweep',
-        'description' => 'Open the World Cup sweepstake page.',
-        'href' => '/c69t/worldCup.php',
-        'icon' => '★',
-        'label' => 'Competition',
-    ],
+    // [
+    //     'title' => 'World Cup Sweep',
+    //     'description' => 'Open the World Cup sweepstake page.',
+    //     'href' => '/c69t/worldCup.php',
+    //     'icon' => '★',
+    //     'label' => 'Competition',
+    // ],
 ];
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Site Navigation</title>
     <link rel="stylesheet" href="homeStyle.css">
 </head>
+
 <body>
     <main class="home-shell">
         <header class="hero">
@@ -95,7 +97,7 @@ $navItems = [
     </main>
 
     <script>
-        (function () {
+        (function() {
             const clock = document.getElementById('liveClock');
             const date = document.getElementById('liveDate');
 
@@ -124,4 +126,5 @@ $navItems = [
         }());
     </script>
 </body>
+
 </html>

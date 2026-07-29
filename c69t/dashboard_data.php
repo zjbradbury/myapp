@@ -39,7 +39,7 @@ function monitor_has_issue(array $item): bool
 function render_single_monitor_item(string $key, array $item): string
 {
     ob_start();
-    ?>
+?>
     <div class="monitor-item monitor-state-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
         <form method="post">
             <input type="hidden" name="monitor_form" value="item">
@@ -98,7 +98,7 @@ function render_single_monitor_item(string $key, array $item): string
             </div>
         </form>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 
@@ -138,7 +138,7 @@ function render_monitor_shell(array $monitorData): string
         : 'All process streams normal. Expand to access toggles, timers, and details.';
 
     ob_start();
-    ?>
+?>
     <div class="monitor-shell-shell" data-refresh-seconds="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>">
         <div class="monitor-shell refined-shell">
             <div class="monitor-toolbar refined-toolbar">
@@ -229,7 +229,7 @@ function render_monitor_shell(array $monitorData): string
             <?php endif; ?>
         </div>
     </div>
-    <?php
+<?php
     return ob_get_clean();
 }
 
@@ -239,7 +239,7 @@ function render_topbar(array $dashboard): string
     $range = $dashboard['range'];
 
     ob_start();
-    ?>
+?>
     <div class="topbar refined-topbar">
         <div class="info-card hero-card">
             <div class="info-title">System Status</div>
@@ -281,7 +281,7 @@ function render_topbar(array $dashboard): string
             <?php endif; ?>
         </div>
     </div>
-    <?php
+<?php
 
     return ob_get_clean();
 }
@@ -289,7 +289,7 @@ function render_topbar(array $dashboard): string
 function render_tricanter_kpis(array $row): string
 {
     ob_start();
-    ?>
+?>
     <div class="kpi"><small>Bowl Speed</small><b><?= fmt($row['bowl_speed'] ?? null, 0) ?> %</b></div>
     <div class="kpi"><small>Screw Speed</small><b><?= fmt($row['screw_speed'] ?? null, 2) ?> %</b></div>
     <div class="kpi"><small>Bowl RPM</small><b><?= fmt($row['bowl_rpm'] ?? null, 0) ?> RPM</b></div>
@@ -308,8 +308,10 @@ function render_tricanter_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="11">No tricanter data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="11">No tricanter data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="tri-row<?= ((int)($r['tricanter_status'] ?? 0) === 1) ? ' tricanter-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
@@ -324,7 +326,7 @@ function render_tricanter_rows(array $rows): string
                 <td><?= fmt($r['temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['pressure'] ?? null, 3) ?> BAR</td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -346,8 +348,10 @@ function render_solid_waste_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="5">No solid waste data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="5">No solid waste data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="solid-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
@@ -356,7 +360,7 @@ function render_solid_waste_rows(array $rows): string
                 <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -384,8 +388,10 @@ function render_recovered_water_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="6">No recovered water pump data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="6">No recovered water pump data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="recovered-water-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date'] ?? '') ?></td>
@@ -395,7 +401,7 @@ function render_recovered_water_rows(array $rows): string
                 <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -420,8 +426,10 @@ function render_nozzle_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="8">No nozzle data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="8">No nozzle data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
@@ -433,7 +441,7 @@ function render_nozzle_rows(array $rows): string
                 <td><?= fmt($r['max_deg'] ?? null, 0) ?> °</td>
                 <td><?= fmt($r['rpm'] ?? null, 1) ?> RPM</td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -460,8 +468,10 @@ function render_sample_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="10">No sample data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="10">No sample data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="sample-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
@@ -475,7 +485,7 @@ function render_sample_rows(array $rows): string
                 <td><?= fmt($r['wax'] ?? null, 2) ?> %</td>
                 <td><?= h($r['operator'] ?? '') ?></td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -503,8 +513,10 @@ function render_gas_test_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="13">No gas test data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="13">No gas test data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="gas-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
@@ -521,7 +533,7 @@ function render_gas_test_rows(array $rows): string
                 <td><?= h($r['product_details'] ?? '') ?></td>
                 <td><?= h($r['action_taken'] ?? '') ?></td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -546,8 +558,10 @@ function render_project_flow_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="8">No project flow data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="8">No project flow data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="project-flow-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
@@ -559,7 +573,7 @@ function render_project_flow_rows(array $rows): string
                 <td><?= fmt($r['total_nozzle'] ?? null, 4) ?> m³</td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -609,8 +623,10 @@ function render_nitrogen_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="12">No nitrogen data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="12">No nitrogen data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="nitrogen-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date'] ?? '') ?></td>
@@ -626,7 +642,7 @@ function render_nitrogen_rows(array $rows): string
                 <td><?= fmt($r['interior_o2'] ?? null, 2) ?> %</td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
-        <?php endforeach;
+    <?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -696,8 +712,10 @@ function render_pump_values_rows(array $rows): string
     ob_start();
 
     if (!$rows): ?>
-        <tr><td colspan="15">No pump values data in selected range.</td></tr>
-    <?php else:
+        <tr>
+            <td colspan="15">No pump values data in selected range.</td>
+        </tr>
+        <?php else:
         foreach ($rows as $r): ?>
             <tr class="pump-values-row" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date'] ?? '') ?></td>
@@ -716,7 +734,7 @@ function render_pump_values_rows(array $rows): string
                 <td><?= fmt($r['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
             </tr>
-        <?php endforeach;
+<?php endforeach;
     endif;
 
     return ob_get_clean();
@@ -841,7 +859,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         $latestGasTestOverall = tableExists($pdo, 'gas_test_logs') ? (fetch_latest_row($pdo, 'gas_test_logs') ?: []) : [];
         $latestProjectFlowOverall = tableExists($pdo, 'project_flow_logs') ? (fetch_latest_row($pdo, 'project_flow_logs') ?: []) : [];
         $latestPumpValuesOverall = tableExists($pdo, 'pump_values_logs') ? (fetch_latest_row($pdo, 'pump_values_logs') ?: []) : [];
-    $latestNitrogenOverall = tableExists($pdo, 'nitrogen_logs') ? (fetch_latest_row($pdo, 'nitrogen_logs') ?: []) : [];
+        $latestNitrogenOverall = tableExists($pdo, 'nitrogen_logs') ? (fetch_latest_row($pdo, 'nitrogen_logs') ?: []) : [];
     } catch (Throwable $e) {
         throw new RuntimeException($e->getMessage());
     }

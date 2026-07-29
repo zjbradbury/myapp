@@ -120,13 +120,13 @@ $isLoggedIn = isset($_SESSION['user_id']);
             </div>
 
             <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
-            <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a>
+            <!-- <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a> -->
             <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">View
                 Logs</a>
 
             <a href="graphs.php" class="<?= $currentPage === 'graphs.php' ? 'active' : '' ?>">View Graphs</a>
 
-<a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
+            <a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
 
 
             <!-- <a href="logs.php?table=nozzle" class="<?= $currentPage === 'logs.php?table=nozzle' ? 'active' : '' ?>">Nozzle Logs</a>
@@ -164,7 +164,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown
                     Config</a>
 
-                    <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
+                <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
 
 
             <?php endif; ?>
@@ -178,19 +178,19 @@ $isLoggedIn = isset($_SESSION['user_id']);
 </div>
 
 <script>
-    (function () {
+    (function() {
         const toggle = document.getElementById('menuToggle');
         const menu = document.getElementById('hamburgerMenu');
 
         if (!toggle || !menu) return;
 
-        toggle.addEventListener('click', function (e) {
+        toggle.addEventListener('click', function(e) {
             e.stopPropagation();
             const isOpen = menu.classList.toggle('open');
             toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
         });
 
-        document.addEventListener('click', function (e) {
+        document.addEventListener('click', function(e) {
             if (!menu.contains(e.target) && !toggle.contains(e.target)) {
                 menu.classList.remove('open');
                 toggle.setAttribute('aria-expanded', 'false');

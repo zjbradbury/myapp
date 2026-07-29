@@ -347,8 +347,8 @@ th {
 }
 
 .monitor-item {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     padding: 12px;
     transition: box-shadow .25s ease, border-color .25s ease;
@@ -453,10 +453,13 @@ th {
 }
 
 @keyframes flashYellow {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 6px rgba(255, 180, 0, 0.15);
         border-color: rgba(255, 180, 0, 0.35);
     }
+
     50% {
         box-shadow: 0 0 18px rgba(255, 180, 0, 0.55);
         border-color: rgba(255, 220, 120, 0.95);
@@ -464,10 +467,13 @@ th {
 }
 
 @keyframes flashRed {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 8px rgba(255, 0, 0, 0.18);
         border-color: rgba(255, 80, 80, 0.45);
     }
+
     50% {
         box-shadow: 0 0 22px rgba(255, 0, 0, 0.7);
         border-color: rgba(255, 180, 180, 1);
@@ -515,6 +521,7 @@ th {
 }
 
 @media (max-width: 700px) {
+
     .topbar,
     .kpis,
     .grid {
@@ -602,18 +609,23 @@ th {
 }
 
 @keyframes rowHighlight {
-    0%   { background: rgba(255,255,0,0.7); }
-    100% { background: transparent; }
+    0% {
+        background: rgba(255, 255, 0, 0.7);
+    }
+
+    100% {
+        background: transparent;
+    }
 }
 
 /* Tricanter status alarm highlighting */
-.tri-row.tricanter-status-alert > td {
+.tri-row.tricanter-status-alert>td {
     background: rgba(220, 38, 38, 0.30);
     color: #ffe5e5;
     border-bottom-color: rgba(255, 120, 120, 0.55);
 }
 
-.tri-row.tricanter-status-alert:hover > td {
+.tri-row.tricanter-status-alert:hover>td {
     background: rgba(239, 68, 68, 0.42);
 }
 

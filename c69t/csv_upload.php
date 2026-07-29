@@ -443,10 +443,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                                 }
 
                                 if (in_array($column, [
-                                    "amount", "flow", "pressure", "min_deg", "max_deg", "rpm",
-                                    "bowl_speed", "screw_speed", "bowl_rpm", "screw_rpm", "impeller",
-                                    "feed_rate", "torque", "temp", "mercury", "solids", "water",
-                                    "wax", "benzene", "lel", "h2s", "o2"
+                                    "amount",
+                                    "flow",
+                                    "pressure",
+                                    "min_deg",
+                                    "max_deg",
+                                    "rpm",
+                                    "bowl_speed",
+                                    "screw_speed",
+                                    "bowl_rpm",
+                                    "screw_rpm",
+                                    "impeller",
+                                    "feed_rate",
+                                    "torque",
+                                    "temp",
+                                    "mercury",
+                                    "solids",
+                                    "water",
+                                    "wax",
+                                    "benzene",
+                                    "lel",
+                                    "h2s",
+                                    "o2"
                                 ], true)) {
                                     $data[$column] = cleanNumeric($value);
                                     continue;
@@ -487,6 +505,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>CSV Upload</title>
@@ -582,75 +601,77 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         code {
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.08);
             padding: 2px 5px;
             border-radius: 4px;
         }
     </style>
 </head>
+
 <body>
-<?php require_once "nav.php"; ?>
+    <?php require_once "nav.php"; ?>
 
-<div class="upload-wrap">
-    <h1>CSV Upload</h1>
-    <p class="help">
-        Admin only. Upload a CSV with headers like <code>Date</code>, <code>Time</code>, <code>Flow</code>, <code>Comments</code> etc.
-        Date formats like <code>23/01/2026</code>, <code>2026-01-23</code>, <code>1/23/2026</code> and times like
-        <code>14:30</code>, <code>2:30 PM</code>, <code>14:30:00</code> are converted automatically.
-    </p>
+    <div class="upload-wrap">
+        <h1>CSV Upload</h1>
+        <p class="help">
+            Admin only. Upload a CSV with headers like <code>Date</code>, <code>Time</code>, <code>Flow</code>, <code>Comments</code> etc.
+            Date formats like <code>23/01/2026</code>, <code>2026-01-23</code>, <code>1/23/2026</code> and times like
+            <code>14:30</code>, <code>2:30 PM</code>, <code>14:30:00</code> are converted automatically.
+        </p>
 
-    <form method="post" enctype="multipart/form-data" class="form-grid">
-        <div class="field">
-            <label for="table_name">Upload to table</label>
-            <select name="table_name" id="table_name" required>
-                <?php foreach ($uploadTables as $tableName => $def): ?>
-                    <option value="<?= h($tableName) ?>" <?= $selectedTable === $tableName ? 'selected' : '' ?>>
-                        <?= h($def["label"]) ?> (<?= h($tableName) ?>)
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
+        <form method="post" enctype="multipart/form-data" class="form-grid">
+            <div class="field">
+                <label for="table_name">Upload to table</label>
+                <select name="table_name" id="table_name" required>
+                    <?php foreach ($uploadTables as $tableName => $def): ?>
+                        <option value="<?= h($tableName) ?>" <?= $selectedTable === $tableName ? 'selected' : '' ?>>
+                            <?= h($def["label"]) ?> (<?= h($tableName) ?>)
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
-        <div class="field">
-            <label for="csv_file">CSV file</label>
-            <input type="file" name="csv_file" id="csv_file" accept=".csv,text/csv" required>
-        </div>
+            <div class="field">
+                <label for="csv_file">CSV file</label>
+                <input type="file" name="csv_file" id="csv_file" accept=".csv,text/csv" required>
+            </div>
 
-        <div class="btn-row">
-            <button class="btn" type="submit">Upload CSV</button>
-        </div>
-    </form>
+            <div class="btn-row">
+                <button class="btn" type="submit">Upload CSV</button>
+            </div>
+        </form>
 
-    <?php foreach ($messages as $message): ?>
-        <div class="msg"><?= h($message) ?></div>
-    <?php endforeach; ?>
+        <?php foreach ($messages as $message): ?>
+            <div class="msg"><?= h($message) ?></div>
+        <?php endforeach; ?>
 
-    <?php foreach ($errors as $error): ?>
-        <div class="err"><?= h($error) ?></div>
-    <?php endforeach; ?>
+        <?php foreach ($errors as $error): ?>
+            <div class="err"><?= h($error) ?></div>
+        <?php endforeach; ?>
 
-    <?php if ($report): ?>
+        <?php if ($report): ?>
+            <div class="report-box">
+                <strong>Skipped rows</strong>
+                <ul>
+                    <?php foreach ($report as $line): ?>
+                        <li><?= h($line) ?></li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
         <div class="report-box">
-            <strong>Skipped rows</strong>
+            <strong>Expected columns for selected tables</strong>
             <ul>
-                <?php foreach ($report as $line): ?>
-                    <li><?= h($line) ?></li>
+                <?php foreach ($uploadTables as $tableName => $def): ?>
+                    <li>
+                        <strong><?= h($def["label"]) ?></strong>:
+                        <?= h(implode(", ", $def["columns"])) ?>
+                    </li>
                 <?php endforeach; ?>
             </ul>
         </div>
-    <?php endif; ?>
-
-    <div class="report-box">
-        <strong>Expected columns for selected tables</strong>
-        <ul>
-            <?php foreach ($uploadTables as $tableName => $def): ?>
-                <li>
-                    <strong><?= h($def["label"]) ?></strong>:
-                    <?= h(implode(", ", $def["columns"])) ?>
-                </li>
-            <?php endforeach; ?>
-        </ul>
     </div>
-</div>
 </body>
+
 </html>

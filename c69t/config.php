@@ -367,7 +367,7 @@ function current_page_with_params(array $remove = ['start', 'end', 'quick', 'msg
 
 function render_dashboard_range_filter(array $range): void
 {
-    ?>
+?>
     <form method="get" action="index.php" class="filter-form">
         <div class="range-layout">
             <div class="range-inputs">
@@ -400,13 +400,13 @@ function render_dashboard_range_filter(array $range): void
             </div>
         </div>
     </form>
-    <?php
+<?php
 }
 
 function render_range_filter(array $range, string $message = 'Filtering table to selected range'): void
 {
     $clearUrl = current_page_with_params(['start', 'end', 'quick', 'msg']);
-    ?>
+?>
     <div class="list-filter-card">
         <div class="list-filter-title">Date / Time Range</div>
 
@@ -455,7 +455,7 @@ function render_range_filter(array $range, string $message = 'Filtering table to
             <div class="list-range-active">Showing all available records</div>
         <?php endif; ?>
     </div>
-    <?php
+<?php
 }
 
 function get_project_flow_kpis(PDO $pdo, array $range): array
