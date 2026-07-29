@@ -132,7 +132,7 @@ foreach ($channels as $index => $channel) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TV Player</title>
-    <link rel="icon" type="image/x-icon" href="/images/favicon-tv.ico">
+    <link rel="icon" type="image/x-icon" href="favicon-tv.ico">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         * {

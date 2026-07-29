@@ -667,6 +667,173 @@ th {
     background: #10273c;
 }
 
+/* Shared secondary-page layout
+   These rules replace the reusable styles that previously lived in style.css.
+   They are scoped to .container so dashboard components retain their own layout. */
+.container {
+    max-width: 500px;
+    margin: 55px auto 0;
+    padding: 20px;
+    background: #122c44;
+    border-radius: 10px;
+    box-shadow: 0 0 14px rgba(0, 0, 0, 0.3);
+}
+
+.container.wide {
+    max-width: 1600px;
+}
+
+.container h2,
+.container h3,
+.container p {
+    margin-top: 0;
+}
+
+.container input,
+.container textarea,
+.container select,
+.container button {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 8px 0;
+    padding: 10px;
+    color: #fff;
+    background: #0d2238;
+    border: 1px solid #2c4f73;
+    border-radius: 6px;
+}
+
+.container textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.container button,
+.container .btn {
+    display: inline-block;
+    width: auto;
+    padding: 10px 14px;
+    color: #fff;
+    background: #2e7bb4;
+    border: 0;
+    border-radius: 6px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.container button:hover,
+.container .btn:hover {
+    background: #3a8cca;
+}
+
+.container button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.container .btn.small {
+    padding: 6px 10px;
+    font-size: 12px;
+}
+
+.container button.danger,
+.container .btn.danger {
+    background: #b64242;
+}
+
+.container button.danger:hover,
+.container .btn.danger:hover {
+    background: #cc5050;
+}
+
+.container table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0d2238;
+}
+
+.container th,
+.container td {
+    padding: 8px;
+    font-size: 14px;
+    text-align: left;
+    vertical-align: top;
+    white-space: normal;
+    border: 1px solid #21486e;
+}
+
+.container th {
+    position: static;
+    color: #cbe17e;
+    background: #16385a;
+}
+
+.container .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.container .message.error {
+    padding: 10px;
+    color: #fff;
+    background: #5d2020;
+    border-radius: 6px;
+}
+
+.container .menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.container .card-link {
+    display: block;
+    padding: 20px;
+    color: #fff;
+    background: #16385a;
+    border-radius: 10px;
+    font-size: 18px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.logo-row-login {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.logo-row-login img {
+    width: auto;
+    max-width: 100%;
+    height: 200px;
+}
+
+@media (max-width: 700px) {
+    .container {
+        margin-top: 55px;
+        padding: 15px;
+    }
+
+    .container .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .logo-row-login {
+        gap: 10px;
+    }
+
+    .logo-row-login img {
+        height: auto;
+        max-height: 120px;
+    }
+}
+
 /* Tables */
 .table::-webkit-scrollbar {
     width: 12px;

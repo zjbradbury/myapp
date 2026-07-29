@@ -378,7 +378,7 @@ $tanks = $pdo->query("
 
 <head>
     <title>Project Tank Levels</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="indexStyle.css">
     <style>
         .tank-grid {
             display: grid;

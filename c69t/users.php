@@ -68,7 +68,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 <head>
     <title>Manage Users</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="indexStyle.css">
     <style>
         .actions-cell {
             min-width: 360px;

@@ -509,7 +509,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <title>CSV Upload</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="indexStyle.css">
     <style>
         .upload-wrap {
             max-width: 900px;

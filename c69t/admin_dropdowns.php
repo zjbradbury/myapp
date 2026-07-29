@@ -312,7 +312,7 @@ $gasTestLocations = $pdo->query("
 
 <head>
     <title>Manage Dropdowns</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="indexStyle.css">
     <style>
         .manage-grid {
             display: grid;
