@@ -415,14 +415,19 @@ function render_recovered_water_rows(array $rows): string
 
 function render_nozzle_kpis(array $row): string
 {
+    $isOff = array_key_exists('nozzle_status', $row)
+        && $row['nozzle_status'] !== null
+        && $row['nozzle_status'] !== ''
+        && (int)$row['nozzle_status'] === 0;
+    $alertClass = $isOff ? ' nozzle-status-alert' : '';
     ob_start();
     ?>
-    <div class="kpi"><small>Flow</small><b><?= fmt($row['flow'] ?? null, 1) ?> M3/hr</b></div>
-    <div class="kpi"><small>Pressure</small><b><?= fmt($row['pressure'] ?? null, 2) ?> BAR</b></div>
-    <div class="kpi"><small>RPM</small><b><?= fmt($row['rpm'] ?? null, 1) ?> RPM</b></div>
-    <div class="kpi"><small>Min Deg</small><b><?= fmt($row['min_deg'] ?? null, 0) ?> °</b></div>
-    <div class="kpi"><small>Max Deg</small><b><?= fmt($row['max_deg'] ?? null, 0) ?> °</b></div>
-    <div class="kpi"><small>Nozzle</small><b>N<?= h($row['nozzle'] ?? '-') ?></b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Flow</small><b><?= fmt($row['flow'] ?? null, 1) ?> M3/hr</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Pressure</small><b><?= fmt($row['pressure'] ?? null, 2) ?> BAR</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>RPM</small><b><?= fmt($row['rpm'] ?? null, 1) ?> RPM</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Min Deg</small><b><?= fmt($row['min_deg'] ?? null, 0) ?> °</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Max Deg</small><b><?= fmt($row['max_deg'] ?? null, 0) ?> °</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Nozzle</small><b>N<?= h($row['nozzle'] ?? '-') ?></b></div>
     <?php
     return ob_get_clean();
 }
@@ -437,7 +442,7 @@ function render_nozzle_rows(array $rows): string
         </tr>
         <?php else:
         foreach ($rows as $r): ?>
-            <tr class="nozzle-row" data-id="<?= (int)$r['id'] ?>">
+            <tr class="nozzle-row<?= isset($r['nozzle_status']) && $r['nozzle_status'] !== '' && (int)$r['nozzle_status'] === 0 ? ' nozzle-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date']) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td>N<?= h($r['nozzle']) ?></td>
@@ -1032,6 +1037,8 @@ function build_dashboard_data(PDO $pdo, array $range): array
                 'rows_html' => render_nozzle_rows($nozzle),
                 'chart' => [
                     'labels' => dashboard_chart_labels($nozzleChart),
+                    'status' => dashboard_chart_numeric($nozzleChart, 'nozzle_status'),
+                    'alertStatus' => 0,
                     'datasets' => [
                         ['label' => 'Flow', 'data' => dashboard_chart_numeric($nozzleChart, 'flow')],
                         ['label' => 'Pressure', 'data' => dashboard_chart_numeric($nozzleChart, 'pressure')],

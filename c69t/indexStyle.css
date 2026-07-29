@@ -553,6 +553,17 @@ th {
     background: rgba(239, 68, 68, 0.42);
 }
 
+.kpi.nozzle-status-alert,
+.nozzle-row.nozzle-status-alert>td {
+    background: rgba(220, 38, 38, 0.30);
+    color: #ffe5e5;
+    border-color: rgba(255, 120, 120, 0.55);
+}
+
+.nozzle-row.nozzle-status-alert:hover>td {
+    background: rgba(239, 68, 68, 0.42);
+}
+
 /* ===== THEMED SCROLLBARS ===== */
 
 /* Firefox */
