@@ -601,12 +601,33 @@ function nitrogen_bool_text($value): string
     return h($value);
 }
 
+function nitrogen_trip_text($value): string
+{
+    if ($value === null || $value === '') {
+        return '-';
+    }
+
+    if (is_numeric($value)) {
+        return ((int)$value === 1) ? 'TRIPPED' : 'OK';
+    }
+
+    $v = strtolower(trim((string)$value));
+    if (in_array($v, ['true', 'on', 'yes', '1', 'tripped'], true)) {
+        return 'TRIPPED';
+    }
+    if (in_array($v, ['false', 'off', 'no', '0', 'ok'], true)) {
+        return 'OK';
+    }
+
+    return (string)$value;
+}
+
 function render_nitrogen_kpis(array $row): string
 {
     ob_start();
     ?>
     <div class="kpi"><small>Nitrogen Active</small><b><?= h(nitrogen_bool_text($row['nitrogen_active'] ?? null)) ?></b></div>
-    <div class="kpi"><small>Trip Status</small><b><?= h(nitrogen_bool_text($row['trip_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>Trip Status</small><b><?= h(nitrogen_trip_text($row['trip_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 2) ?> M3/hr</b></div>
     <div class="kpi"><small>Outlet Purity</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> % O2</b></div>
     <div class="kpi"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 3) ?> BAR</b></div>
@@ -632,7 +653,7 @@ function render_nitrogen_rows(array $rows): string
                 <td><?= h($r['log_date'] ?? '') ?></td>
                 <td><?= h($r['log_time'] ?? '') ?></td>
                 <td><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
-                <td><?= h(nitrogen_bool_text($r['trip_status'] ?? null)) ?></td>
+                <td><?= h(nitrogen_trip_text($r['trip_status'] ?? null)) ?></td>
                 <td><?= fmt($r['outlet_flow'] ?? null, 2) ?> M3/hr</td>
                 <td><?= fmt($r['outlet_purity'] ?? null, 2) ?> % O2</td>
                 <td><?= fmt($r['inlet_pressure'] ?? null, 3) ?> BAR</td>

@@ -16,6 +16,7 @@ $tables = [
         'columns' => [
             ['key' => 'log_date', 'label' => 'Date'],
             ['key' => 'log_time', 'label' => 'Time'],
+            ['key' => 'tricanter_status', 'label' => 'State', 'type' => 'bool'],
             ['key' => 'bowl_speed', 'label' => 'Bowl Speed', 'suffix' => ' %', 'decimals' => 0],
             ['key' => 'screw_speed', 'label' => 'Screw Speed', 'suffix' => ' %', 'decimals' => 2],
             ['key' => 'bowl_rpm', 'label' => 'Bowl RPM', 'suffix' => ' RPM', 'decimals' => 0],
@@ -52,6 +53,7 @@ $tables = [
         'columns' => [
             ['key' => 'log_date', 'label' => 'Date'],
             ['key' => 'log_time', 'label' => 'Time'],
+            ['key' => 'nozzle_status', 'label' => 'State', 'type' => 'bool'],
             ['key' => 'nozzle', 'label' => 'Nozzle', 'prefix' => 'N'],
             ['key' => 'flow', 'label' => 'Flow', 'suffix' => ' M3/hr', 'decimals' => 1],
             ['key' => 'pressure', 'label' => 'Pressure', 'suffix' => ' BAR', 'decimals' => 2],
@@ -163,7 +165,7 @@ $tables = [
             ['key' => 'log_date', 'label' => 'Date'],
             ['key' => 'log_time', 'label' => 'Time'],
             ['key' => 'nitrogen_active', 'label' => 'Active', 'type' => 'bool'],
-            ['key' => 'trip_status', 'label' => 'Trip', 'type' => 'bool'],
+            ['key' => 'trip_status', 'label' => 'Trip', 'type' => 'trip_status'],
             ['key' => 'outlet_flow', 'label' => 'Outlet Flow', 'suffix' => ' M3/hr', 'decimals' => 2],
             ['key' => 'outlet_purity', 'label' => 'Outlet Purity', 'suffix' => ' % O2', 'decimals' => 2],
             ['key' => 'inlet_pressure', 'label' => 'Inlet Pressure', 'suffix' => ' BAR', 'decimals' => 3],
@@ -196,6 +198,17 @@ function bool_text_for_logs($value): string
     return (string)$value;
 }
 
+function trip_status_text_for_logs($value): string
+{
+    if ($value === null || $value === '') return '-';
+    if (is_numeric($value)) return ((int)$value === 1) ? 'TRIPPED' : 'OK';
+
+    $v = strtolower(trim((string)$value));
+    if (in_array($v, ['true', 'on', 'yes', '1', 'tripped'], true)) return 'TRIPPED';
+    if (in_array($v, ['false', 'off', 'no', '0', 'ok'], true)) return 'OK';
+    return (string)$value;
+}
+
 function pump_feedback_text_for_logs($value, int $decimals = 2): string
 {
     if ($value === null || $value === '') return '-';
@@ -222,6 +235,7 @@ function log_cell_value(array $row, array $col): string
     $type = $col['type'] ?? '';
     if ($type === 'pump_status') return h(pump_status_text_for_logs($value));
     if ($type === 'bool') return h(bool_text_for_logs($value));
+    if ($type === 'trip_status') return h(trip_status_text_for_logs($value));
     if ($type === 'pump_feedback') return h(pump_feedback_text_for_logs($value, (int)($col['decimals'] ?? 2)));
 
     $prefix = $col['prefix'] ?? '';
