@@ -123,6 +123,18 @@ $schemas = [
             ['name' => 'comments', 'label' => 'Comments', 'type' => 'textarea'],
         ],
     ],
+    'recovered_water' => [
+        'label' => 'Recovered Water Pump',
+        'table' => 'recovered_water_pump_logs',
+        'list' => 'logs.php?table=recovered_water',
+        'fields' => [
+            ['name' => 'log_date', 'label' => 'Date', 'type' => 'date', 'required' => true],
+            ['name' => 'log_time', 'label' => 'Time', 'type' => 'time', 'required' => true],
+            ['name' => 'start_level', 'label' => 'Start Level', 'type' => 'number', 'step' => '0.01'],
+            ['name' => 'stop_level', 'label' => 'Stop Level', 'type' => 'number', 'step' => '0.01'],
+            ['name' => 'comments', 'label' => 'Comments', 'type' => 'textarea'],
+        ],
+    ],
     'nozzle' => [
         'label' => 'Nozzle',
         'table' => 'nozzle_logs',

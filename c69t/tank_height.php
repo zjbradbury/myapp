@@ -1,6 +1,6 @@
 <?php
 require_once "config.php";
-requireRole(['admin', 'operator']);
+requireRole(['admin', 'operator', 'viewer']);
 
 $canEdit = currentRole() === 'admin';
 
@@ -17,7 +17,7 @@ $pdo->exec("
         start_flow_total DECIMAL(14,4) NULL,
         start_height_mm DECIMAL(12,2) NULL,
         target_height_mm DECIMAL(12,2) NULL,
-        conversion_factor DECIMAL(10,4) NOT NULL DEFAULT 2.8000,
+        diameter_m DECIMAL(10,3) NULL,
         updated_by BIGINT UNSIGNED NULL,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
             ON UPDATE CURRENT_TIMESTAMP
@@ -33,11 +33,19 @@ try {
     }
 }
 
+try {
+    $pdo->exec("ALTER TABLE tricanter_height_settings ADD COLUMN diameter_m DECIMAL(10,3) NULL AFTER target_height_mm");
+} catch (PDOException $e) {
+    if ((string)$e->getCode() !== '42S21') {
+        throw $e;
+    }
+}
+
 $pdo->exec("
     INSERT IGNORE INTO tricanter_height_settings
-        (id, conversion_factor)
+        (id)
     VALUES
-        (1, 2.8000)
+        (1)
 ");
 
 function latestTricanterFlow(PDO $pdo): ?array
@@ -110,11 +118,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $startHeight = filter_input(INPUT_POST, 'start_height_mm', FILTER_VALIDATE_FLOAT);
         $flowRowId = filter_input(INPUT_POST, 'start_project_flow_id', FILTER_VALIDATE_INT);
         $targetHeight = filter_input(INPUT_POST, 'target_height_mm', FILTER_VALIDATE_FLOAT);
+        $diameter = filter_input(INPUT_POST, 'diameter_m', FILTER_VALIDATE_FLOAT);
 
         if ($startHeight === false || $startHeight === null || $startHeight < 0) {
             $error = 'Enter a valid starting height in millimetres.';
         } elseif ($targetHeight === false || $targetHeight === null || $targetHeight < 0 || $targetHeight >= $startHeight) {
             $error = 'Enter a target height that is lower than the starting height.';
+        } elseif ($diameter === false || $diameter === null || $diameter <= 0) {
+            $error = 'Enter a valid tank diameter in metres.';
         } elseif (!$flowRowId) {
             $error = 'Select a tricanter project-flow starting point.';
         } else {
@@ -132,14 +143,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'The selected project-flow record could not be found.';
             } else {
                 $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-
                 $stmt = $pdo->prepare("
                     UPDATE tricanter_height_settings
                     SET start_project_flow_id = ?,
                         start_flow_total = ?,
                         start_height_mm = ?,
                         target_height_mm = ?,
-                        conversion_factor = 2.8000,
+                        diameter_m = ?,
                         updated_by = ?,
                         updated_at = NOW()
                     WHERE id = 1
@@ -149,6 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     (float)$flowRow['total_tricanter'],
                     (float)$startHeight,
                     (float)$targetHeight,
+                    (float)$diameter,
                     $userId
                 ]);
 
@@ -161,24 +172,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'use_latest') {
         $startHeight = filter_input(INPUT_POST, 'start_height_mm', FILTER_VALIDATE_FLOAT);
         $targetHeight = filter_input(INPUT_POST, 'target_height_mm', FILTER_VALIDATE_FLOAT);
+        $diameter = filter_input(INPUT_POST, 'diameter_m', FILTER_VALIDATE_FLOAT);
         $latest = latestTricanterFlow($pdo);
 
         if ($startHeight === false || $startHeight === null || $startHeight < 0) {
             $error = 'Enter a valid starting height in millimetres.';
         } elseif ($targetHeight === false || $targetHeight === null || $targetHeight < 0 || $targetHeight >= $startHeight) {
             $error = 'Enter a target height that is lower than the starting height.';
+        } elseif ($diameter === false || $diameter === null || $diameter <= 0) {
+            $error = 'Enter a valid tank diameter in metres.';
         } elseif (!$latest) {
             $error = 'No tricanter project-flow total is available.';
         } else {
             $userId = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
-
             $stmt = $pdo->prepare("
                 UPDATE tricanter_height_settings
                 SET start_project_flow_id = ?,
                     start_flow_total = ?,
                     start_height_mm = ?,
                     target_height_mm = ?,
-                    conversion_factor = 2.8000,
+                    diameter_m = ?,
                     updated_by = ?,
                     updated_at = NOW()
                 WHERE id = 1
@@ -188,6 +201,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (float)$latest['total_tricanter'],
                 (float)$startHeight,
                 (float)$targetHeight,
+                (float)$diameter,
                 $userId
             ]);
 
@@ -203,6 +217,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 start_flow_total = NULL,
                 start_height_mm = NULL,
                 target_height_mm = NULL,
+                diameter_m = NULL,
                 updated_by = ?,
                 updated_at = NOW()
             WHERE id = 1
@@ -215,7 +230,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 if (isset($_GET['saved'])) {
-    $success = 'Starting point and height saved.';
+    $success = 'Tank diameter, starting point, and heights saved.';
 } elseif (isset($_GET['cleared'])) {
     $success = 'Saved calculation cleared.';
 }
@@ -244,19 +259,40 @@ $currentFlow = $latest ? (float)$latest['total_tricanter'] : null;
 $targetHeight = isset($settings['target_height_mm']) && $settings['target_height_mm'] !== null
     ? (float)$settings['target_height_mm']
     : null;
+$diameter = isset($settings['diameter_m']) && $settings['diameter_m'] !== null
+    ? (float)$settings['diameter_m']
+    : null;
+$volumePerMillimetre = $diameter !== null && $diameter > 0
+    ? pi() * pow($diameter / 2, 2) / 1000
+    : null;
 $tricanterRate = $latestRate ? (float)$latestRate['feed_rate'] : null;
 
-$flowUsed = ($startFlow !== null && $currentFlow !== null)
+$missingSetup = [];
+if ($diameter === null || $diameter <= 0) $missingSetup[] = 'tank diameter';
+if ($startHeight === null) $missingSetup[] = 'starting height';
+if ($targetHeight === null) $missingSetup[] = 'target height';
+if ($startFlow === null) $missingSetup[] = 'starting flow total';
+
+$setupError = $missingSetup
+    ? 'Tank height setup is incomplete. Enter and save: ' . implode(', ', $missingSetup) . '.'
+    : '';
+
+$setupComplete = !$missingSetup;
+$flowUsed = ($setupComplete && $currentFlow !== null)
     ? $currentFlow - $startFlow
     : null;
-$heightUsed = $flowUsed !== null ? $flowUsed / 2.8 : null;
+$heightUsed = ($flowUsed !== null && $volumePerMillimetre !== null)
+    ? $flowUsed / $volumePerMillimetre
+    : null;
 $currentHeight = ($startHeight !== null && $heightUsed !== null)
     ? $startHeight - $heightUsed
     : null;
 $heightRemaining = ($currentHeight !== null && $targetHeight !== null)
     ? max(0.0, $currentHeight - $targetHeight)
     : null;
-$volumeRemaining = $heightRemaining !== null ? $heightRemaining * 2.8 : null;
+$volumeRemaining = ($heightRemaining !== null && $volumePerMillimetre !== null)
+    ? $heightRemaining * $volumePerMillimetre
+    : null;
 $hoursToTarget = ($volumeRemaining !== null && $tricanterRate !== null && $tricanterRate > 0)
     ? $volumeRemaining / $tricanterRate
     : null;
@@ -479,6 +515,8 @@ function numberOrDash(?float $value, int $decimals = 2): string
                 <div class="notice error"><?= h($error) ?></div>
             <?php endif; ?>
 
+            <div id="setupErrorNotice" class="notice error" <?= $setupError === '' ? 'hidden' : '' ?>><?= h($setupError) ?></div>
+
             <div class="height-layout">
                 <div class="chart-card">
                     <div class="chart-title">Set Calculation Starting Point</div>
@@ -510,6 +548,20 @@ function numberOrDash(?float $value, int $decimals = 2): string
                                 required
                                 value="<?= $targetHeight !== null ? h(number_format($targetHeight, 2, '.', '')) : '' ?>"
                                 <?= !$canEdit ? 'disabled' : '' ?>>
+                        </div>
+
+                        <div class="field-group">
+                            <label for="diameter_m">Tank diameter (m)</label>
+                            <input
+                                type="number"
+                                id="diameter_m"
+                                name="diameter_m"
+                                min="0.001"
+                                step="0.001"
+                                required
+                                value="<?= $diameter !== null ? h(number_format($diameter, 3, '.', '')) : '' ?>"
+                                <?= !$canEdit ? 'disabled' : '' ?>>
+                            <div class="height-note">Assumes a vertical cylindrical tank with a constant diameter.</div>
                         </div>
 
                         <div class="field-group">
@@ -551,7 +603,7 @@ function numberOrDash(?float $value, int $decimals = 2): string
                                 </button>
                             </div>
                         <?php else: ?>
-                            <div class="height-note">Operator accounts can view the live calculation but cannot change its saved starting values.</div>
+                            <div class="height-note">Your account can view the live calculation but cannot change its saved setup.</div>
                         <?php endif; ?>
                     </form>
 
@@ -593,6 +645,10 @@ function numberOrDash(?float $value, int $decimals = 2): string
                             <b id="heightUsedDisplay"><?= numberOrDash($heightUsed, 1) ?> mm</b>
                         </div>
                         <div class="kpi">
+                            <small>Tank Diameter</small>
+                            <b id="diameterDisplay"><?= numberOrDash($diameter, 3) ?> m</b>
+                        </div>
+                        <div class="kpi">
                             <small>Latest Reading</small>
                             <b id="latestReadingDisplay">
                                 <?= $latest ? h($latest['log_date'] . ' ' . substr($latest['log_time'], 0, 8)) : '-' ?>
@@ -632,6 +688,9 @@ function numberOrDash(?float $value, int $decimals = 2): string
                 }
 
                 const data = await response.json();
+                const setupErrorNotice = document.getElementById('setupErrorNotice');
+                setupErrorNotice.textContent = data.setup_error || '';
+                setupErrorNotice.hidden = !data.setup_error;
 
                 document.getElementById('currentHeight').textContent =
                     formatNumber(data.current_height_mm, 1);
@@ -645,6 +704,8 @@ function numberOrDash(?float $value, int $decimals = 2): string
                     formatNumber(data.flow_difference, 4) + ' m³';
                 document.getElementById('heightUsedDisplay').textContent =
                     formatNumber(data.height_used_mm, 1) + ' mm';
+                document.getElementById('diameterDisplay').textContent =
+                    formatNumber(data.diameter_m, 3) + ' m';
                 document.getElementById('latestReadingDisplay').textContent =
                     data.latest_reading || '-';
                 document.getElementById('hoursToTarget').textContent =

@@ -1,13 +1,13 @@
 <?php
 require_once "config.php";
-requireRole(['admin', 'operator']);
+requireRole(['admin', 'operator', 'viewer']);
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 try {
     $settingsStmt = $pdo->query("
-        SELECT start_flow_total, start_height_mm, target_height_mm, conversion_factor
+        SELECT *
         FROM tricanter_height_settings
         WHERE id = 1
         LIMIT 1
@@ -38,9 +38,12 @@ try {
     $startHeight = isset($settings['start_height_mm']) && $settings['start_height_mm'] !== null
         ? (float)$settings['start_height_mm']
         : null;
-    $factor = isset($settings['conversion_factor']) && (float)$settings['conversion_factor'] > 0
-        ? (float)$settings['conversion_factor']
-        : 2.8;
+    $diameter = isset($settings['diameter_m']) && $settings['diameter_m'] !== null
+        ? (float)$settings['diameter_m']
+        : null;
+    $factor = $diameter !== null && $diameter > 0
+        ? pi() * pow($diameter / 2, 2) / 1000
+        : null;
     $targetHeight = isset($settings['target_height_mm']) && $settings['target_height_mm'] !== null
         ? (float)$settings['target_height_mm']
         : null;
@@ -49,31 +52,43 @@ try {
         ? (float)$latest['total_tricanter']
         : null;
 
-    $difference = ($startFlow !== null && $currentFlow !== null)
+    $missingSetup = [];
+    if ($diameter === null || $diameter <= 0) $missingSetup[] = 'tank diameter';
+    if ($startHeight === null) $missingSetup[] = 'starting height';
+    if ($targetHeight === null) $missingSetup[] = 'target height';
+    if ($startFlow === null) $missingSetup[] = 'starting flow total';
+
+    $setupComplete = !$missingSetup;
+    $difference = ($setupComplete && $currentFlow !== null)
         ? $currentFlow - $startFlow
         : null;
-    $heightUsed = $difference !== null ? $difference / $factor : null;
+    $heightUsed = ($difference !== null && $factor !== null) ? $difference / $factor : null;
     $currentHeight = ($startHeight !== null && $heightUsed !== null)
         ? $startHeight - $heightUsed
         : null;
     $heightRemaining = ($currentHeight !== null && $targetHeight !== null)
         ? max(0.0, $currentHeight - $targetHeight)
         : null;
-    $volumeRemaining = $heightRemaining !== null ? $heightRemaining * $factor : null;
+    $volumeRemaining = ($heightRemaining !== null && $factor !== null) ? $heightRemaining * $factor : null;
     $hoursToTarget = ($volumeRemaining !== null && $tricanterRate !== null && $tricanterRate > 0)
         ? $volumeRemaining / $tricanterRate
         : null;
 
     echo json_encode([
         'ok' => true,
+        'setup_complete' => $setupComplete,
+        'setup_error' => $missingSetup
+            ? 'Tank height setup is incomplete. Enter and save: ' . implode(', ', $missingSetup) . '.'
+            : null,
         'start_height_mm' => $startHeight,
         'start_flow_total' => $startFlow,
         'target_height_mm' => $targetHeight,
+        'diameter_m' => $diameter,
         'current_flow_total' => $currentFlow,
         'flow_difference' => $difference,
         'height_used_mm' => $heightUsed,
         'current_height_mm' => $currentHeight,
-        'conversion_factor' => $factor,
+        'volume_per_millimetre' => $factor,
         'tricanter_flow_rate' => $tricanterRate,
         'hours_to_target' => $hoursToTarget,
         'latest_reading' => !empty($latest)

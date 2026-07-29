@@ -5,6 +5,11 @@ requireRole(['admin', 'operator', 'viewer']);
 $canEdit = in_array(currentRole(), ['admin', 'operator'], true);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
+    if (!$canEdit) {
+        http_response_code(403);
+        die('Access denied. Operator or administrator access required.');
+    }
+
     $form = $_POST['monitor_form'] ?? '';
 
     if ($form === 'master') {
@@ -68,6 +73,7 @@ function monitor_has_issue(array $item): bool
 
 function render_single_monitor_item(string $key, array $item): string
 {
+    $canManageMonitoring = in_array(currentRole(), ['admin', 'operator'], true);
     ob_start();
 ?>
     <div class="monitor-item monitor-state-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
@@ -83,6 +89,7 @@ function render_single_monitor_item(string $key, array $item): string
                     <input type="checkbox"
                         name="monitor_enabled"
                         <?= !empty($item['enabled']) ? 'checked' : '' ?>
+                        <?= !$canManageMonitoring ? 'disabled' : '' ?>
                         onchange="this.form.submit()">
                 </label>
             </div>
@@ -108,6 +115,7 @@ function render_single_monitor_item(string $key, array $item): string
                     min="1"
                     max="1440"
                     value="<?= (int)($item['minutes'] ?? 60) ?>"
+                    <?= !$canManageMonitoring ? 'disabled' : '' ?>
                     onchange="this.form.submit()"
                     onblur="this.form.submit()">
             </div>
@@ -134,6 +142,7 @@ function render_single_monitor_item(string $key, array $item): string
 
 function render_monitor_shell(array $monitorData): string
 {
+    $canManageMonitoring = in_array(currentRole(), ['admin', 'operator'], true);
     $combinedKeys = ['nozzle', 'tricanter', 'project_flow', 'pump_values', 'nitrogen'];
     $combinedItems = [];
     $otherItems = [];
@@ -190,6 +199,7 @@ function render_monitor_shell(array $monitorData): string
                         <input type="checkbox"
                             name="monitor_master"
                             <?= !empty($monitorData['master_enabled']) ? 'checked' : '' ?>
+                            <?= !$canManageMonitoring ? 'disabled' : '' ?>
                             onchange="this.form.submit()">
                     </label>
 
@@ -200,6 +210,7 @@ function render_monitor_shell(array $monitorData): string
                             min="5"
                             max="300"
                             value="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>"
+                            <?= !$canManageMonitoring ? 'disabled' : '' ?>
                             onchange="this.form.submit()"
                             onblur="this.form.submit()">
                         <small>sec</small>
@@ -1792,6 +1803,10 @@ $dashboard = build_dashboard_data($pdo, $range);
                         <h2>Project Flow</h2>
                         <div class="panel-sub">Totals for selected date/time range</div>
                     </div>
+                    <div class="panel-actions">
+                        <a class="btn" href="logs.php?table=project_flow">View Logs</a>
+                        <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=project_flow">Add Record</a><?php endif; ?>
+                    </div>
                 </div>
 
                 <div id="project-flow-kpis" class="kpis"><?= $dashboard['panels']['project_flow']['kpis_html'] ?></div>
@@ -1821,10 +1836,10 @@ $dashboard = build_dashboard_data($pdo, $range);
                         <h2>Pump Values</h2>
                         <div class="panel-sub">Pump statuses, feedback, and live pressure trends</div>
                     </div>
-                    <!-- <div class="panel-actions">
-                    <a class="btn" href="logs.php?table=pump_values">View Logs</a>
-                    <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=pump_values">Add Record</a><?php endif; ?>
-                </div> -->
+                    <div class="panel-actions">
+                        <a class="btn" href="logs.php?table=pump_values">View Logs</a>
+                        <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=pump_values">Add Record</a><?php endif; ?>
+                    </div>
                 </div>
 
                 <div id="pump-values-kpis" class="kpis"><?= $dashboard['panels']['pump_values']['kpis_html'] ?></div>
@@ -1866,10 +1881,10 @@ $dashboard = build_dashboard_data($pdo, $range);
                         <h2>Nitrogen</h2>
                         <div class="panel-sub">Nitrogen generator status, purity, pressure, temperature, and O2 readings</div>
                     </div>
-                    <!-- <div class="panel-actions">
-                    <a class="btn" href="logs.php?table=nitrogen">View Logs</a>
-                    <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=nitrogen">Add Record</a><?php endif; ?>
-                </div> -->
+                    <div class="panel-actions">
+                        <a class="btn" href="logs.php?table=nitrogen">View Logs</a>
+                        <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=nitrogen">Add Record</a><?php endif; ?>
+                    </div>
                 </div>
 
                 <div id="nitrogen-kpis" class="kpis"><?= $dashboard['panels']['nitrogen']['kpis_html'] ?></div>

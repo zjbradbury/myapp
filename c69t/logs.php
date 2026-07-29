@@ -16,7 +16,7 @@ $tables = [
         'columns' => [
             ['key' => 'log_date', 'label' => 'Date'],
             ['key' => 'log_time', 'label' => 'Time'],
-            ['key' => 'tricanter_status', 'label' => 'State', 'type' => 'bool'],
+            ['key' => 'tricanter_status', 'label' => 'State', 'decimals' => 0],
             ['key' => 'bowl_speed', 'label' => 'Bowl Speed', 'suffix' => ' %', 'decimals' => 0],
             ['key' => 'screw_speed', 'label' => 'Screw Speed', 'suffix' => ' %', 'decimals' => 2],
             ['key' => 'bowl_rpm', 'label' => 'Bowl RPM', 'suffix' => ' RPM', 'decimals' => 0],
@@ -40,6 +40,21 @@ $tables = [
             ['key' => 'log_date', 'label' => 'Date'],
             ['key' => 'log_time', 'label' => 'Time'],
             ['key' => 'amount', 'label' => 'Amount', 'suffix' => ' KG', 'decimals' => 0],
+            ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
+        ],
+    ],
+    'recovered_water' => [
+        'label' => 'Recovered Water Pump',
+        'table' => 'recovered_water_pump_logs',
+        'add' => 'record.php?action=add&table=recovered_water',
+        'edit' => 'record.php?action=edit&table=recovered_water',
+        'delete' => 'record.php?action=delete&table=recovered_water',
+        'desc' => 'Recovered water pump start and stop levels with cycle history.',
+        'columns' => [
+            ['key' => 'log_date', 'label' => 'Date'],
+            ['key' => 'log_time', 'label' => 'Time'],
+            ['key' => 'start_level', 'label' => 'Start Level', 'decimals' => 2],
+            ['key' => 'stop_level', 'label' => 'Stop Level', 'decimals' => 2],
             ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
         ],
     ],
@@ -128,9 +143,9 @@ $tables = [
     'pump_values' => [
         'label' => 'Pump Values',
         'table' => 'pump_values_logs',
-        'add' => null,
-        'edit' => null,
-        'delete' => null,
+        'add' => 'record.php?action=add&table=pump_values',
+        'edit' => 'record.php?action=edit&table=pump_values',
+        'delete' => 'record.php?action=delete&table=pump_values',
         'desc' => 'Pump statuses, feedback, inlet pressure, and outlet pressure records.',
         'columns' => [
             ['key' => 'log_date', 'label' => 'Date'],
@@ -157,9 +172,9 @@ $tables = [
     'nitrogen' => [
         'label' => 'Nitrogen',
         'table' => 'nitrogen_logs',
-        'add' => null,
-        'edit' => null,
-        'delete' => null,
+        'add' => 'record.php?action=add&table=nitrogen',
+        'edit' => 'record.php?action=edit&table=nitrogen',
+        'delete' => 'record.php?action=delete&table=nitrogen',
         'desc' => 'Nitrogen generator status, purity, flow, pressures, heater temperatures, and interior oxygen records.',
         'columns' => [
             ['key' => 'log_date', 'label' => 'Date'],

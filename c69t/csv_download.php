@@ -19,6 +19,10 @@ $exportTables = [
         "label" => "solid_waste",
         "columns" => ["log_date", "log_time", "amount", "comments"],
     ],
+    "recovered_water_pump_logs" => [
+        "label" => "recovered_water_pump",
+        "columns" => ["log_date", "log_time", "start_level", "stop_level", "comments"],
+    ],
     "nozzle_logs" => [
         "label" => "nozzle",
         "columns" => ["log_date", "log_time", "nozzle", "flow", "pressure", "min_deg", "max_deg", "rpm", "comments"],

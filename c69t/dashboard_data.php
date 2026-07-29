@@ -38,6 +38,7 @@ function monitor_has_issue(array $item): bool
 
 function render_single_monitor_item(string $key, array $item): string
 {
+    $canManageMonitoring = in_array(currentRole(), ['admin', 'operator'], true);
     ob_start();
 ?>
     <div class="monitor-item monitor-state-<?= h(monitor_status_slug((string)($item['status'] ?? 'OK'))) ?>">
@@ -53,6 +54,7 @@ function render_single_monitor_item(string $key, array $item): string
                     <input type="checkbox"
                         name="monitor_enabled"
                         <?= !empty($item['enabled']) ? 'checked' : '' ?>
+                        <?= !$canManageMonitoring ? 'disabled' : '' ?>
                         onchange="this.form.submit()">
                 </label>
             </div>
@@ -78,6 +80,7 @@ function render_single_monitor_item(string $key, array $item): string
                     min="1"
                     max="1440"
                     value="<?= (int)($item['minutes'] ?? 60) ?>"
+                    <?= !$canManageMonitoring ? 'disabled' : '' ?>
                     onchange="this.form.submit()"
                     onblur="this.form.submit()">
             </div>
@@ -104,6 +107,7 @@ function render_single_monitor_item(string $key, array $item): string
 
 function render_monitor_shell(array $monitorData): string
 {
+    $canManageMonitoring = in_array(currentRole(), ['admin', 'operator'], true);
     $combinedKeys = ['nozzle', 'tricanter', 'project_flow', 'pump_values', 'nitrogen'];
     $combinedItems = [];
     $otherItems = [];
@@ -160,6 +164,7 @@ function render_monitor_shell(array $monitorData): string
                         <input type="checkbox"
                             name="monitor_master"
                             <?= !empty($monitorData['master_enabled']) ? 'checked' : '' ?>
+                            <?= !$canManageMonitoring ? 'disabled' : '' ?>
                             onchange="this.form.submit()">
                     </label>
 
@@ -170,6 +175,7 @@ function render_monitor_shell(array $monitorData): string
                             min="5"
                             max="300"
                             value="<?= (int)($monitorData['refresh_seconds'] ?? 30) ?>"
+                            <?= !$canManageMonitoring ? 'disabled' : '' ?>
                             onchange="this.form.submit()"
                             onblur="this.form.submit()">
                         <small>sec</small>
