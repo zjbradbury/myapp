@@ -447,7 +447,7 @@ function numberOrDash(?float $value, int $decimals = 2): string
     </style>
 </head>
 
-<body>
+<body class="app-page">
     <?php require_once "nav.php"; ?>
 
     <div class="dashboard-shell">

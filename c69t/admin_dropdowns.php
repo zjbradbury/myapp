@@ -313,147 +313,17 @@ $gasTestLocations = $pdo->query("
 <head>
     <title>Manage Dropdowns</title>
     <link rel="stylesheet" href="indexStyle.css">
-    <style>
-        .manage-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 20px;
-        }
-
-        .stack-grid {
-            display: grid;
-            gap: 20px;
-        }
-
-        .manage-card {
-            background: #122c44;
-            border-radius: 10px;
-            padding: 15px;
-            min-width: 0;
-        }
-
-        .manage-card h3 {
-            margin-top: 0;
-            margin-bottom: 12px;
-        }
-
-        .manage-list {
-            display: grid;
-            gap: 12px;
-            margin-top: 15px;
-            max-height: 360px;
-            overflow-y: auto;
-            padding-right: 6px;
-        }
-
-        .manage-row {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .device-form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px 16px;
-            margin-top: 10px;
-        }
-
-        .check-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            line-height: 1.2;
-            min-height: 26px;
-        }
-
-        .check-row input[type="checkbox"] {
-            margin: 0;
-            width: 16px;
-            height: 16px;
-            flex: 0 0 auto;
-        }
-
-        .check-row span {
-            display: inline-block;
-        }
-
-        .msg-ok {
-            background: #1f5f2b;
-            color: #fff;
-            padding: 10px 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .msg-error {
-            background: #7a1f1f;
-            color: #fff;
-            padding: 10px 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .status-pill {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .status-pill.active {
-            background: #1f5f2b;
-            color: #fff;
-        }
-
-        .status-pill.inactive {
-            background: #666;
-            color: #fff;
-        }
-
-        .row-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-
-        .inline-form {
-            margin: 0;
-        }
-
-        .manage-list::-webkit-scrollbar {
-            width: 10px;
-        }
-
-        .manage-list::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.25);
-            border-radius: 999px;
-        }
-
-        .manage-list::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 999px;
-        }
-
-        @media (max-width: 900px) {
-            .manage-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .device-form-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 
-<body>
+<body class="app-page">
     <?php require_once "nav.php"; ?>
 
     <div class="container wide">
-        <h2>Manage Dropdowns</h2>
+        <div class="page-heading">
+            <div class="section-kicker">administration</div>
+            <h1>Manage Dropdowns</h1>
+            <p>Configure the options available throughout log entry forms.</p>
+        </div>
 
         <?php if ($message !== ''): ?>
             <div class="msg-ok"><?= h($message) ?></div>

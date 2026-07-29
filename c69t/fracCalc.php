@@ -379,84 +379,17 @@ $tanks = $pdo->query("
 <head>
     <title>Project Tank Levels</title>
     <link rel="stylesheet" href="indexStyle.css">
-    <style>
-        .tank-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(220px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
-        }
-
-        .tank-card {
-            border: 1px solid #333;
-            border-radius: 14px;
-            padding: 16px;
-            background: #111827;
-            color: #fff;
-        }
-
-        .tank-card.active {
-            border: 2px solid #22c55e;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.35);
-        }
-
-        .tank-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .tank-level {
-            font-size: 34px;
-            font-weight: bold;
-            margin: 12px 0;
-        }
-
-        .tank-meta {
-            font-size: 13px;
-            opacity: 0.8;
-            line-height: 1.5;
-        }
-
-        .tank-form {
-            margin-top: 12px;
-        }
-
-        .tank-form input {
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .tank-form button {
-            width: 100%;
-            margin-bottom: 6px;
-        }
-
-        .active-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            background: #22c55e;
-            color: #000;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-
-        .info-box {
-            background: #0f172a;
-            color: #fff;
-            border-radius: 12px;
-            padding: 14px;
-            margin-top: 16px;
-        }
-    </style>
 </head>
 
-<body>
+<body class="app-page">
     <?php require_once "nav.php"; ?>
 
     <div class="container wide">
-        <h1>Project Tank Levels</h1>
+        <div class="page-heading">
+            <div class="section-kicker">live calculation</div>
+            <h1>Project Tank Levels</h1>
+            <p>Track estimated tank volumes from the latest project flow readings.</p>
+        </div>
 
         <div class="info-box">
             <strong>Latest Project Flow:</strong>

@@ -35,10 +35,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="indexStyle.css">
 </head>
 
-<body>
+<body class="app-page">
     <?php require_once "nav.php"; ?>
     <div class="container">
-        <h2>Create User</h2>
+        <div class="page-heading">
+            <div class="section-kicker">administration</div>
+            <h1>Create User</h1>
+            <p>Add a user and choose their access level.</p>
+        </div>
 
         <?php if ($message !== ""): ?>
             <p class="message error"><?= h($message) ?></p>

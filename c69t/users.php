@@ -69,41 +69,17 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <title>Manage Users</title>
     <link rel="stylesheet" href="indexStyle.css">
-    <style>
-        .actions-cell {
-            min-width: 360px;
-        }
-
-        .inline-form {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            align-items: center;
-            margin: 4px 0;
-        }
-
-        .inline-form input[type="password"] {
-            max-width: 160px;
-        }
-
-        .danger {
-            background: #b91c1c;
-            border-color: #b91c1c;
-            color: #fff;
-        }
-
-        .danger:hover {
-            background: #991b1b;
-            border-color: #991b1b;
-        }
-    </style>
 </head>
 
-<body>
+<body class="app-page">
     <?php require_once "nav.php"; ?>
     <div class="container wide">
-        <div class="topbar">
-            <h2>Users</h2>
+        <div class="page-heading page-heading-actions">
+            <div>
+                <div class="section-kicker">administration</div>
+                <h1>Users</h1>
+                <p>Manage accounts, passwords, and access roles.</p>
+            </div>
             <a class="btn" href="user_create.php">Create User</a>
         </div>
 
@@ -111,7 +87,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <p class="message <?= h($messageType) ?>"><?= h($message) ?></p>
         <?php endif; ?>
 
-        <table>
+        <div class="table app-table"><table>
             <thead>
                 <tr>
                     <th>ID</th>
@@ -153,7 +129,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     </tr>
                 <?php endforeach; ?>
             </tbody>
-        </table>
+        </table></div>
 
     </div>
 </body>

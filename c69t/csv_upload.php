@@ -510,109 +510,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <title>CSV Upload</title>
     <link rel="stylesheet" href="indexStyle.css">
-    <style>
-        .upload-wrap {
-            max-width: 900px;
-            margin: 20px auto;
-            background: #122c44;
-            border-radius: 12px;
-            padding: 20px;
-            color: #fff;
-        }
-
-        .upload-wrap h1 {
-            margin-top: 0;
-        }
-
-        .form-grid {
-            display: grid;
-            gap: 14px;
-            grid-template-columns: 1fr;
-        }
-
-        .field label {
-            display: block;
-            font-size: 13px;
-            color: #9ec3df;
-            margin-bottom: 6px;
-        }
-
-        .field select,
-        .field input[type="file"] {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #2f4e68;
-            background: #0d2234;
-            color: #fff;
-            box-sizing: border-box;
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-
-        .btn {
-            display: inline-block;
-            padding: 10px 14px;
-            border-radius: 8px;
-            text-decoration: none;
-            border: none;
-            cursor: pointer;
-            background: #1e88e5;
-            color: #fff;
-            font-weight: bold;
-        }
-
-        .msg,
-        .err,
-        .report-box {
-            margin-top: 16px;
-            padding: 12px 14px;
-            border-radius: 8px;
-        }
-
-        .msg {
-            background: #10361d;
-            border: 1px solid #255c35;
-            color: #b9f3c8;
-        }
-
-        .err {
-            background: #3b1616;
-            border: 1px solid #7d2c2c;
-            color: #ffb8b8;
-        }
-
-        .report-box {
-            background: #0d2234;
-            border: 1px solid #2f4e68;
-            max-height: 280px;
-            overflow: auto;
-        }
-
-        .help {
-            color: #c8d8e5;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        code {
-            background: rgba(255, 255, 255, 0.08);
-            padding: 2px 5px;
-            border-radius: 4px;
-        }
-    </style>
 </head>
 
-<body>
+<body class="app-page">
     <?php require_once "nav.php"; ?>
 
     <div class="upload-wrap">
-        <h1>CSV Upload</h1>
+        <div class="page-heading">
+            <div class="section-kicker">data tools</div>
+            <h1>CSV Upload</h1>
+        </div>
         <p class="help">
             Admin only. Upload a CSV with headers like <code>Date</code>, <code>Time</code>, <code>Flow</code>, <code>Comments</code> etc.
             Date formats like <code>23/01/2026</code>, <code>2026-01-23</code>, <code>1/23/2026</code> and times like

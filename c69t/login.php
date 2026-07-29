@@ -40,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <link rel="stylesheet" href="indexStyle.css">
 </head>
 
-<body>
+<body class="app-page auth-page">
     <div class="container">
 
         <div class="logo-row-login">
@@ -48,7 +48,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <img src="Contract69TanksLogoTransparent.png">
         </div>
 
-        <h2>Login</h2>
+        <div class="page-heading">
+            <div class="section-kicker">secure access</div>
+            <h1>Login</h1>
+            <p>Sign in to open the operations dashboard.</p>
+        </div>
 
         <?php if ($message !== ""): ?>
             <p class="message error"><?= h($message) ?></p>
