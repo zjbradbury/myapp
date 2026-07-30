@@ -672,13 +672,6 @@ function buildMonitoringData(PDO $pdo): array
             'enabled' => (int)getSetting($pdo, 'monitor_gas_test_enabled', '1') === 1,
             'minutes' => max(1, (int)getSetting($pdo, 'monitor_gas_test_minutes', '60')),
         ],
-        'tank_internal_o2' => [
-            'label' => 'Tank Internal O2',
-            'table' => 'nitrogen_logs',
-            'data_column' => 'tank_internal_o2',
-            'enabled' => (int)getSetting($pdo, 'monitor_tank_internal_o2_enabled', '1') === 1,
-            'minutes' => max(1, (int)getSetting($pdo, 'monitor_tank_internal_o2_minutes', '60')),
-        ],
         'project_flow' => [
             'label' => 'Project Flow',
             'table' => 'project_flow_logs',

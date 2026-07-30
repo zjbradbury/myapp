@@ -29,8 +29,6 @@ $allowedKeys = [
     'monitor_sample_minutes',
     'monitor_gas_test_enabled',
     'monitor_gas_test_minutes',
-    'monitor_tank_internal_o2_enabled',
-    'monitor_tank_internal_o2_minutes',
 ];
 
 foreach ($allowedKeys as $key) {
