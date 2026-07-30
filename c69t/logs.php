@@ -277,6 +277,43 @@ function selected_time_search(): string
     return trim((string)($_GET['time_search'] ?? $_POST['time_search'] ?? ''));
 }
 
+function selected_value_columns(array $config): array
+{
+    $requested = $_GET['has_value'] ?? $_POST['has_value'] ?? [];
+    if (!is_array($requested)) {
+        $requested = [$requested];
+    }
+
+    $allowed = [];
+    foreach ($config['columns'] as $column) {
+        $key = (string)($column['key'] ?? '');
+        if ($key !== '' && !in_array($key, ['log_date', 'log_time'], true)) {
+            $allowed[$key] = true;
+        }
+    }
+
+    return array_values(array_unique(array_filter(
+        array_map(static fn($value): string => trim((string)$value), $requested),
+        static fn(string $key): bool => isset($allowed[$key])
+    )));
+}
+
+function filter_rows_by_value_columns(array $rows, array $selectedColumns): array
+{
+    if (!$selectedColumns) {
+        return $rows;
+    }
+
+    return array_values(array_filter($rows, static function (array $row) use ($selectedColumns): bool {
+        foreach ($selectedColumns as $column) {
+            if (!array_key_exists($column, $row) || $row[$column] === null || trim((string)$row[$column]) === '') {
+                return false;
+            }
+        }
+        return true;
+    }));
+}
+
 function normalise_time_search(string $value): string
 {
     $value = trim($value);
@@ -366,6 +403,7 @@ function nav_url_for_table(string $key): string
 {
     $params = $_GET;
     unset($params['msg']);
+    unset($params['has_value']);
     $params['table'] = $key;
     return 'logs.php?' . http_build_query($params);
 }
@@ -375,6 +413,7 @@ $config = $tables[$selectedKey];
 $range = get_range_filter_state(true);
 $selectedInterval = selected_interval_minutes();
 $timeSearch = selected_time_search();
+$selectedValueColumns = selected_value_columns($config);
 $message = '';
 $error = '';
 
@@ -417,6 +456,7 @@ try {
     } else {
         $rows = fetch_log_rows($pdo, $config['table'], $range, 'log_date DESC, log_time DESC, id DESC');
         $rows = filter_rows_by_time_search($rows, $timeSearch);
+        $rows = filter_rows_by_value_columns($rows, $selectedValueColumns);
         $rows = filter_rows_to_minute_increments_for_logs($rows, $selectedInterval);
     }
 } catch (Throwable $e) {
@@ -430,6 +470,7 @@ $csvParams = [
     'quick' => $range['quick'] ?? '',
     'interval' => $selectedInterval,
     'time_search' => $timeSearch,
+    'has_value' => $selectedValueColumns,
 ];
 ?>
 <!DOCTYPE html>
@@ -630,6 +671,44 @@ $csvParams = [
             font-size: 12px;
         }
 
+        .column-value-filter {
+            min-width: 240px;
+            position: relative;
+        }
+
+        .column-value-filter summary {
+            background: #0a1a29;
+            border: 1px solid #2a5377;
+            border-radius: 10px;
+            color: #fff;
+            cursor: pointer;
+            padding: 8px 10px;
+            font-size: 12px;
+            list-style-position: inside;
+        }
+
+        .column-value-options {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px 12px;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #2a5377;
+            border-radius: 10px;
+            background: #0a1a29;
+            max-height: 230px;
+            overflow: auto;
+        }
+
+        .column-value-options label {
+            display: flex;
+            gap: 7px;
+            align-items: center;
+            color: #dcecff;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
         .notice-success,
         .notice-error {
             margin: 12px 0;
@@ -798,7 +877,7 @@ $csvParams = [
 
             <form method="get" class="list-extra-filter-form" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
                 <?php foreach ($_GET as $key => $value): ?>
-                    <?php if (!in_array($key, ['interval', 'time_search'], true) && !is_array($value)): ?>
+                    <?php if (!in_array($key, ['interval', 'time_search', 'has_value'], true) && !is_array($value)): ?>
                         <input type="hidden" name="<?= h($key) ?>" value="<?= h((string)$value) ?>">
                     <?php endif; ?>
                 <?php endforeach; ?>
@@ -824,8 +903,29 @@ $csvParams = [
                     <input type="text" name="time_search" value="<?= h($timeSearch) ?>" placeholder="06:15 or 06:">
                 </label>
 
+                <details class="column-value-filter" <?= $selectedValueColumns ? 'open' : '' ?>>
+                    <summary>
+                        Has an entry<?= $selectedValueColumns ? ' (' . count($selectedValueColumns) . ' selected)' : '' ?>
+                    </summary>
+                    <div class="column-value-options">
+                        <?php foreach ($config['columns'] as $column): ?>
+                            <?php
+                            $columnKey = (string)($column['key'] ?? '');
+                            if ($columnKey === '' || in_array($columnKey, ['log_date', 'log_time'], true)) continue;
+                            ?>
+                            <label>
+                                <input type="checkbox"
+                                    name="has_value[]"
+                                    value="<?= h($columnKey) ?>"
+                                    <?= in_array($columnKey, $selectedValueColumns, true) ? 'checked' : '' ?>>
+                                <?= h($column['label'] ?? $columnKey) ?>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </details>
+
                 <button class="btn" type="submit">Apply</button>
-                <a class="btn" href="<?= h(url_with_current_state('logs.php', ['interval' => null, 'time_search' => null])) ?>">Clear Log Filters</a>
+                <a class="btn" href="<?= h(url_with_current_state('logs.php', ['interval' => null, 'time_search' => null, 'has_value' => null])) ?>">Clear Log Filters</a>
             </form>
         </div>
 

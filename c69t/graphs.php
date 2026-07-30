@@ -80,6 +80,7 @@ $tables = [
 ];
 
 $intervalOptions = [
+    0 => "All records",
     1 => "1 minute",
     5 => "5 minutes",
     15 => "15 minutes",
@@ -105,7 +106,8 @@ if (!is_array($selected)) {
 
 $startSql = str_replace("T", " ", $start) . ":00";
 $endSql = str_replace("T", " ", $end) . ":00";
-$bucketSeconds = $interval * 60;
+$allRecords = $interval === 0;
+$bucketSeconds = $allRecords ? null : $interval * 60;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,13 +120,17 @@ $bucketSeconds = $interval * 60;
 $startTimestamp = strtotime($startSql);
 $endTimestamp = strtotime($endSql);
 
-$timelineStart = (int)(floor($startTimestamp / $bucketSeconds) * $bucketSeconds);
-$timelineEnd = (int)(floor($endTimestamp / $bucketSeconds) * $bucketSeconds);
-
 $timelineKeys = [];
 $finalLabels = [];
 
-if ($startTimestamp !== false && $endTimestamp !== false && $timelineEnd >= $timelineStart) {
+if (!$allRecords && $startTimestamp !== false && $endTimestamp !== false) {
+    $timelineStart = (int)(floor($startTimestamp / $bucketSeconds) * $bucketSeconds);
+    $timelineEnd = (int)(floor($endTimestamp / $bucketSeconds) * $bucketSeconds);
+
+    if ($timelineEnd < $timelineStart) {
+        $timelineEnd = $timelineStart - 1;
+    }
+
     for ($timestamp = $timelineStart; $timestamp <= $timelineEnd; $timestamp += $bucketSeconds) {
         $bucketKey = date("Y-m-d H:i:s", $timestamp);
         $timelineKeys[] = $bucketKey;
@@ -207,11 +213,17 @@ foreach ($selected as $seriesKey) {
                 $value = ($entryTimestamp - $previousTimestamp) / 60;
             }
 
-            $bucketTimestamp = (int)(floor($entryTimestamp / $bucketSeconds) * $bucketSeconds);
+            $bucketTimestamp = $allRecords
+                ? $entryTimestamp
+                : (int)(floor($entryTimestamp / $bucketSeconds) * $bucketSeconds);
             $bucketKey = date("Y-m-d H:i:s", $bucketTimestamp);
 
             if ($value !== null) {
-                $dataByBucketValues[$bucketKey][] = $value;
+                if ($allRecords) {
+                    $dataByBucketValues[$bucketKey] = [$value];
+                } else {
+                    $dataByBucketValues[$bucketKey][] = $value;
+                }
             }
 
             $previousTimestamp = $entryTimestamp;
@@ -243,23 +255,36 @@ foreach ($selected as $seriesKey) {
         continue;
     }
 
-    $sql = "
-        SELECT
-            FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(CONCAT(log_date, ' ', log_time)) / :bucket) * :bucket) AS bucket_time,
-            AVG(CAST(`$column` AS DECIMAL(18,4))) AS avg_value
-        FROM `$table`
-        WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
-          AND `$column` IS NOT NULL
-          AND `$column` <> ''
-        GROUP BY bucket_time
-        ORDER BY bucket_time ASC
-    ";
+    $sql = $allRecords
+        ? "
+            SELECT CONCAT(log_date, ' ', log_time) AS bucket_time,
+                   CAST(`$column` AS DECIMAL(18,4)) AS avg_value
+            FROM `$table`
+            WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
+              AND `$column` IS NOT NULL
+              AND `$column` <> ''
+            ORDER BY log_date ASC, log_time ASC, id ASC
+        "
+        : "
+            SELECT
+                FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(CONCAT(log_date, ' ', log_time)) / :bucket) * :bucket) AS bucket_time,
+                AVG(CAST(`$column` AS DECIMAL(18,4))) AS avg_value
+            FROM `$table`
+            WHERE CONCAT(log_date, ' ', log_time) BETWEEN :start_dt AND :end_dt
+              AND `$column` IS NOT NULL
+              AND `$column` <> ''
+            GROUP BY bucket_time
+            ORDER BY bucket_time ASC
+        ";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([
-        ":bucket" => $bucketSeconds,
+    $queryParams = [
         ":start_dt" => $startSql,
         ":end_dt" => $endSql,
-    ]);
+    ];
+    if (!$allRecords) {
+        $queryParams[":bucket"] = $bucketSeconds;
+    }
+    $stmt->execute($queryParams);
 
     $dataByBucket = [];
 
@@ -281,6 +306,21 @@ foreach ($selected as $seriesKey) {
         "label" => $seriesLabel,
         "data" => $dataByBucket,
     ];
+}
+
+if ($allRecords) {
+    $allTimelineKeys = [];
+    foreach ($seriesData as $series) {
+        foreach (array_keys($series['data']) as $timestampKey) {
+            $allTimelineKeys[$timestampKey] = true;
+        }
+    }
+    $timelineKeys = array_keys($allTimelineKeys);
+    sort($timelineKeys);
+    $finalLabels = array_map(
+        static fn(string $timestampKey): string => date('d/m H:i:s', strtotime($timestampKey)),
+        $timelineKeys
+    );
 }
 
 $datasets = [];

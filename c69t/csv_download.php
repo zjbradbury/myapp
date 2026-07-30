@@ -73,6 +73,35 @@ function selected_csv_time_search(): string
     return trim((string)($_GET['time_search'] ?? ''));
 }
 
+function selected_csv_value_columns(array $columns): array
+{
+    $requested = $_GET['has_value'] ?? [];
+    if (!is_array($requested)) {
+        $requested = [$requested];
+    }
+    $allowed = array_fill_keys($columns, true);
+
+    return array_values(array_unique(array_filter(
+        array_map(static fn($value): string => trim((string)$value), $requested),
+        static fn(string $column): bool => isset($allowed[$column])
+            && !in_array($column, ['log_date', 'log_time'], true)
+    )));
+}
+
+function filter_csv_rows_by_value_columns(array $rows, array $selectedColumns): array
+{
+    if (!$selectedColumns) return $rows;
+
+    return array_values(array_filter($rows, static function (array $row) use ($selectedColumns): bool {
+        foreach ($selectedColumns as $column) {
+            if (!array_key_exists($column, $row) || $row[$column] === null || trim((string)$row[$column]) === '') {
+                return false;
+            }
+        }
+        return true;
+    }));
+}
+
 function normalise_csv_time_search(string $value): string
 {
     $value = trim($value);
@@ -149,6 +178,7 @@ $tableDef = $exportTables[$table];
 $columns = $tableDef["columns"];
 $selectedInterval = selected_csv_interval_minutes();
 $timeSearch = selected_csv_time_search();
+$selectedValueColumns = selected_csv_value_columns($columns);
 
 /*
 |--------------------------------------------------------------------------
@@ -167,6 +197,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($filter["params"]);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $rows = filter_csv_rows_by_time_search($rows, $timeSearch);
+$rows = filter_csv_rows_by_value_columns($rows, $selectedValueColumns);
 $rows = filter_csv_rows_to_minute_increments($rows, $selectedInterval);
 $rows = array_reverse($rows);
 
