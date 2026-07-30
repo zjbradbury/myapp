@@ -289,6 +289,7 @@ try {
                 'Pre Heat Temp' => 'pre_heat_temp',
                 'Post Heat Temp' => 'post_heat_temp',
                 'Interior O2' => 'interior_o2',
+                'Tank Internal O2' => 'tank_internal_o2',
                 'Comments' => 'comments'
             ],
             'numeric_columns' => [
@@ -298,7 +299,8 @@ try {
                 'outlet_pressure',
                 'pre_heat_temp',
                 'post_heat_temp',
-                'interior_o2'
+                'interior_o2',
+                'tank_internal_o2'
             ],
             'boolean_columns' => [
                 'nitrogen_active',

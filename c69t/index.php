@@ -690,6 +690,7 @@ function render_nitrogen_kpis(array $row): string
     <div class="kpi<?= $alertClass ?>"><small>Pre Heat Temp</small><b><?= fmt($row['pre_heat_temp'] ?? null, 1) ?> °C</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Post Heat Temp</small><b><?= fmt($row['post_heat_temp'] ?? null, 1) ?> °C</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Interior O2</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Tank Internal O2</small><b><?= fmt($row['tank_internal_o2'] ?? null, 2) ?> %</b></div>
     <?php
     return ob_get_clean();
 }
@@ -700,7 +701,7 @@ function render_nitrogen_rows(array $rows): string
 
     if (!$rows): ?>
         <tr>
-            <td colspan="12">No nitrogen data in selected range.</td>
+            <td colspan="13">No nitrogen data in selected range.</td>
         </tr>
         <?php else:
         foreach ($rows as $r): ?>
@@ -716,6 +717,7 @@ function render_nitrogen_rows(array $rows): string
                 <td><?= fmt($r['pre_heat_temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['post_heat_temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['interior_o2'] ?? null, 2) ?> %</td>
+                <td><?= fmt($r['tank_internal_o2'] ?? null, 2) ?> %</td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
     <?php endforeach;
@@ -1137,6 +1139,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
                         ['label' => 'Pre Heat Temp', 'data' => dashboard_chart_numeric($nitrogenChart, 'pre_heat_temp')],
                         ['label' => 'Post Heat Temp', 'data' => dashboard_chart_numeric($nitrogenChart, 'post_heat_temp')],
                         ['label' => 'Interior O2', 'data' => dashboard_chart_numeric($nitrogenChart, 'interior_o2')],
+                        ['label' => 'Tank Internal O2', 'data' => dashboard_chart_numeric($nitrogenChart, 'tank_internal_o2')],
                     ],
                 ],
             ],
@@ -1929,6 +1932,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                                 <th>Pre Heat Temp</th>
                                 <th>Post Heat Temp</th>
                                 <th>Interior O2</th>
+                                <th>Tank Internal O2</th>
                                 <th>Comments</th>
                             </tr>
                         </thead>
@@ -1975,7 +1979,8 @@ $dashboard = build_dashboard_data($pdo, $range);
             'Outlet Pressure': '#f59e0b',
             'Pre Heat Temp': '#ffb36b',
             'Post Heat Temp': '#ff7e67',
-            'Interior O2': '#c8a7ff'
+            'Interior O2': '#c8a7ff',
+            'Tank Internal O2': '#ec4899'
         };
 
         const initialPanels = <?= json_encode($dashboard['panels'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;

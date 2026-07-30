@@ -49,7 +49,7 @@ $exportTables = [
     ],
     "nitrogen_logs" => [
         "label" => "nitrogen",
-        "columns" => ["log_date", "log_time", "nitrogen_active", "trip_status", "outlet_flow", "outlet_purity", "inlet_pressure", "outlet_pressure", "pre_heat_temp", "post_heat_temp", "interior_o2", "comments"],
+        "columns" => ["log_date", "log_time", "nitrogen_active", "trip_status", "outlet_flow", "outlet_purity", "inlet_pressure", "outlet_pressure", "pre_heat_temp", "post_heat_temp", "interior_o2", "tank_internal_o2", "comments"],
     ],
 ];
 

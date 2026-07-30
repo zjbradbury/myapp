@@ -246,6 +246,7 @@ $schemas = [
             ['name' => 'pre_heat_temp', 'label' => 'Pre Heat Temp', 'type' => 'number', 'step' => '0.001', 'unit' => '°C'],
             ['name' => 'post_heat_temp', 'label' => 'Post Heat Temp', 'type' => 'number', 'step' => '0.001', 'unit' => '°C'],
             ['name' => 'interior_o2', 'label' => 'Interior O2', 'type' => 'number', 'step' => '0.001', 'unit' => '%'],
+            ['name' => 'tank_internal_o2', 'label' => 'Tank Internal O2', 'type' => 'number', 'step' => '0.001', 'unit' => '%'],
             ['name' => 'comments', 'label' => 'Comments', 'type' => 'textarea'],
         ],
     ],

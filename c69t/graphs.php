@@ -74,6 +74,7 @@ $tables = [
             "pre_heat_temp" => "Pre Heat Temp",
             "post_heat_temp" => "Post Heat Temp",
             "interior_o2" => "Interior O2",
+            "tank_internal_o2" => "Tank Internal O2",
         ],
     ],
 ];
@@ -750,7 +751,8 @@ $rangeSummary = date("d/m/Y H:i", strtotime($startSql)) . " to " . date("d/m/Y H
             'Nitrogen - Outlet Pressure': '#f59e0b',
             'Nitrogen - Pre Heat Temp': '#ffb36b',
             'Nitrogen - Post Heat Temp': '#ff7e67',
-            'Nitrogen - Interior O2': '#c8a7ff'
+            'Nitrogen - Interior O2': '#c8a7ff',
+            'Nitrogen - Tank Internal O2': '#ec4899'
         };
 
         const chartLabels = <?= json_encode($finalLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;

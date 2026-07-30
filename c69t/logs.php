@@ -188,6 +188,7 @@ $tables = [
             ['key' => 'pre_heat_temp', 'label' => 'Pre Heat Temp', 'suffix' => ' °C', 'decimals' => 1],
             ['key' => 'post_heat_temp', 'label' => 'Post Heat Temp', 'suffix' => ' °C', 'decimals' => 1],
             ['key' => 'interior_o2', 'label' => 'Interior O2', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'tank_internal_o2', 'label' => 'Tank Internal O2', 'suffix' => ' %', 'decimals' => 2],
             ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
         ],
     ],
