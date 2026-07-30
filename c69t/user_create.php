@@ -31,6 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html>
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>Create User</title>
     <link rel="stylesheet" href="indexStyle.css">
 </head>

@@ -1154,6 +1154,7 @@ $dashboard = build_dashboard_data($pdo, $range);
 <html lang="en">
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Dashboard</title>

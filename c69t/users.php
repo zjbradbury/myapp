@@ -67,6 +67,7 @@ $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <html>
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>Manage Users</title>
     <link rel="stylesheet" href="indexStyle.css">
 </head>

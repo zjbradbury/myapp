@@ -377,6 +377,7 @@ $tanks = $pdo->query("
 <html>
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>Project Tank Levels</title>
     <link rel="stylesheet" href="indexStyle.css">
 </head>

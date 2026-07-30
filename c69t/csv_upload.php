@@ -507,6 +507,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <html lang="en">
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <title>CSV Upload</title>
     <link rel="stylesheet" href="indexStyle.css">

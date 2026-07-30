@@ -311,6 +311,7 @@ $gasTestLocations = $pdo->query("
 <html>
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>Manage Dropdowns</title>
     <link rel="stylesheet" href="indexStyle.css">
 </head>

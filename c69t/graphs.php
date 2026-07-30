@@ -346,6 +346,7 @@ $rangeSummary = date("d/m/Y H:i", strtotime($startSql)) . " to " . date("d/m/Y H
 <html lang="en">
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Custom Graphs</title>

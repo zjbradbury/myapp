@@ -306,6 +306,7 @@ function numberOrDash(?float $value, int $decimals = 2): string
 <html lang="en">
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tricanter Tank Height</title>

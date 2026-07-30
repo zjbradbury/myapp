@@ -451,6 +451,7 @@ foreach ($teams as $t) {
 <html>
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>World Cup Sweepstake</title>
     <style>
         body {

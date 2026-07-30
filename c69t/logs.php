@@ -477,6 +477,7 @@ $csvParams = [
 <html lang="en">
 
 <head>
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title><?= h($config['label']) ?> Logs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="indexStyle.css">
