@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
 
     if ($form === 'item') {
         $key = trim($_POST['monitor_key'] ?? '');
-        $allowed = ['nozzle', 'tricanter', 'solid_waste', 'sample', 'gas_test', 'project_flow', 'pump_values', 'nitrogen'];
+        $allowed = ['nozzle', 'tricanter', 'solid_waste', 'sample', 'gas_test', 'tank_internal_o2', 'project_flow', 'pump_values', 'nitrogen'];
 
         if (in_array($key, $allowed, true)) {
             setSetting($pdo, 'monitor_' . $key . '_enabled', isset($_POST['monitor_enabled']) ? '1' : '0');

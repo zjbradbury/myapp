@@ -605,11 +605,19 @@ function formatElapsedTime(int $seconds): string
     return $days . 'd ' . $hours . 'h ago';
 }
 
-function getLastLogDateTime(PDO $pdo, string $table): ?string
+function getLastLogDateTime(PDO $pdo, string $table, ?string $dataColumn = null): ?string
 {
     if (!tableExists($pdo, $table)) {
         return null;
     }
+
+    if ($dataColumn !== null && !preg_match('/^[A-Za-z0-9_]+$/', $dataColumn)) {
+        throw new InvalidArgumentException('Invalid monitoring data column.');
+    }
+
+    $dataCondition = $dataColumn === null
+        ? ''
+        : "\n          AND {$dataColumn} IS NOT NULL";
 
     $sql = "
         SELECT CONCAT(log_date, ' ', log_time) AS dt
@@ -617,7 +625,7 @@ function getLastLogDateTime(PDO $pdo, string $table): ?string
         WHERE log_date IS NOT NULL
           AND log_time IS NOT NULL
           AND log_date <> ''
-          AND log_time <> ''
+          AND log_time <> ''{$dataCondition}
         ORDER BY log_date DESC, log_time DESC, id DESC
         LIMIT 1
     ";
@@ -663,6 +671,13 @@ function buildMonitoringData(PDO $pdo): array
             'table' => 'gas_test_logs',
             'enabled' => (int)getSetting($pdo, 'monitor_gas_test_enabled', '1') === 1,
             'minutes' => max(1, (int)getSetting($pdo, 'monitor_gas_test_minutes', '60')),
+        ],
+        'tank_internal_o2' => [
+            'label' => 'Tank Internal O2',
+            'table' => 'nitrogen_logs',
+            'data_column' => 'tank_internal_o2',
+            'enabled' => (int)getSetting($pdo, 'monitor_tank_internal_o2_enabled', '1') === 1,
+            'minutes' => max(1, (int)getSetting($pdo, 'monitor_tank_internal_o2_minutes', '60')),
         ],
         'project_flow' => [
             'label' => 'Project Flow',
@@ -714,7 +729,7 @@ function buildMonitoringData(PDO $pdo): array
             continue;
         }
 
-        $last = getLastLogDateTime($pdo, $item['table']);
+        $last = getLastLogDateTime($pdo, $item['table'], $item['data_column'] ?? null);
         $item['last_entry'] = $last;
         $item['last_entry_display'] = $last ? date('d/m/Y H:i', strtotime($last)) : 'No data';
 
