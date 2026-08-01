@@ -3,15 +3,15 @@ date_default_timezone_set('Australia/Adelaide');
 
 $navItems = [
     [
-        'title' => 'Tank Dashboard',
-        'description' => 'Open the Contract 69 tank cleaning dashboard, live process data, logs and monitoring.',
+        'title' => 'Tank Cleaning Dashboard',
+        'description' => 'Contract69tanks dashboard, live process data, logs and monitoring.',
         'href' => '/c69t',
         'icon' => '⚙',
         'label' => 'Operations',
     ],
     [
-        'title' => 'TV',
-        'description' => 'Open the site television and IPTV player.',
+        'title' => 'Free View TV',
+        'description' => 'Australian TV Channel Player.',
         'href' => '/tv',
         'icon' => '▣',
         'label' => 'Media',
@@ -23,8 +23,14 @@ $navItems = [
         'icon' => '◆',
         'label' => 'Racing',
     ],
-
     [
+         'title' => 'World Cup Sweep',
+         'description' => 'Open the World Cup sweepstake page.',
+         'href' => '/c69t/worldCup.php',
+         'icon' => '★',
+         'label' => 'Competition',
+     ],
+     [
         'title' => 'Overseerr',
         'description' => 'Request Movies and TV Shows for Plex.',
         'href' => 'https://overseerr.zbradbury.com/login',
@@ -32,13 +38,6 @@ $navItems = [
         'label' => 'Media',
     ],
 
-    // [
-    //     'title' => 'World Cup Sweep',
-    //     'description' => 'Open the World Cup sweepstake page.',
-    //     'href' => '/c69t/worldCup.php',
-    //     'icon' => '★',
-    //     'label' => 'Competition',
-    // ],
 ];
 ?>
 <!DOCTYPE html>
