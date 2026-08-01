@@ -13,7 +13,7 @@ $navItems = [
         'title' => 'Free View TV',
         'description' => 'Australian TV Channel Player.',
         'href' => '/tv',
-        'icon' => '▣',
+        'icon' => '‣',
         'label' => 'Media',
     ],
     [
