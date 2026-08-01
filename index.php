@@ -27,7 +27,7 @@ $navItems = [
          'title' => 'World Cup Sweep',
          'description' => 'Open the World Cup sweepstake page.',
          'href' => '/c69t/worldCup.php',
-         'icon' => '★',
+         'icon' => '♛',
          'label' => 'Competition',
      ],
      [
