@@ -23,6 +23,15 @@ $navItems = [
         'icon' => '◆',
         'label' => 'Racing',
     ],
+
+    [
+        'title' => 'Overseerr',
+        'description' => 'Request Movies and TV Shows for Plex.',
+        'href' => 'https://overseerr.zbradbury.com/login',
+        'icon' => '★',
+        'label' => 'Media',
+    ],
+
     // [
     //     'title' => 'World Cup Sweep',
     //     'description' => 'Open the World Cup sweepstake page.',
