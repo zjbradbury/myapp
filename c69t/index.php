@@ -773,6 +773,7 @@ function render_pump_values_kpis(array $row): string
     ?>
     <div class="kpi"><small>SP1 Status</small><b><?= h(pump_status_text($row['suction_pump_1_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>SP2 Status</small><b><?= h(pump_status_text($row['suction_pump_2_status'] ?? null)) ?></b></div>
+    <div class="kpi"><small>SP3 Status</small><b><?= h(pump_status_text($row['suction_pump_3_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>FP Status</small><b><?= h(pump_status_text($row['feed_pump_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>BP Status</small><b><?= h(pump_status_text($row['booster_pump_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>SP2 Inlet Pressure</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
@@ -791,7 +792,7 @@ function render_pump_values_rows(array $rows): string
 
     if (!$rows): ?>
         <tr>
-            <td colspan="15">No pump values data in selected range.</td>
+            <td colspan="16">No pump values data in selected range.</td>
         </tr>
         <?php else:
         foreach ($rows as $r): ?>
@@ -800,6 +801,7 @@ function render_pump_values_rows(array $rows): string
                 <td><?= h($r['log_time'] ?? '') ?></td>
                 <td><?= h(pump_status_text($r['suction_pump_1_status'] ?? null)) ?></td>
                 <td><?= h(pump_status_text($r['suction_pump_2_status'] ?? null)) ?></td>
+                <td><?= h(pump_status_text($r['suction_pump_3_status'] ?? null)) ?></td>
                 <td><?= pump_feedback_display($r['suction_pump_2_feedback'] ?? null, 2) ?></td>
                 <td><?= fmt($r['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</td>
@@ -1881,6 +1883,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                                 <th>Time</th>
                                 <th>SP1 Status</th>
                                 <th>SP2 Status</th>
+                                <th>SP3 Status</th>
                                 <th>SP2 Feedback</th>
                                 <th>SP2 Inlet</th>
                                 <th>SP2 Outlet</th>

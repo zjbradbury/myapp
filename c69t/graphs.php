@@ -46,6 +46,7 @@ $tables = [
         "columns" => [
             "suction_pump_1_status" => "SP1 Status",
             "suction_pump_2_status" => "SP2 Status",
+            "suction_pump_3_status" => "SP3 Status",
             "suction_pump_2_speed_out" => "SP2 Speed Out",
             "suction_pump_2_feedback" => "SP2 Feedback",
             "suction_pump_2_inlet_pressure" => "SP2 Inlet Pressure",

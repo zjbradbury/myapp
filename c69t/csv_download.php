@@ -45,7 +45,7 @@ $exportTables = [
     ],
     "pump_values_logs" => [
         "label" => "pump_values",
-        "columns" => ["log_date", "log_time", "suction_pump_1_status", "suction_pump_2_status", "suction_pump_2_speed_out", "suction_pump_2_feedback", "suction_pump_2_inlet_pressure", "suction_pump_2_outlet_pressure", "feed_pump_status", "feed_pump_speed_out", "feed_pump_feedback", "feed_pump_inlet_pressure", "feed_pump_outlet_pressure", "booster_pump_status", "booster_pump_speed_out", "booster_pump_feedback", "booster_pump_inlet_pressure", "booster_pump_outlet_pressure", "comments"],
+        "columns" => ["log_date", "log_time", "suction_pump_1_status", "suction_pump_2_status", "suction_pump_3_status", "suction_pump_2_speed_out", "suction_pump_2_feedback", "suction_pump_2_inlet_pressure", "suction_pump_2_outlet_pressure", "feed_pump_status", "feed_pump_speed_out", "feed_pump_feedback", "feed_pump_inlet_pressure", "feed_pump_outlet_pressure", "booster_pump_status", "booster_pump_speed_out", "booster_pump_feedback", "booster_pump_inlet_pressure", "booster_pump_outlet_pressure", "comments"],
     ],
     "nitrogen_logs" => [
         "label" => "nitrogen",

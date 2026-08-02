@@ -213,6 +213,7 @@ $schemas = [
             ['name' => 'log_time', 'label' => 'Time', 'type' => 'time', 'required' => true],
             ['name' => 'suction_pump_1_status', 'label' => 'SP1 Status', 'type' => 'number', 'step' => '1'],
             ['name' => 'suction_pump_2_status', 'label' => 'SP2 Status', 'type' => 'number', 'step' => '1'],
+            ['name' => 'suction_pump_3_status', 'label' => 'SP3 Status', 'type' => 'number', 'step' => '1'],
             ['name' => 'suction_pump_2_speed_out', 'label' => 'SP2 Speed Out', 'type' => 'number', 'step' => '0.001'],
             ['name' => 'suction_pump_2_feedback', 'label' => 'SP2 Feedback', 'type' => 'number', 'step' => '0.001'],
             ['name' => 'suction_pump_2_inlet_pressure', 'label' => 'SP2 Inlet Pressure', 'type' => 'number', 'step' => '0.001', 'unit' => 'BAR'],

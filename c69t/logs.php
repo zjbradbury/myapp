@@ -152,6 +152,7 @@ $tables = [
             ['key' => 'log_time', 'label' => 'Time'],
             ['key' => 'suction_pump_1_status', 'label' => 'SP1 Status', 'type' => 'pump_status'],
             ['key' => 'suction_pump_2_status', 'label' => 'SP2 Status', 'type' => 'pump_status'],
+            ['key' => 'suction_pump_3_status', 'label' => 'SP3 Status', 'type' => 'pump_status'],
             ['key' => 'suction_pump_2_speed_out', 'label' => 'SP2 Speed Out', 'suffix' => ' %', 'decimals' => 2],
             ['key' => 'suction_pump_2_feedback', 'label' => 'SP2 Feedback', 'type' => 'pump_feedback', 'decimals' => 2],
             ['key' => 'suction_pump_2_inlet_pressure', 'label' => 'SP2 Inlet', 'suffix' => ' BAR', 'decimals' => 3],

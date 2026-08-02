@@ -219,6 +219,7 @@ try {
 
                 'Suction Pump 1 Status' => 'suction_pump_1_status',
                 'Suction Pump 2 Status' => 'suction_pump_2_status',
+                'Suction Pump 3 Status' => 'suction_pump_3_status',
                 'Suction Pump 2 Speed Out' => 'suction_pump_2_speed_out',
                 'Suction Pump 2 Feedback' => 'suction_pump_2_feedback',
                 'Suction Pump 2 Inlet Pressure' => 'suction_pump_2_inlet_pressure',
@@ -241,6 +242,7 @@ try {
             'numeric_columns' => [
                 'suction_pump_1_status',
                 'suction_pump_2_status',
+                'suction_pump_3_status',
                 'suction_pump_2_speed_out',
                 'suction_pump_2_feedback',
                 'suction_pump_2_inlet_pressure',
