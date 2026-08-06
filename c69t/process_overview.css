@@ -1,0 +1,318 @@
+:root {
+    --bg: #11171d;
+    --panel: #222b33;
+    --panel-2: #182128;
+    --line: #c9d9df;
+    --text: #f5f7f8;
+    --muted: #9fb0ba;
+    --border: #46545d;
+    --green: #55e05c;
+    --red: #ff4f57;
+    --amber: #ffcb45;
+    --cyan: #20cbe8;
+    --oil: #ffd528;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 15% 10%, rgba(40, 75, 95, .28), transparent 35%),
+        linear-gradient(160deg, #0b1116, var(--bg));
+    color: var(--text);
+    font-family: Inter, Segoe UI, Arial, sans-serif;
+}
+
+.overview-shell {
+    width: min(1800px, 100%);
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.overview-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.eyebrow {
+    margin: 0 0 4px;
+    color: var(--cyan);
+    font-size: .78rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(1.6rem, 3vw, 2.8rem);
+}
+
+.system-state {
+    min-width: 300px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: rgba(24, 33, 40, .92);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .3);
+}
+
+.system-state .state-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    box-shadow: 0 0 16px currentColor;
+    flex: 0 0 auto;
+}
+
+.system-state.online { color: var(--green); }
+.system-state.offline { color: var(--red); }
+.system-state .state-dot { background: currentColor; }
+.system-state strong { display: block; font-size: 1rem; }
+.system-state small { display: block; color: var(--muted); margin-top: 4px; }
+
+.process-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.35fr .75fr .75fr .9fr;
+    grid-template-areas:
+        "suction feed booster nitrogen"
+        "tricanter tricanter flow nitrogen"
+        "outputs outputs outputs nitrogen";
+    gap: 16px;
+}
+
+.panel {
+    position: relative;
+    z-index: 2;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: linear-gradient(180deg, rgba(38, 49, 58, .98), rgba(23, 31, 38, .98));
+    padding: 15px;
+    box-shadow: 0 12px 26px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+.panel-title {
+    margin: -15px -15px 14px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8, 13, 17, .34);
+    font-size: .82rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #dce6eb;
+}
+
+.suction-panel { grid-area: suction; }
+.feed-panel { grid-area: feed; }
+.booster-panel { grid-area: booster; }
+.tricanter-panel { grid-area: tricanter; }
+.flow-panel { grid-area: flow; }
+.outputs-panel { grid-area: outputs; }
+.nitrogen-panel { grid-area: nitrogen; }
+
+.pump-row,
+.tank-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.pump-card {
+    border: 1px solid #394750;
+    border-radius: 8px;
+    padding: 10px;
+    background: rgba(11, 17, 22, .38);
+}
+
+.pump-heading,
+.nitrogen-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: .9rem;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #7b858a;
+    box-shadow: 0 0 10px rgba(255,255,255,.12);
+}
+.status-dot.running { background: var(--green); box-shadow: 0 0 12px rgba(85,224,92,.65); }
+.status-dot.error { background: var(--red); box-shadow: 0 0 12px rgba(255,79,87,.65); }
+.status-dot.off { background: #8b969b; }
+.status-dot.unknown { background: var(--amber); }
+
+.status-text {
+    margin: 10px 0;
+    text-align: center;
+    font-weight: 900;
+    font-size: .82rem;
+}
+.status-text.running { color: var(--green); }
+.status-text.error { color: var(--red); }
+.status-text.off { color: var(--muted); }
+.status-text.unknown { color: var(--amber); }
+
+.value-grid {
+    display: grid;
+    gap: 8px;
+}
+.value-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.value-grid.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.value-grid > div {
+    min-width: 0;
+    padding: 9px;
+    border: 1px solid #3e4b53;
+    border-radius: 6px;
+    background: #11191f;
+}
+.value-grid span {
+    display: block;
+    color: var(--muted);
+    font-size: .72rem;
+    margin-bottom: 4px;
+}
+.value-grid b {
+    display: block;
+    font-size: .98rem;
+    overflow-wrap: anywhere;
+}
+
+.tricanter-art {
+    height: 145px;
+    margin: 0 0 14px;
+    position: relative;
+    border-radius: 8px;
+    background:
+        linear-gradient(90deg, transparent 4%, #9aa8ac 4% 10%, transparent 10% 88%, #829094 88% 94%, transparent 94%),
+        linear-gradient(180deg, transparent 37%, #7c8c91 37% 64%, transparent 64%);
+}
+.tricanter-art::before {
+    content: "";
+    position: absolute;
+    left: 12%; right: 12%; top: 31%; bottom: 25%;
+    border: 3px solid #a8b6ba;
+    border-radius: 45% 18% 18% 45%;
+    background: linear-gradient(90deg, #7a8a8e, #d2dddf 18%, #59696d 52%, #b7c5c8 78%, #68777b);
+    box-shadow: inset 0 0 0 6px rgba(17,25,31,.25), 0 8px 15px rgba(0,0,0,.28);
+}
+.tricanter-art::after {
+    content: "";
+    position: absolute;
+    left: 21%; right: 19%; top: 45%; height: 18px;
+    background: repeating-linear-gradient(135deg, #d4dfdf 0 8px, #748589 8px 15px);
+    border-radius: 10px;
+}
+
+.tank-card { text-align: center; }
+.tank-card strong { display: block; margin-top: 8px; }
+.tank-card small { display: block; color: var(--muted); margin-top: 4px; }
+.tank-vessel {
+    position: relative;
+    width: min(145px, 100%);
+    height: 170px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 4px solid #a9b8bd;
+    border-radius: 8px 8px 34px 34px;
+    background: rgba(255,255,255,.055);
+}
+.tank-vessel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: repeating-linear-gradient(180deg, transparent 0 32px, rgba(255,255,255,.15) 33px 34px);
+}
+.tank-fill { position: absolute; left: 0; right: 0; bottom: 0; transition: height .4s ease; }
+.tank-vessel span {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+    font-weight: 900;
+    text-shadow: 0 2px 4px #000;
+}
+.solids .tank-fill { background: linear-gradient(#8d6255, #4e2f27); }
+.water .tank-fill { background: linear-gradient(rgba(32,203,232,.65), rgba(0,120,160,.95)); }
+.oil .tank-fill { background: linear-gradient(rgba(255,213,40,.72), rgba(190,136,0,.95)); }
+
+.nitrogen-status {
+    margin-bottom: 12px;
+    padding: 10px;
+    border: 1px solid #3e4b53;
+    border-radius: 6px;
+    background: #11191f;
+}
+
+.flow-line {
+    position: absolute;
+    z-index: 1;
+    background: var(--line);
+    box-shadow: 0 0 8px rgba(201,217,223,.25);
+}
+.flow-line.horizontal { height: 8px; top: 145px; }
+.line-a { left: 29%; width: 6%; }
+.line-b { left: 50%; width: 5%; }
+
+.overview-footer {
+    margin-top: 16px;
+    color: var(--muted);
+    text-align: center;
+    font-size: .82rem;
+}
+
+@media (max-width: 1150px) {
+    .process-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "suction suction"
+            "feed booster"
+            "tricanter tricanter"
+            "flow nitrogen"
+            "outputs outputs";
+    }
+    .flow-line { display: none; }
+}
+
+@media (max-width: 720px) {
+    .overview-shell { padding: 10px; }
+    .overview-header { align-items: stretch; flex-direction: column; }
+    .system-state { min-width: 0; }
+    .process-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "suction"
+            "feed"
+            "booster"
+            "tricanter"
+            "flow"
+            "outputs"
+            "nitrogen";
+    }
+    .pump-row,
+    .tank-row,
+    .value-grid.four { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 460px) {
+    .pump-row,
+    .tank-row,
+    .value-grid.two,
+    .value-grid.four { grid-template-columns: 1fr; }
+}
