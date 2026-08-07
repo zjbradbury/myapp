@@ -72,7 +72,9 @@ $sp2 = processStatus($data['pump'], 'suction_pump_2_status');
 $sp3 = processStatus($data['pump'], 'suction_pump_3_status');
 $feed = processStatus($data['pump'], 'feed_pump_status');
 $boost = processStatus($data['pump'], 'booster_pump_status');
-$tri = processStatus($data['tricanter'], 'tricanter_status');
+$tri = (isset($data['tricanter']['tricanter_status']) && (int)$data['tricanter']['tricanter_status'] === 5)
+    ? ['Running', 'running']
+    : ['Offline', 'stopped'];
 $nitrogenActive = (int)($data['nitrogen']['nitrogen_active'] ?? 0) === 1;
 $nitrogenTrip = (int)($data['nitrogen']['trip_status'] ?? 0) === 1;
 ?>
@@ -98,17 +100,15 @@ $nitrogenTrip = (int)($data['nitrogen']['trip_status'] ?? 0) === 1;
     <section class="process-canvas" aria-label="Tricanter process flow">
         <div class="process-pipe main-pipe"></div>
 
-        <article class="unit suction-unit">
-            <div class="unit-title">Tank suction</div>
-            <div class="suction-layout">
-                <div class="source-tank"><span>Source<br>tank</span></div>
-                <div class="pump-stack">
-                    <div class="mini-pump"><span class="pump-icon"></span><div><b>Suction pump 1</b><small><?= statusLamp($sp1) ?></small></div></div>
-                    <div class="mini-pump primary"><span class="pump-icon"></span><div><b>Suction pump 2</b><small><?= statusLamp($sp2) ?></small></div></div>
-                    <div class="mini-pump"><span class="pump-icon"></span><div><b>Suction pump 3</b><small><?= statusLamp($sp3) ?></small></div></div>
-                </div>
-            </div>
-            <div class="readings four">
+        <article class="unit suction-one-unit pump-unit">
+            <div class="unit-title">Suction pump 1</div>
+            <div class="large-pump"><span class="pump-icon <?= $sp1[1] ?>"></span><div><?= statusLamp($sp1) ?></div></div>
+        </article>
+
+        <article class="unit suction-two-unit pump-unit">
+            <div class="unit-title">Suction pump 2</div>
+            <div class="large-pump"><span class="pump-icon <?= $sp2[1] ?>"></span><div><?= statusLamp($sp2) ?></div></div>
+            <div class="readings two">
                 <div><label>Feedback</label><output><?= pv($data['pump'], 'suction_pump_2_feedback', 1, '%') ?></output></div>
                 <div><label>Speed out</label><output><?= pv($data['pump'], 'suction_pump_2_speed_out', 1, '%') ?></output></div>
                 <div><label>Inlet</label><output><?= pv($data['pump'], 'suction_pump_2_inlet_pressure', 2, 'bar') ?></output></div>
@@ -116,9 +116,14 @@ $nitrogenTrip = (int)($data['nitrogen']['trip_status'] ?? 0) === 1;
             </div>
         </article>
 
+        <article class="unit suction-three-unit pump-unit">
+            <div class="unit-title">Suction pump 3</div>
+            <div class="large-pump"><span class="pump-icon <?= $sp3[1] ?>"></span><div><?= statusLamp($sp3) ?></div></div>
+        </article>
+
         <article class="unit feed-unit pump-unit">
             <div class="unit-title">Feed pump</div>
-            <div class="large-pump"><span class="pump-icon"></span><div><?= statusLamp($feed) ?></div></div>
+            <div class="large-pump"><span class="pump-icon <?= $feed[1] ?>"></span><div><?= statusLamp($feed) ?></div></div>
             <div class="readings two">
                 <div><label>Feedback</label><output><?= pv($data['pump'], 'feed_pump_feedback', 1, '%') ?></output></div>
                 <div><label>Speed out</label><output><?= pv($data['pump'], 'feed_pump_speed_out', 1, '%') ?></output></div>
@@ -129,7 +134,7 @@ $nitrogenTrip = (int)($data['nitrogen']['trip_status'] ?? 0) === 1;
 
         <article class="unit booster-unit pump-unit">
             <div class="unit-title">Booster pump</div>
-            <div class="large-pump"><span class="pump-icon"></span><div><?= statusLamp($boost) ?></div></div>
+            <div class="large-pump"><span class="pump-icon <?= $boost[1] ?>"></span><div><?= statusLamp($boost) ?></div></div>
             <div class="readings two">
                 <div><label>Feedback</label><output><?= pv($data['pump'], 'booster_pump_feedback', 1, '%') ?></output></div>
                 <div><label>Speed out</label><output><?= pv($data['pump'], 'booster_pump_speed_out', 1, '%') ?></output></div>
