@@ -1,46 +1,24 @@
 <?php
-
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
 
-date_default_timezone_set('Australia/Adelaide');
-
-// Support the common config.php patterns used by the site.
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    if (function_exists('getPDO')) {
-        $pdo = getPDO();
-    } elseif (function_exists('db')) {
-        $pdo = db();
-    }
-}
-
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    http_response_code(500);
-    exit('Database connection was not found. Expected $pdo, getPDO(), or db() from config.php.');
-}
-
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-function latestRow(PDO $pdo, string $table): ?array
+function latestProcessRow(PDO $pdo, string $table): ?array
 {
-    // Table names are hard-coded by this page and never come from user input.
-    $sql = "SELECT * FROM `{$table}` ORDER BY log_date DESC, log_time DESC LIMIT 1";
     try {
-        $row = $pdo->query($sql)->fetch();
+        $row = $pdo->query("SELECT * FROM `{$table}` ORDER BY log_date DESC, log_time DESC LIMIT 1")->fetch();
         return $row ?: null;
     } catch (Throwable $e) {
         return null;
     }
 }
 
-function rowTimestamp(?array $row): ?DateTimeImmutable
+function processTimestamp(?array $row): ?DateTimeImmutable
 {
-    if (!$row || empty($row['log_date']) || empty($row['log_time'])) {
-        return null;
-    }
-
+    if (!$row || empty($row['log_date']) || empty($row['log_time'])) return null;
     try {
         return new DateTimeImmutable($row['log_date'] . ' ' . $row['log_time'], new DateTimeZone('Australia/Adelaide'));
     } catch (Throwable $e) {
@@ -48,60 +26,55 @@ function rowTimestamp(?array $row): ?DateTimeImmutable
     }
 }
 
-function displayValue(?array $row, string $key, int $decimals = 1, string $suffix = ''): string
+function pv(?array $row, string $key, int $decimals = 1, string $unit = ''): string
 {
-    if (!$row || !array_key_exists($key, $row) || $row[$key] === null || $row[$key] === '') {
-        return '—';
-    }
-
-    if (is_numeric($row[$key])) {
-        return number_format((float)$row[$key], $decimals) . $suffix;
-    }
-
-    return htmlspecialchars((string)$row[$key], ENT_QUOTES, 'UTF-8');
+    $value = $row[$key] ?? null;
+    if ($value === null || $value === '') return '—';
+    if (!is_numeric($value)) return h($value);
+    return number_format((float)$value, $decimals) . ($unit === '' ? '' : ' ' . $unit);
 }
 
-function pumpStatus(?array $row, string $key): array
+function processStatus(?array $row, string $key): array
 {
-    if (!$row || !isset($row[$key]) || !is_numeric($row[$key])) {
-        return ['label' => 'NO DATA', 'class' => 'unknown'];
-    }
-
-    return match ((int)$row[$key]) {
-        1 => ['label' => 'RUNNING', 'class' => 'running'],
-        2 => ['label' => 'ERROR', 'class' => 'error'],
-        default => ['label' => 'OFF', 'class' => 'off'],
+    $value = $row[$key] ?? null;
+    if ($value === null || $value === '' || !is_numeric($value)) return ['No data', 'unknown'];
+    return match ((int)$value) {
+        1 => ['Running', 'running'],
+        2 => ['Fault', 'fault'],
+        default => ['Stopped', 'stopped'],
     };
 }
 
-$rows = [
-    'pump'       => latestRow($pdo, 'pump_values_logs'),
-    'tricanter'  => latestRow($pdo, 'tricanter_logs'),
-    'flow'       => latestRow($pdo, 'project_flow_logs'),
-    'nitrogen'   => latestRow($pdo, 'nitrogen_logs'),
-    'solid'      => latestRow($pdo, 'solid_waste_logs'),
-];
-
-$latestTimestamp = null;
-foreach ($rows as $row) {
-    $ts = rowTimestamp($row);
-    if ($ts && (!$latestTimestamp || $ts > $latestTimestamp)) {
-        $latestTimestamp = $ts;
-    }
+function statusLamp(array $status): string
+{
+    return '<span class="lamp ' . $status[1] . '"></span><span>' . h($status[0]) . '</span>';
 }
 
+$data = [
+    'pump' => latestProcessRow($pdo, 'pump_values_logs'),
+    'tricanter' => latestProcessRow($pdo, 'tricanter_logs'),
+    'flow' => latestProcessRow($pdo, 'project_flow_logs'),
+    'nitrogen' => latestProcessRow($pdo, 'nitrogen_logs'),
+    'solid' => latestProcessRow($pdo, 'solid_waste_logs'),
+    'waterPump' => latestProcessRow($pdo, 'recovered_water_pump_logs'),
+    'oilPump' => latestProcessRow($pdo, 'recovered_oil_pump_logs'),
+];
+
+$timestamps = array_values(array_filter(array_map('processTimestamp', $data)));
+$latest = $timestamps ? max($timestamps) : null;
 $now = new DateTimeImmutable('now', new DateTimeZone('Australia/Adelaide'));
-$ageSeconds = $latestTimestamp ? max(0, $now->getTimestamp() - $latestTimestamp->getTimestamp()) : null;
-$systemOnline = $ageSeconds !== null && $ageSeconds <= 600;
+$age = $latest ? max(0, $now->getTimestamp() - $latest->getTimestamp()) : null;
+$online = $age !== null && $age <= 600;
+$updated = $latest ? $latest->format('d/m/Y g:i:s A') : 'No database data';
 
-$sp1 = pumpStatus($rows['pump'], 'suction_pump_1_status');
-$sp2 = pumpStatus($rows['pump'], 'suction_pump_2_status');
-$sp3 = pumpStatus($rows['pump'], 'suction_pump_3_status');
-$fp  = pumpStatus($rows['pump'], 'feed_pump_status');
-$bp  = pumpStatus($rows['pump'], 'booster_pump_status');
-
-$lastUpdated = $latestTimestamp ? $latestTimestamp->format('d/m/Y H:i:s') : 'No data';
-$ageText = $ageSeconds === null ? 'No database entries found' : ($ageSeconds < 60 ? $ageSeconds . ' sec ago' : floor($ageSeconds / 60) . ' min ago');
+$sp1 = processStatus($data['pump'], 'suction_pump_1_status');
+$sp2 = processStatus($data['pump'], 'suction_pump_2_status');
+$sp3 = processStatus($data['pump'], 'suction_pump_3_status');
+$feed = processStatus($data['pump'], 'feed_pump_status');
+$boost = processStatus($data['pump'], 'booster_pump_status');
+$tri = processStatus($data['tricanter'], 'tricanter_status');
+$nitrogenActive = (int)($data['nitrogen']['nitrogen_active'] ?? 0) === 1;
+$nitrogenTrip = (int)($data['nitrogen']['trip_status'] ?? 0) === 1;
 ?>
 <!doctype html>
 <html lang="en">
@@ -113,140 +86,107 @@ $ageText = $ageSeconds === null ? 'No database entries found' : ($ageSeconds < 6
     <link rel="stylesheet" href="process_overview.css">
 </head>
 <body>
-<main class="overview-shell">
-    <header class="overview-header">
-        <div>
-            <p class="eyebrow">Contract 69 Tanks</p>
-            <h1>Process Overview</h1>
-        </div>
-        <div class="system-state <?= $systemOnline ? 'online' : 'offline' ?>">
-            <span class="state-dot"></span>
-            <div>
-                <strong>SYSTEM <?= $systemOnline ? 'ONLINE' : 'OFFLINE' ?></strong>
-                <small>Last entry: <?= htmlspecialchars($lastUpdated) ?> · <?= htmlspecialchars($ageText) ?></small>
-            </div>
+<main class="hmi-shell">
+    <header class="hmi-header">
+        <div class="brand"><span>C69T</span><div><h1>Process Overview</h1><p>Tricanter separation system</p></div></div>
+        <div class="system-card <?= $online ? 'online' : 'offline' ?>">
+            <span class="lamp <?= $online ? 'running' : 'fault' ?>"></span>
+            <div><strong>System <?= $online ? 'online' : 'offline' ?></strong><small>Latest data <?= h($updated) ?></small></div>
         </div>
     </header>
 
-    <section class="process-grid">
-        <article class="panel suction-panel">
-            <div class="panel-title">Tank Suction</div>
-            <div class="pump-row">
-                <div class="pump-card">
-                    <div class="pump-heading"><span class="status-dot <?= $sp1['class'] ?>"></span> Suction Pump 1</div>
-                    <div class="status-text <?= $sp1['class'] ?>"><?= $sp1['label'] ?></div>
-                </div>
-                <div class="pump-card">
-                    <div class="pump-heading"><span class="status-dot <?= $sp2['class'] ?>"></span> Suction Pump 2</div>
-                    <div class="status-text <?= $sp2['class'] ?>"><?= $sp2['label'] ?></div>
-                    <div class="value-grid two">
-                        <div><span>Speed</span><b><?= displayValue($rows['pump'], 'suction_pump_2_speed_out', 1, ' %') ?></b></div>
-                        <div><span>Feedback</span><b><?= displayValue($rows['pump'], 'suction_pump_2_feedback', 1, ' %') ?></b></div>
-                        <div><span>Inlet</span><b><?= displayValue($rows['pump'], 'suction_pump_2_inlet_pressure', 2, ' bar') ?></b></div>
-                        <div><span>Outlet</span><b><?= displayValue($rows['pump'], 'suction_pump_2_outlet_pressure', 2, ' bar') ?></b></div>
-                    </div>
-                </div>
-                <div class="pump-card">
-                    <div class="pump-heading"><span class="status-dot <?= $sp3['class'] ?>"></span> Suction Pump 3</div>
-                    <div class="status-text <?= $sp3['class'] ?>"><?= $sp3['label'] ?></div>
+    <section class="process-canvas" aria-label="Tricanter process flow">
+        <div class="process-pipe main-pipe"></div>
+
+        <article class="unit suction-unit">
+            <div class="unit-title">Tank suction</div>
+            <div class="suction-layout">
+                <div class="source-tank"><span>Source<br>tank</span></div>
+                <div class="pump-stack">
+                    <div class="mini-pump"><span class="pump-icon"></span><div><b>Suction pump 1</b><small><?= statusLamp($sp1) ?></small></div></div>
+                    <div class="mini-pump primary"><span class="pump-icon"></span><div><b>Suction pump 2</b><small><?= statusLamp($sp2) ?></small></div></div>
+                    <div class="mini-pump"><span class="pump-icon"></span><div><b>Suction pump 3</b><small><?= statusLamp($sp3) ?></small></div></div>
                 </div>
             </div>
-        </article>
-
-        <div class="flow-line horizontal line-a"></div>
-
-        <article class="panel feed-panel">
-            <div class="panel-title">Feed Pump</div>
-            <div class="pump-heading"><span class="status-dot <?= $fp['class'] ?>"></span> <?= $fp['label'] ?></div>
-            <div class="value-grid two">
-                <div><span>Speed</span><b><?= displayValue($rows['pump'], 'feed_pump_speed_out', 1, ' %') ?></b></div>
-                <div><span>Feedback</span><b><?= displayValue($rows['pump'], 'feed_pump_feedback', 1, ' %') ?></b></div>
-                <div><span>Inlet</span><b><?= displayValue($rows['pump'], 'feed_pump_inlet_pressure', 2, ' bar') ?></b></div>
-                <div><span>Outlet</span><b><?= displayValue($rows['pump'], 'feed_pump_outlet_pressure', 2, ' bar') ?></b></div>
+            <div class="readings four">
+                <div><label>Feedback</label><output><?= pv($data['pump'], 'suction_pump_2_feedback', 1, '%') ?></output></div>
+                <div><label>Speed out</label><output><?= pv($data['pump'], 'suction_pump_2_speed_out', 1, '%') ?></output></div>
+                <div><label>Inlet</label><output><?= pv($data['pump'], 'suction_pump_2_inlet_pressure', 2, 'bar') ?></output></div>
+                <div><label>Outlet</label><output><?= pv($data['pump'], 'suction_pump_2_outlet_pressure', 2, 'bar') ?></output></div>
             </div>
         </article>
 
-        <div class="flow-line horizontal line-b"></div>
-
-        <article class="panel booster-panel">
-            <div class="panel-title">Booster Pump</div>
-            <div class="pump-heading"><span class="status-dot <?= $bp['class'] ?>"></span> <?= $bp['label'] ?></div>
-            <div class="value-grid two">
-                <div><span>Speed</span><b><?= displayValue($rows['pump'], 'booster_pump_speed_out', 1, ' %') ?></b></div>
-                <div><span>Feedback</span><b><?= displayValue($rows['pump'], 'booster_pump_feedback', 1, ' %') ?></b></div>
-                <div><span>Inlet</span><b><?= displayValue($rows['pump'], 'booster_pump_inlet_pressure', 2, ' bar') ?></b></div>
-                <div><span>Outlet</span><b><?= displayValue($rows['pump'], 'booster_pump_outlet_pressure', 2, ' bar') ?></b></div>
+        <article class="unit feed-unit pump-unit">
+            <div class="unit-title">Feed pump</div>
+            <div class="large-pump"><span class="pump-icon"></span><div><?= statusLamp($feed) ?></div></div>
+            <div class="readings two">
+                <div><label>Feedback</label><output><?= pv($data['pump'], 'feed_pump_feedback', 1, '%') ?></output></div>
+                <div><label>Speed out</label><output><?= pv($data['pump'], 'feed_pump_speed_out', 1, '%') ?></output></div>
+                <div><label>Inlet</label><output><?= pv($data['pump'], 'feed_pump_inlet_pressure', 2, 'bar') ?></output></div>
+                <div><label>Outlet</label><output><?= pv($data['pump'], 'feed_pump_outlet_pressure', 2, 'bar') ?></output></div>
             </div>
         </article>
 
-        <article class="panel tricanter-panel equipment-panel">
-            <div class="panel-title">Tricanter</div>
-            <div class="equipment-art tricanter-art"><span></span></div>
-            <div class="value-grid four">
-                <div><span>Bowl speed</span><b><?= displayValue($rows['tricanter'], 'bowl_speed', 1, ' %') ?></b></div>
-                <div><span>Screw speed</span><b><?= displayValue($rows['tricanter'], 'screw_speed', 1, ' %') ?></b></div>
-                <div><span>Bowl RPM</span><b><?= displayValue($rows['tricanter'], 'bowl_rpm', 0, ' RPM') ?></b></div>
-                <div><span>Screw RPM</span><b><?= displayValue($rows['tricanter'], 'screw_rpm', 2, ' RPM') ?></b></div>
-                <div><span>Torque</span><b><?= displayValue($rows['tricanter'], 'torque', 1, ' %') ?></b></div>
-                <div><span>Feed rate</span><b><?= displayValue($rows['tricanter'], 'feed_rate', 2, ' m³/hr') ?></b></div>
-                <div><span>Temperature</span><b><?= displayValue($rows['tricanter'], 'temp', 1, ' °C') ?></b></div>
-                <div><span>Pressure</span><b><?= displayValue($rows['tricanter'], 'pressure', 2, ' bar') ?></b></div>
+        <article class="unit booster-unit pump-unit">
+            <div class="unit-title">Booster pump</div>
+            <div class="large-pump"><span class="pump-icon"></span><div><?= statusLamp($boost) ?></div></div>
+            <div class="readings two">
+                <div><label>Feedback</label><output><?= pv($data['pump'], 'booster_pump_feedback', 1, '%') ?></output></div>
+                <div><label>Speed out</label><output><?= pv($data['pump'], 'booster_pump_speed_out', 1, '%') ?></output></div>
+                <div><label>Inlet</label><output><?= pv($data['pump'], 'booster_pump_inlet_pressure', 2, 'bar') ?></output></div>
+                <div><label>Outlet</label><output><?= pv($data['pump'], 'booster_pump_outlet_pressure', 2, 'bar') ?></output></div>
             </div>
         </article>
 
-        <article class="panel flow-panel">
-            <div class="panel-title">Project Flow</div>
-            <div class="value-grid two">
-                <div><span>Flow rate</span><b><?= displayValue($rows['flow'], 'flow_rate', 2, ' m³/hr') ?></b></div>
-                <div><span>Nozzle</span><b><?= displayValue($rows['flow'], 'nozzle', 0) ?></b></div>
-                <div><span>Nozzle vertical</span><b><?= displayValue($rows['flow'], 'nozzle_vertical_deg', 1, '°') ?></b></div>
-                <div><span>Recovered water</span><b><?= displayValue($rows['flow'], 'recovered_water_level', 1, ' %') ?></b></div>
-                <div><span>Recovered oil</span><b><?= displayValue($rows['flow'], 'recovered_oil_level', 1, ' %') ?></b></div>
-                <div><span>Solid waste</span><b><?= displayValue($rows['flow'], 'solid_waste_level', 1, ' %') ?></b></div>
+        <article class="unit tricanter-unit">
+            <div class="unit-title"><span>Tricanter</span><span class="inline-status"><?= statusLamp($tri) ?></span></div>
+            <div class="tricanter-machine" aria-hidden="true"><span class="motor"></span><span class="drum"></span><span class="screw"></span><span class="outlet water-outlet"></span><span class="outlet oil-outlet"></span></div>
+            <div class="readings eight">
+                <div><label>Bowl speed</label><output><?= pv($data['tricanter'], 'bowl_speed', 1, '%') ?></output></div>
+                <div><label>Screw speed</label><output><?= pv($data['tricanter'], 'screw_speed', 1, '%') ?></output></div>
+                <div><label>Bowl</label><output><?= pv($data['tricanter'], 'bowl_rpm', 0, 'RPM') ?></output></div>
+                <div><label>Screw</label><output><?= pv($data['tricanter'], 'screw_rpm', 2, 'RPM') ?></output></div>
+                <div><label>Torque</label><output><?= pv($data['tricanter'], 'torque', 1, '%') ?></output></div>
+                <div><label>Feed rate</label><output><?= pv($data['tricanter'], 'feed_rate', 2, 'm³/hr') ?></output></div>
+                <div><label>Temperature</label><output><?= pv($data['tricanter'], 'temp', 1, '°C') ?></output></div>
+                <div><label>Pressure</label><output><?= pv($data['tricanter'], 'pressure', 2, 'bar') ?></output></div>
             </div>
         </article>
 
-        <article class="panel outputs-panel">
-            <div class="panel-title">Recovered Products</div>
-            <div class="tank-row">
-                <div class="tank-card solids">
-                    <div class="tank-vessel"><div class="tank-fill" style="height: <?= max(0, min(100, (float)($rows['flow']['solid_waste_level'] ?? 0))) ?>%"></div><span><?= displayValue($rows['flow'], 'solid_waste_level', 0, '%') ?></span></div>
-                    <strong>Solid Waste</strong>
-                    <small>Latest amount: <?= displayValue($rows['solid'], 'amount', 1, ' kg') ?></small>
+        <article class="unit outputs-unit">
+            <div class="unit-title">Recovered products</div>
+            <div class="vessels">
+                <div class="product solid"><div class="vessel"><span class="material"></span><b><?= pv($data['solid'], 'amount', 1, 'kg') ?></b></div><h3>Solid waste</h3><p>Total <?= pv($data['flow'], 'total_solid_waste', 1, 'kg') ?></p></div>
+                <div class="product water"><div class="vessel"><span class="material"></span><b><?= pv($data['flow'], 'total_recovered_water', 2, 'm³') ?></b></div><h3>Recovered water</h3><p>Pump <?= pv($data['waterPump'], 'start_level', 1, '%') ?> / <?= pv($data['waterPump'], 'stop_level', 1, '%') ?></p></div>
+                <div class="product oil"><div class="vessel"><span class="material"></span><b><?= pv($data['flow'], 'total_recovered_oil', 2, 'm³') ?></b></div><h3>Recovered oil</h3><p>Project total</p></div>
+            </div>
+        </article>
+
+        <aside class="side-column">
+            <article class="side-panel overview-values">
+                <div class="unit-title">Process totals</div>
+                <div class="readings one">
+                    <div><label>Tricanter total</label><output><?= pv($data['flow'], 'total_tricanter', 2, 'm³') ?></output></div>
+                    <div><label>Nozzle total</label><output><?= pv($data['flow'], 'total_nozzle', 2, 'm³') ?></output></div>
+                    <div><label>Tank internal O₂</label><output><?= pv($data['nitrogen'], 'tank_internal_o2', 1, '%') ?></output></div>
                 </div>
-                <div class="tank-card water">
-                    <div class="tank-vessel"><div class="tank-fill" style="height: <?= max(0, min(100, (float)($rows['flow']['recovered_water_level'] ?? 0))) ?>%"></div><span><?= displayValue($rows['flow'], 'recovered_water_level', 0, '%') ?></span></div>
-                    <strong>Recovered Water</strong>
+            </article>
+            <article class="side-panel nitrogen-panel">
+                <div class="unit-title">Nitrogen generator</div>
+                <div class="generator-state"><span class="lamp <?= $nitrogenActive ? 'running' : 'stopped' ?>"></span><b><?= $nitrogenActive ? 'Running' : 'Inactive' ?></b><small class="trip <?= $nitrogenTrip ? 'bad' : '' ?>"><?= $nitrogenTrip ? 'Trip active' : 'Trip OK' ?></small></div>
+                <div class="readings one">
+                    <div><label>Outlet flow</label><output><?= pv($data['nitrogen'], 'outlet_flow', 1, 'Nm³/hr') ?></output></div>
+                    <div><label>Outlet purity (O₂)</label><output><?= pv($data['nitrogen'], 'outlet_purity', 1, '%') ?></output></div>
+                    <div><label>Inlet pressure</label><output><?= pv($data['nitrogen'], 'inlet_pressure', 2, 'bar') ?></output></div>
+                    <div><label>Outlet pressure</label><output><?= pv($data['nitrogen'], 'outlet_pressure', 2, 'bar') ?></output></div>
+                    <div><label>Pre-heat temperature</label><output><?= pv($data['nitrogen'], 'pre_heat_temp', 1, '°C') ?></output></div>
+                    <div><label>Post-heat temperature</label><output><?= pv($data['nitrogen'], 'post_heat_temp', 1, '°C') ?></output></div>
+                    <div><label>Container interior O₂</label><output><?= pv($data['nitrogen'], 'interior_o2', 1, '%') ?></output></div>
                 </div>
-                <div class="tank-card oil">
-                    <div class="tank-vessel"><div class="tank-fill" style="height: <?= max(0, min(100, (float)($rows['flow']['recovered_oil_level'] ?? 0))) ?>%"></div><span><?= displayValue($rows['flow'], 'recovered_oil_level', 0, '%') ?></span></div>
-                    <strong>Recovered Oil</strong>
-                </div>
-            </div>
-        </article>
-
-        <article class="panel nitrogen-panel">
-            <div class="panel-title">Nitrogen Generator</div>
-            <div class="nitrogen-status">
-                <span class="status-dot <?= ((int)($rows['nitrogen']['nitrogen_active'] ?? 0) === 1) ? 'running' : 'off' ?>"></span>
-                <?= ((int)($rows['nitrogen']['nitrogen_active'] ?? 0) === 1) ? 'ACTIVE' : 'INACTIVE' ?>
-            </div>
-            <div class="value-grid two">
-                <div><span>Outlet flow</span><b><?= displayValue($rows['nitrogen'], 'outlet_flow', 1, ' Nm³/hr') ?></b></div>
-                <div><span>Purity O₂</span><b><?= displayValue($rows['nitrogen'], 'outlet_purity', 2, ' %') ?></b></div>
-                <div><span>Inlet pressure</span><b><?= displayValue($rows['nitrogen'], 'inlet_pressure', 2, ' bar') ?></b></div>
-                <div><span>Outlet pressure</span><b><?= displayValue($rows['nitrogen'], 'outlet_pressure', 2, ' bar') ?></b></div>
-                <div><span>Pre-heat</span><b><?= displayValue($rows['nitrogen'], 'pre_heat_temp', 1, ' °C') ?></b></div>
-                <div><span>Post-heat</span><b><?= displayValue($rows['nitrogen'], 'post_heat_temp', 1, ' °C') ?></b></div>
-                <div><span>Interior O₂</span><b><?= displayValue($rows['nitrogen'], 'interior_o2', 2, ' %') ?></b></div>
-                <div><span>Trip status</span><b><?= htmlspecialchars((string)($rows['nitrogen']['trip_status'] ?? '—')) ?></b></div>
-            </div>
-        </article>
+            </article>
+        </aside>
     </section>
-
-    <footer class="overview-footer">
-        Values refresh every 30 seconds. System is offline when the newest database entry is more than 10 minutes old.
-    </footer>
+    <footer>Read-only process display · Values refresh from the latest database entries every 30 seconds</footer>
 </main>
 </body>
 </html>
