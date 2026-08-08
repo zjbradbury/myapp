@@ -69,6 +69,31 @@ function gas_device_rows(PDO $pdo): array
     }
 }
 
+function latest_log_values(PDO $pdo, string $table, array $columns): array
+{
+    $allowed = [
+        'nozzle_logs' => ['nozzle', 'flow'],
+        'tricanter_logs' => ['feed_rate'],
+    ];
+
+    if (!isset($allowed[$table]) || !safe_table_exists($pdo, $table)) {
+        return [];
+    }
+
+    $columns = array_values(array_intersect($columns, $allowed[$table]));
+    if (!$columns) {
+        return [];
+    }
+
+    try {
+        $select = implode(', ', array_map(fn($column) => "`$column`", $columns));
+        $sql = "SELECT $select FROM `$table` ORDER BY log_date DESC, log_time DESC, id DESC LIMIT 1";
+        return $pdo->query($sql)->fetch(PDO::FETCH_ASSOC) ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
 function datalist_options(array $values): string
 {
     $html = '';
@@ -165,7 +190,7 @@ $schemas = [
             ['name' => 'solids', 'label' => 'Solids', 'type' => 'number', 'step' => '0.001', 'unit' => '%'],
             ['name' => 'water', 'label' => 'Water', 'type' => 'number', 'step' => '0.001', 'unit' => '%'],
             ['name' => 'wax', 'label' => 'Wax', 'type' => 'number', 'step' => '0.001', 'unit' => '%'],
-            ['name' => 'operator', 'label' => 'Operator', 'type' => 'text', 'datalist' => 'operators'],
+            ['name' => 'operator', 'label' => 'Operator', 'type' => 'text', 'datalist' => 'operators', 'required' => true],
             ['name' => 'comments', 'label' => 'Comments', 'type' => 'textarea'],
         ],
     ],
@@ -280,6 +305,8 @@ $sampleLocations = config_names($pdo, 'config_sample_location');
 $gasLocations = config_names($pdo, 'config_gas_test_location');
 $gasDevices = gas_device_rows($pdo);
 $gasDeviceNames = array_column($gasDevices, 'name');
+$latestNozzle = latest_log_values($pdo, 'nozzle_logs', ['nozzle', 'flow']);
+$latestTricanter = latest_log_values($pdo, 'tricanter_logs', ['feed_rate']);
 
 $gasDeviceConfig = [];
 foreach ($gasDevices as $device) {
@@ -340,6 +367,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $data['source_file'] = "web_entry_" . $currentUser;
+
+    if ($tableKey === 'sample' && $data['operator'] === null) {
+        http_response_code(422);
+        die('An operator is required when adding or editing a sample log. Please go back and select an operator.');
+    }
 
     if ($action === 'add') {
         $columns = array_keys($data);
@@ -804,6 +836,51 @@ $pageTitle = $actionTitle . ' ' . $schema['label'] . ' Record';
 
             document.addEventListener('DOMContentLoaded', updateGasFields);
             updateGasFields();
+        </script>
+    <?php endif; ?>
+    <?php if ($tableKey === 'sample' && $action === 'add'): ?>
+        <script>
+            const sampleAutoFill = <?= json_encode([
+                'nozzle' => $latestNozzle['nozzle'] ?? '',
+                'nozzleFlow' => $latestNozzle['flow'] ?? '',
+                'tricanterFeedRate' => $latestTricanter['feed_rate'] ?? '',
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+
+            function normalizedSampleLocation(value) {
+                return String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, ' ');
+            }
+
+            function updateSampleDefaults() {
+                const locationInput = document.querySelector('[name="sample_location"]');
+                const nozzleInput = document.querySelector('[name="nozzle"]');
+                const flowInput = document.querySelector('[name="flow"]');
+                if (!locationInput || !nozzleInput || !flowInput) return;
+
+                const location = normalizedSampleLocation(locationInput.value);
+                const isSuctionPump = /^suction pump [123]$/.test(location);
+                const isRecoveredProduct = location === 'recovered oil' || location === 'recovered water';
+
+                if (!isSuctionPump && !isRecoveredProduct) return;
+
+                nozzleInput.value = sampleAutoFill.nozzle ?? '';
+                flowInput.value = isRecoveredProduct
+                    ? (sampleAutoFill.tricanterFeedRate ?? '')
+                    : (sampleAutoFill.nozzleFlow ?? '');
+            }
+
+            document.addEventListener('change', event => {
+                if (event.target && event.target.name === 'sample_location') {
+                    updateSampleDefaults();
+                }
+            });
+
+            document.addEventListener('input', event => {
+                if (event.target && event.target.name === 'sample_location') {
+                    updateSampleDefaults();
+                }
+            });
+
+            document.addEventListener('DOMContentLoaded', updateSampleDefaults);
         </script>
     <?php endif; ?>
 </body>
