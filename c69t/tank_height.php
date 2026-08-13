@@ -1,6 +1,9 @@
 <?php
 require_once "config.php";
+/* 
 requireRole(['admin', 'operator', 'viewer']);
+*/
+requireRole(['admin']);
 
 $canEdit = currentRole() === 'admin';
 
