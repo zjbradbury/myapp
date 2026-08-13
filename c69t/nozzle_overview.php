@@ -1,0 +1,180 @@
+<?php
+declare(strict_types=1);
+
+require_once __DIR__ . '/config.php';
+requireRole(['admin', 'operator', 'viewer']);
+
+$canEdit = in_array(currentRole(), ['admin', 'operator'], true);
+$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS nozzle_attributes (
+    nozzle_number TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    operational_condition TINYINT(1) NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+$seed = $pdo->prepare('INSERT IGNORE INTO nozzle_attributes (nozzle_number, operational_condition) VALUES (?, 1)');
+for ($number = 1; $number <= 16; $number++) {
+    $seed->execute([$number]);
+}
+
+if (empty($_SESSION['nozzle_overview_token'])) {
+    $_SESSION['nozzle_overview_token'] = bin2hex(random_bytes(24));
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!$canEdit) {
+        http_response_code(403);
+        die('Access denied. Operator or administrator access required.');
+    }
+    if (!hash_equals($_SESSION['nozzle_overview_token'], (string)($_POST['token'] ?? ''))) {
+        http_response_code(400);
+        die('Invalid request token.');
+    }
+
+    $number = filter_input(INPUT_POST, 'nozzle_number', FILTER_VALIDATE_INT);
+    $condition = filter_input(INPUT_POST, 'operational_condition', FILTER_VALIDATE_INT);
+    if ($number === false || $number < 1 || $number > 16 || !in_array($condition, [0, 1], true)) {
+        http_response_code(422);
+        die('Invalid nozzle condition.');
+    }
+
+    $update = $pdo->prepare('UPDATE nozzle_attributes SET operational_condition = ? WHERE nozzle_number = ?');
+    $update->execute([$condition, $number]);
+    header('Location: nozzle_overview.php');
+    exit;
+}
+
+function nozzleOverviewData(PDO $pdo): array
+{
+    $latest = $pdo->query('SELECT nozzle, log_date, log_time FROM nozzle_logs ORDER BY id DESC LIMIT 1')->fetch() ?: null;
+    $activeNozzle = null;
+    if ($latest && preg_match('/\d+/', (string)($latest['nozzle'] ?? ''), $match)) {
+        $candidate = (int)$match[0];
+        if ($candidate >= 1 && $candidate <= 16) $activeNozzle = $candidate;
+    }
+
+    $timestamp = null;
+    if ($latest && !empty($latest['log_date']) && !empty($latest['log_time'])) {
+        $parsed = strtotime($latest['log_date'] . ' ' . $latest['log_time']);
+        if ($parsed !== false) $timestamp = $parsed;
+    }
+
+    $conditions = array_fill(1, 16, true);
+    foreach ($pdo->query('SELECT nozzle_number, operational_condition FROM nozzle_attributes ORDER BY nozzle_number') as $row) {
+        $conditions[(int)$row['nozzle_number']] = (bool)$row['operational_condition'];
+    }
+
+    return [
+        'online' => $timestamp !== null && max(0, time() - $timestamp) <= 600,
+        'active_nozzle' => $activeNozzle,
+        'last_updated' => $timestamp ? date('d/m/Y g:i:s A', $timestamp) : 'No nozzle data',
+        'conditions' => $conditions,
+    ];
+}
+
+$data = nozzleOverviewData($pdo);
+if (($_GET['format'] ?? '') === 'json') {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    echo json_encode($data);
+    exit;
+}
+
+$positions = [
+    1 => [50, 7], 2 => [23, 18], 3 => [77, 18], 4 => [13, 29], 5 => [87, 29],
+    6 => [50, 18], 7 => [50, 43], 8 => [26, 43], 9 => [74, 43], 10 => [13, 55],
+    11 => [87, 55], 12 => [31, 70], 13 => [69, 70], 14 => [21, 81], 15 => [79, 81], 16 => [50, 92],
+];
+?>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nozzle Overview</title>
+    <link rel="icon" href="c69t.ico">
+    <link rel="stylesheet" href="nozzle_overview.css">
+</head>
+<body>
+<?php require __DIR__ . '/nav.php'; ?>
+<main class="overview-shell">
+    <header class="page-header">
+        <div class="brand-block">
+            <div class="logo-row">
+                <img src="MoombaTankCleaningLogoTransparent.PNG" alt="Moomba Tank Cleaning">
+                <img src="Contract69TanksLogoTransparent.png" alt="Contract 69 Tanks">
+            </div>
+            <div><div class="eyebrow">Tank cleaning system</div><h1>Nozzle Overview</h1></div>
+        </div>
+        <div class="system-card <?= $data['online'] ? 'online' : 'offline' ?>" id="systemCard">
+            <span class="status-lamp"></span>
+            <div><strong id="systemLabel">System <?= $data['online'] ? 'online' : 'offline' ?></strong><small>Latest nozzle entry <span id="lastUpdated"><?= h($data['last_updated']) ?></span></small></div>
+        </div>
+    </header>
+
+    <section class="overview-grid">
+        <article class="layout-card">
+            <div class="card-heading"><div><span class="eyebrow">Live position</span><h2>Tank nozzle layout</h2></div><div class="legend"><span><i class="legend-active"></i>Active</span><span><i class="legend-operational"></i>Operational</span><span><i class="legend-unavailable"></i>Unavailable</span></div></div>
+            <div class="tank-layout" id="tankLayout" aria-label="Sixteen nozzle tank layout">
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                    <circle class="tank-outline" cx="50" cy="50" r="47" />
+                    <g class="pipe-lines">
+                        <path d="M50 7 V92 M23 18 H77 M23 18 L13 29 M77 18 L87 29 M26 43 H74 M26 43 L13 55 M74 43 L87 55 M31 70 H69 M31 70 L21 81 M69 70 L79 81" />
+                    </g>
+                </svg>
+                <?php foreach ($positions as $number => [$left, $top]):
+                    $active = $data['active_nozzle'] === $number;
+                    $operational = $data['conditions'][$number]; ?>
+                    <div class="nozzle-node<?= $active ? ' active' : '' ?><?= $operational ? ' operational' : ' unavailable' ?>" data-nozzle="<?= $number ?>" style="--left:<?= $left ?>%;--top:<?= $top ?>%" aria-label="Nozzle <?= $number ?>, <?= $active ? 'active, ' : '' ?><?= $operational ? 'operational' : 'unavailable' ?>">
+                        <span class="node-number"><?= $number ?></span><span class="node-lamp"></span><span class="condition-lamp"></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </article>
+
+        <aside class="condition-card">
+            <div class="card-heading"><div><span class="eyebrow">Manual status</span><h2>Operational condition</h2></div></div>
+            <p class="card-copy">Set whether each nozzle is available for operation. Live activity is read from the latest nozzle log.</p>
+            <div class="condition-list">
+                <?php foreach ($data['conditions'] as $number => $operational): ?>
+                    <form method="post" class="condition-row">
+                        <input type="hidden" name="token" value="<?= h($_SESSION['nozzle_overview_token']) ?>">
+                        <input type="hidden" name="nozzle_number" value="<?= $number ?>">
+                        <span class="condition-number">N<?= $number ?></span>
+                        <span class="condition-state <?= $operational ? 'good' : 'bad' ?>"><i></i><?= $operational ? 'Operational' : 'Unavailable' ?></span>
+                        <select name="operational_condition" aria-label="Nozzle <?= $number ?> operational condition" <?= !$canEdit ? 'disabled' : '' ?> onchange="this.form.submit()">
+                            <option value="1" <?= $operational ? 'selected' : '' ?>>Operational</option>
+                            <option value="0" <?= !$operational ? 'selected' : '' ?>>Unavailable</option>
+                        </select>
+                    </form>
+                <?php endforeach; ?>
+            </div>
+            <?php if (!$canEdit): ?><p class="read-only-note">Viewer access is read-only.</p><?php endif; ?>
+        </aside>
+    </section>
+</main>
+<script>
+(() => {
+    const apply = data => {
+        const card = document.getElementById('systemCard');
+        card.classList.toggle('online', data.online);
+        card.classList.toggle('offline', !data.online);
+        document.getElementById('systemLabel').textContent = `System ${data.online ? 'online' : 'offline'}`;
+        document.getElementById('lastUpdated').textContent = data.last_updated;
+        document.querySelectorAll('.nozzle-node').forEach(node => {
+            const number = Number(node.dataset.nozzle);
+            const active = number === data.active_nozzle;
+            const operational = Boolean(data.conditions[number]);
+            node.classList.toggle('active', active);
+            node.classList.toggle('operational', operational);
+            node.classList.toggle('unavailable', !operational);
+            node.setAttribute('aria-label', `Nozzle ${number}, ${active ? 'active, ' : ''}${operational ? 'operational' : 'unavailable'}`);
+        });
+    };
+    const refresh = () => fetch('nozzle_overview.php?format=json', {cache: 'no-store'}).then(r => r.ok ? r.json() : Promise.reject()).then(apply).catch(() => {});
+    window.setInterval(refresh, 15000);
+})();
+</script>
+</body>
+</html>
