@@ -128,8 +128,6 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
             <a href="checklist_summary.php" class="<?= $currentPage === 'checklist_summary.php' ? 'active' : '' ?>">Checklist Summary</a>
 
-            <a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
-
 
             <!-- <a href="logs.php?table=nozzle" class="<?= $currentPage === 'logs.php?table=nozzle' ? 'active' : '' ?>">Nozzle Logs</a>
             <a href="logs.php?table=solid_waste" class="<?= $currentPage === 'logs.php?table=solid_waste' ? 'active' : '' ?>">Solid
@@ -166,6 +164,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown Config</a>
 
                 <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
+
+            <a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
 
                 <a href="process_overview.php" class="<?= $currentPage === 'process_overview.php' ? 'active' : '' ?>">Process Overview</a>
 
