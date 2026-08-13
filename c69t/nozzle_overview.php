@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $number = filter_input(INPUT_POST, 'nozzle_number', FILTER_VALIDATE_INT);
     $condition = filter_input(INPUT_POST, 'operational_condition', FILTER_VALIDATE_INT);
-    if ($number === false || $number < 1 || $number > 16 || !in_array($condition, [0, 1], true)) {
+    if ($number === false || $number < 1 || $number > 16 || !in_array($condition, [0, 1, 2], true)) {
         http_response_code(422);
         die('Invalid nozzle condition.');
     }
@@ -60,9 +60,9 @@ function nozzleOverviewData(PDO $pdo): array
         if ($parsed !== false) $timestamp = $parsed;
     }
 
-    $conditions = array_fill(1, 16, true);
+    $conditions = array_fill(1, 16, 1);
     foreach ($pdo->query('SELECT nozzle_number, operational_condition FROM nozzle_attributes ORDER BY nozzle_number') as $row) {
-        $conditions[(int)$row['nozzle_number']] = (bool)$row['operational_condition'];
+        $conditions[(int)$row['nozzle_number']] = (int)$row['operational_condition'];
     }
 
     return [
@@ -115,7 +115,7 @@ $positions = [
 
     <section class="overview-grid">
         <article class="layout-card">
-            <div class="card-heading"><div><span class="eyebrow">Live position</span><h2>Tank nozzle layout</h2></div><div class="legend"><span><i class="legend-active"></i>Active</span><span><i class="legend-operational"></i>Operational</span><span><i class="legend-unavailable"></i>Unavailable</span></div></div>
+            <div class="card-heading"><div><span class="eyebrow">Live position</span><h2>Tank nozzle layout</h2></div><div class="legend"><span><i class="legend-active"></i>Active</span><span><i class="legend-operational"></i>Operational</span><span><i class="legend-unavailable"></i>Unavailable</span><span><i class="legend-unknown"></i>Unknown</span></div></div>
             <div class="tank-layout" id="tankLayout" aria-label="Sixteen nozzle tank layout">
                 <svg viewBox="0 0 100 100" aria-hidden="true">
                     <circle class="tank-outline" cx="50" cy="50" r="47" />
@@ -125,8 +125,10 @@ $positions = [
                 </svg>
                 <?php foreach ($positions as $number => [$left, $top]):
                     $active = $data['active_nozzle'] === $number;
-                    $operational = $data['conditions'][$number]; ?>
-                    <div class="nozzle-node<?= $active ? ' active' : '' ?><?= $operational ? ' operational' : ' unavailable' ?>" data-nozzle="<?= $number ?>" style="--left:<?= $left ?>%;--top:<?= $top ?>%" aria-label="Nozzle <?= $number ?>, <?= $active ? 'active, ' : '' ?><?= $operational ? 'operational' : 'unavailable' ?>">
+                    $condition = $data['conditions'][$number];
+                    $conditionClass = $condition === 1 ? 'operational' : ($condition === 0 ? 'unavailable' : 'unknown');
+                    $conditionLabel = $condition === 1 ? 'operational' : ($condition === 0 ? 'unavailable' : 'unknown'); ?>
+                    <div class="nozzle-node<?= $active ? ' active' : '' ?> <?= $conditionClass ?>" data-nozzle="<?= $number ?>" style="--left:<?= $left ?>%;--top:<?= $top ?>%" aria-label="Nozzle <?= $number ?>, <?= $active ? 'active, ' : '' ?><?= $conditionLabel ?>">
                         <span class="node-number"><?= $number ?></span><span class="node-lamp"></span><span class="condition-lamp"></span>
                     </div>
                 <?php endforeach; ?>
@@ -137,15 +139,18 @@ $positions = [
             <div class="card-heading"><div><span class="eyebrow">Manual status</span><h2>Operational condition</h2></div></div>
             <p class="card-copy">Set whether each nozzle is available for operation. Live activity is read from the latest nozzle log.</p>
             <div class="condition-list">
-                <?php foreach ($data['conditions'] as $number => $operational): ?>
+                <?php foreach ($data['conditions'] as $number => $condition):
+                    $conditionLabel = $condition === 1 ? 'Operational' : ($condition === 0 ? 'Unavailable' : 'Unknown');
+                    $conditionClass = $condition === 1 ? 'good' : ($condition === 0 ? 'bad' : 'unknown'); ?>
                     <form method="post" class="condition-row">
                         <input type="hidden" name="token" value="<?= h($_SESSION['nozzle_overview_token']) ?>">
                         <input type="hidden" name="nozzle_number" value="<?= $number ?>">
                         <span class="condition-number">N<?= $number ?></span>
-                        <span class="condition-state <?= $operational ? 'good' : 'bad' ?>"><i></i><?= $operational ? 'Operational' : 'Unavailable' ?></span>
+                        <span class="condition-state <?= $conditionClass ?>"><i></i><?= $conditionLabel ?></span>
                         <select name="operational_condition" aria-label="Nozzle <?= $number ?> operational condition" <?= !$canEdit ? 'disabled' : '' ?> onchange="this.form.submit()">
-                            <option value="1" <?= $operational ? 'selected' : '' ?>>Operational</option>
-                            <option value="0" <?= !$operational ? 'selected' : '' ?>>Unavailable</option>
+                            <option value="1" <?= $condition === 1 ? 'selected' : '' ?>>Operational</option>
+                            <option value="0" <?= $condition === 0 ? 'selected' : '' ?>>Unavailable</option>
+                            <option value="2" <?= $condition === 2 ? 'selected' : '' ?>>Unknown</option>
                         </select>
                     </form>
                 <?php endforeach; ?>
@@ -165,11 +170,13 @@ $positions = [
         document.querySelectorAll('.nozzle-node').forEach(node => {
             const number = Number(node.dataset.nozzle);
             const active = number === data.active_nozzle;
-            const operational = Boolean(data.conditions[number]);
+            const condition = Number(data.conditions[number]);
             node.classList.toggle('active', active);
-            node.classList.toggle('operational', operational);
-            node.classList.toggle('unavailable', !operational);
-            node.setAttribute('aria-label', `Nozzle ${number}, ${active ? 'active, ' : ''}${operational ? 'operational' : 'unavailable'}`);
+            node.classList.toggle('operational', condition === 1);
+            node.classList.toggle('unavailable', condition === 0);
+            node.classList.toggle('unknown', condition === 2);
+            const label = condition === 1 ? 'operational' : (condition === 0 ? 'unavailable' : 'unknown');
+            node.setAttribute('aria-label', `Nozzle ${number}, ${active ? 'active, ' : ''}${label}`);
         });
     };
     const refresh = () => fetch('nozzle_overview.php?format=json', {cache: 'no-store'}).then(r => r.ok ? r.json() : Promise.reject()).then(apply).catch(() => {});
