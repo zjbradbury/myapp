@@ -127,6 +127,8 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
             <a href="graphs.php" class="<?= $currentPage === 'graphs.php' ? 'active' : '' ?>">View Graphs</a>
 
+            <a href="alarm_history.php" class="<?= $currentPage === 'alarm_history.php' ? 'active' : '' ?>">Alarm History</a>
+
             <a href="checklist_summary.php" class="<?= $currentPage === 'checklist_summary.php' ? 'active' : '' ?>">Checklist Summary</a>
 
 
