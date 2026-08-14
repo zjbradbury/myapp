@@ -143,9 +143,37 @@ try {
                 'Min_Deg' => 'min_deg',
                 'Max_Deg' => 'max_deg',
                 'RPM' => 'rpm',
+                'Nozzle 1 Parked' => 'nozzle_1_parked',
+                'Nozzle 2 Parked' => 'nozzle_2_parked',
+                'Nozzle 3 Parked' => 'nozzle_3_parked',
+                'Nozzle 4 Parked' => 'nozzle_4_parked',
+                'Nozzle 5 Parked' => 'nozzle_5_parked',
+                'Nozzle 6 Parked' => 'nozzle_6_parked',
+                'Nozzle 7 Parked' => 'nozzle_7_parked',
+                'Nozzle 8 Parked' => 'nozzle_8_parked',
+                'Nozzle 9 Parked' => 'nozzle_9_parked',
+                'Nozzle 10 Parked' => 'nozzle_10_parked',
+                'Nozzle 11 Parked' => 'nozzle_11_parked',
+                'Nozzle 12 Parked' => 'nozzle_12_parked',
+                'Nozzle 13 Parked' => 'nozzle_13_parked',
+                'Nozzle 14 Parked' => 'nozzle_14_parked',
+                'Nozzle 15 Parked' => 'nozzle_15_parked',
+                'Nozzle 16 Parked' => 'nozzle_16_parked',
+                'Gas Return Tank Level 1' => 'gas_return_tank_level_1',
+                'Gas Return Tank Level 2' => 'gas_return_tank_level_2',
+                'Gas Return Tank Level 3' => 'gas_return_tank_level_3',
+                'Gas Return Overflow' => 'gas_return_overflow',
                 'Comments' => 'comments'
             ],
-            'numeric_columns' => ['nozzle_status', 'flow', 'pressure', 'min_deg', 'max_deg', 'rpm']
+            'numeric_columns' => ['nozzle_status', 'flow', 'pressure', 'min_deg', 'max_deg', 'rpm'],
+            'boolean_columns' => [
+                'nozzle_1_parked', 'nozzle_2_parked', 'nozzle_3_parked', 'nozzle_4_parked',
+                'nozzle_5_parked', 'nozzle_6_parked', 'nozzle_7_parked', 'nozzle_8_parked',
+                'nozzle_9_parked', 'nozzle_10_parked', 'nozzle_11_parked', 'nozzle_12_parked',
+                'nozzle_13_parked', 'nozzle_14_parked', 'nozzle_15_parked', 'nozzle_16_parked',
+                'gas_return_tank_level_1', 'gas_return_tank_level_2', 'gas_return_tank_level_3',
+                'gas_return_overflow'
+            ]
         ],
 
         'TRICANTER' => [
@@ -163,6 +191,9 @@ try {
                 'Torque' => 'torque',
                 'Temp' => 'temp',
                 'Pressure' => 'pressure',
+                'LEL' => 'lel',
+                'H2S' => 'h2s',
+                'Process Valve State' => 'process_valve_state',
                 'Comments' => 'comments'
             ],
             'numeric_columns' => [
@@ -175,8 +206,11 @@ try {
                 'feed_rate',
                 'torque',
                 'temp',
-                'pressure'
-            ]
+                'pressure',
+                'lel',
+                'h2s'
+            ],
+            'boolean_columns' => ['process_valve_state']
         ],
 
         'SOLID_WASTE' => [
@@ -275,6 +309,24 @@ try {
                 'start_level',
                 'stop_level'
             ]
+        ],
+
+        'HMI_ALARM' => [
+            'table' => 'hmi_alarm_logs',
+            'columns' => [
+                'Date' => 'log_date',
+                'Time' => 'log_time',
+                'Alarm ID' => 'alarm_id',
+                'Alarm Name' => 'alarm_name',
+                'Alarm Text' => 'alarm_text',
+                'Trigger Tag' => 'trigger_tag',
+                'Trigger Bit' => 'trigger_bit',
+                'Trigger Address' => 'trigger_address',
+                'PLC Source' => 'plc_source',
+                'State' => 'state'
+            ],
+            'numeric_columns' => ['alarm_id', 'trigger_bit'],
+            'boolean_columns' => ['state']
         ],
 
         'NITROGEN' => [
