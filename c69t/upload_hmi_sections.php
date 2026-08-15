@@ -123,6 +123,30 @@ try {
         $records = [$records];
     }
 
+    // PLCLogger v1.1.1/v1.1.2 compatibility:
+    // Accept snake_case parked fields and normalize them to the established
+    // human-readable NOZZLE field names used by the section map below.
+    foreach ($records as &$record) {
+        if (
+            isset($record['table'], $record['data']) &&
+            strtoupper(trim((string) $record['table'])) === 'NOZZLE' &&
+            is_array($record['data'])
+        ) {
+            for ($i = 1; $i <= 16; $i++) {
+                $snake = 'nozzle_' . $i . '_parked';
+                $label = 'Nozzle ' . $i . ' Parked';
+
+                if (
+                    !array_key_exists($label, $record['data']) &&
+                    array_key_exists($snake, $record['data'])
+                ) {
+                    $record['data'][$label] = $record['data'][$snake];
+                }
+            }
+        }
+    }
+    unset($record);
+
     $pdo = new PDO(
         "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
         $user,
