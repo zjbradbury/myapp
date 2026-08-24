@@ -121,58 +121,31 @@ $isLoggedIn = isset($_SESSION['user_id']);
 
             <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
             <a href="nozzle_overview.php" class="<?= $currentPage === 'nozzle_overview.php' ? 'active' : '' ?>">Nozzle Overview</a>
-            <!-- <a href="worldCup.php" class="<?= $currentPage === 'worldCup.php' ? 'active' : '' ?>">Sweepstake</a> -->
-            <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">View
-                Logs</a>
-
+            <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">View Logs</a>
             <a href="graphs.php" class="<?= $currentPage === 'graphs.php' ? 'active' : '' ?>">View Graphs</a>
-
             <a href="alarm_history.php" class="<?= $currentPage === 'alarm_history.php' ? 'active' : '' ?>">Alarm History</a>
-
             <a href="checklist_summary.php" class="<?= $currentPage === 'checklist_summary.php' ? 'active' : '' ?>">Checklist Summary</a>
-
-
-            <!-- <a href="logs.php?table=nozzle" class="<?= $currentPage === 'logs.php?table=nozzle' ? 'active' : '' ?>">Nozzle Logs</a>
-            <a href="logs.php?table=solid_waste" class="<?= $currentPage === 'logs.php?table=solid_waste' ? 'active' : '' ?>">Solid
-                Waste Logs</a>
-
-            <a href="logs.php?table=sample" class="<?= $currentPage === 'logs.php?table=sample' ? 'active' : '' ?>">Sample Logs</a>
-
-            <a href="logs.php?table=gas_test" class="<?= $currentPage === 'logs.php?table=gas_test' ? 'active' : '' ?>">Gas Test
-                Logs</a> -->
 
             <div class="hamburger-divider"></div>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
-                <!-- <a href="record.php?action=add&table=tricanter" class="<?= $currentPage === 'record.php?action=add&table=tricanter' ? 'active' : '' ?>">Add Tricanter
-                    Record</a>
-                <a href="record.php?action=add&table=nozzle" class="<?= $currentPage === 'record.php?action=add&table=nozzle' ? 'active' : '' ?>">Add Nozzle Record</a>
-                <a href="record.php?action=add&table=solid_waste" class="<?= $currentPage === 'record.php?action=add&table=solid_waste' ? 'active' : '' ?>">Add Solid
-                    Waste Record</a> -->
 
                 <a href="record.php?action=add&table=sample" class="<?= $currentPage === 'record.php?action=add&table=sample' ? 'active' : '' ?>">Add Sample Record</a>
-
-                <a href="record.php?action=add&table=gas_test" class="<?= $currentPage === 'record.php?action=add&table=gas_test' ? 'active' : '' ?>">Add Gas Test
-                    Record</a>
+                <a href="record.php?action=add&table=gas_test" class="<?= $currentPage === 'record.php?action=add&table=gas_test' ? 'active' : '' ?>">Add Gas Test Record</a>
 
             <?php endif; ?>
 
             <?php if ($currentRole === 'admin'): ?>
                 <div class="hamburger-divider"></div>
+
                 <a href="users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">Manage Users</a>
                 <a href="user_create.php" class="<?= $currentPage === 'user_create.php' ? 'active' : '' ?>">Create User</a>
-
-                <a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
-
                 <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown Config</a>
 
+                <a href="csv_upload.php" class="<?= $currentPage === 'csv_upload.php' ? 'active' : '' ?>">CSV Upload</a>
                 <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
-
-            <a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
-
+                <a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
                 <a href="process_overview.php" class="<?= $currentPage === 'process_overview.php' ? 'active' : '' ?>">Process Overview</a>
-
-
 
             <?php endif; ?>
 

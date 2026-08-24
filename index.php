@@ -23,13 +23,6 @@ $navItems = [
         'icon' => '◆',
         'label' => 'Racing',
     ],
-    [
-         'title' => 'World Cup Sweep',
-         'description' => 'Open the World Cup sweepstake page.',
-         'href' => '/c69t/worldCup.php',
-         'icon' => '♛',
-         'label' => 'Competition',
-     ],
      [
         'title' => 'Overseerr',
         'description' => 'Request Movies and TV Shows for Plex.',
