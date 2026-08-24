@@ -84,6 +84,7 @@ $nitrogenTrip = (int)($data['nitrogen']['trip_status'] ?? 0) === 1;
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="refresh" content="30">
+    <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>Process Overview</title>
     <link rel="stylesheet" href="process_overview.css">
 </head>

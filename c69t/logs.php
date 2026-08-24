@@ -862,9 +862,8 @@ $csvParams = [
                 <?php endif; ?>
                 <?php if (currentRole() === 'admin'): ?>
                     <a class="btn" href="csv_download.php?<?= h(http_build_query($csvParams)) ?>">Download CSV</a>
-                <?php else: ?>
-                    <a class="btn" href="excel_download.php">Download formatted Excel</a>
                 <?php endif; ?>
+                <a class="btn" href="excel_download.php">Export to Excel</a>
             </div>
         </div>
 

@@ -1,6 +1,6 @@
 <?php
 require_once 'config.php';
-requireRole(['operator', 'viewer']);
+requireRole(['admin', 'operator', 'viewer']);
 
 $exportTables = [
     'solid_waste_logs' => ['label' => 'Solid Waste', 'columns' => ['log_date', 'log_time', 'amount', 'comments']],
@@ -84,11 +84,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo '<?xml version="1.0" encoding="UTF-8"?>';
         echo '<?mso-application progid="Excel.Sheet"?>';
         echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:x="urn:schemas-microsoft-com:office:excel">';
-        echo '<Styles><Style ss:ID="Default"><Alignment ss:Vertical="Top"/><Font ss:FontName="Calibri" ss:Size="11"/></Style><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#163A59" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center"/></Style><Style ss:ID="Alt"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/></Style></Styles>';
+        echo '<Styles><Style ss:ID="Default"><Alignment ss:Vertical="Top"/><Font ss:FontName="Calibri" ss:Size="11"/></Style><Style ss:ID="Title"><Font ss:Bold="1" ss:Size="16" ss:Color="#FFFFFF"/><Interior ss:Color="#10273C" ss:Pattern="Solid"/><Alignment ss:Vertical="Center"/></Style><Style ss:ID="Meta"><Font ss:Bold="1" ss:Color="#163A59"/><Interior ss:Color="#DCEAF5" ss:Pattern="Solid"/></Style><Style ss:ID="Header"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#163A59" ss:Pattern="Solid"/><Alignment ss:Horizontal="Center"/></Style><Style ss:ID="Alt"><Interior ss:Color="#EAF2F8" ss:Pattern="Solid"/></Style></Styles>';
         foreach ($chosen as [$table, $definition, $start, $end, $interval]) {
             $rows = excel_rows($pdo, $table, $definition['columns'], $start, $end, $interval);
+            $columnCount = count($definition['columns']);
+            $mergeAcross = max(0, $columnCount - 1);
+            $rangeStart = $start !== '' ? date('d M Y H:i', strtotime($start)) : 'Beginning of records';
+            $rangeEnd = $end !== '' ? date('d M Y H:i', strtotime($end)) : 'Latest record';
+            $frequency = $intervals[$interval] ?? $intervals[0];
             echo '<Worksheet ss:Name="' . xml_value(substr($definition['label'], 0, 31)) . '"><Table>';
             foreach ($definition['columns'] as $_) echo '<Column ss:AutoFitWidth="1" ss:Width="100"/>';
+            echo '<Row ss:Height="28"><Cell ss:StyleID="Title" ss:MergeAcross="' . $mergeAcross . '"><Data ss:Type="String">' . xml_value($definition['label'] . ' Logs') . '</Data></Cell></Row>';
+            echo '<Row><Cell ss:StyleID="Meta" ss:MergeAcross="' . $mergeAcross . '"><Data ss:Type="String">Start: ' . xml_value($rangeStart) . '</Data></Cell></Row>';
+            echo '<Row><Cell ss:StyleID="Meta" ss:MergeAcross="' . $mergeAcross . '"><Data ss:Type="String">End: ' . xml_value($rangeEnd) . '</Data></Cell></Row>';
+            echo '<Row><Cell ss:StyleID="Meta" ss:MergeAcross="' . $mergeAcross . '"><Data ss:Type="String">Frequency: ' . xml_value($frequency) . '</Data></Cell></Row>';
+            echo '<Row ss:Height="8"/>';
             echo '<Row ss:StyleID="Header">';
             foreach ($definition['columns'] as $column) echo '<Cell><Data ss:Type="String">' . xml_value(ucwords(str_replace('_', ' ', $column))) . '</Data></Cell>';
             echo '</Row>';
@@ -101,16 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 echo '</Row>';
             }
-            echo '</Table><x:AutoFilter x:Range="R1C1:R' . max(1, count($rows) + 1) . 'C' . count($definition['columns']) . '"/><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>1</SplitHorizontal><TopRowBottomPane>1</TopRowBottomPane></WorksheetOptions></Worksheet>';
+            echo '</Table><x:AutoFilter x:Range="R6C1:R' . max(6, count($rows) + 6) . 'C' . $columnCount . '"/><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><FreezePanes/><FrozenNoSplit/><SplitHorizontal>6</SplitHorizontal><TopRowBottomPane>6</TopRowBottomPane></WorksheetOptions></Worksheet>';
         }
         echo '</Workbook>';
         exit;
     }
 }
 
-$defaultStart = date('Y-m-d\T00:00', strtotime('-1 day'));
-$defaultEnd = date('Y-m-d\TH:i');
+[$currentShiftStart, $currentShiftEnd] = get_current_shift_range();
+$defaultStart = date('Y-m-d\TH:i', strtotime($currentShiftStart));
+$defaultEnd = date('Y-m-d\TH:i', strtotime($currentShiftEnd));
 ?>
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Excel Export</title><link rel="stylesheet" href="indexStyle.css"><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="c69t.ico" type="image/x-icon"><title>Export to Excel</title><link rel="stylesheet" href="indexStyle.css"><style>
 .export-shell{max-width:1250px;margin:100px auto 40px;padding:0 18px;color:#e6f2ff}.export-card{background:#10273c;border:1px solid #214968;border-radius:16px;padding:22px}.export-grid{display:grid;gap:12px}.export-row{display:grid;grid-template-columns:minmax(180px,1fr) repeat(3,minmax(170px,1fr));gap:12px;align-items:end;padding:14px;background:#122c44;border:1px solid #214968;border-radius:10px}.export-row label{display:flex;flex-direction:column;gap:5px;color:#b9d7ef;font-size:13px}.table-choice{display:flex!important;flex-direction:row!important;align-items:center;font-size:16px!important;color:#fff!important}.export-row input,.export-row select{padding:9px;border-radius:7px;border:1px solid #35658b;background:#091c2d;color:#fff}.hint{color:#9cc1de}.error{background:#6d2525;padding:10px;border-radius:8px;margin-bottom:12px}@media(max-width:850px){.export-row{grid-template-columns:1fr}}
-</style></head><body><?php require_once 'nav.php'; ?><main class="export-shell"><section class="export-card"><div class="section-kicker">data export</div><h1>Formatted Excel export</h1><p class="hint">Select one or more tables. Each table becomes a formatted worksheet and can use its own frequency and date/time range.</p><?php if ($error): ?><div class="error"><?= h($error) ?></div><?php endif; ?><form method="post"><div class="export-grid"><?php foreach ($exportTables as $table => $definition): ?><div class="export-row"><label class="table-choice"><input type="checkbox" name="tables[<?= h($table) ?>][selected]" value="1"> <?= h($definition['label']) ?></label><label>Start<input type="datetime-local" name="tables[<?= h($table) ?>][start]" value="<?= h($defaultStart) ?>"></label><label>End<input type="datetime-local" name="tables[<?= h($table) ?>][end]" value="<?= h($defaultEnd) ?>"></label><label>Frequency<select name="tables[<?= h($table) ?>][interval]"><?php foreach ($intervals as $minutes => $label): ?><option value="<?= $minutes ?>"><?= h($label) ?></option><?php endforeach; ?></select></label></div><?php endforeach; ?></div><p><button class="btn" type="submit">Download Excel workbook</button></p></form></section></main></body></html>
+</style></head><body><?php require_once 'nav.php'; ?><main class="export-shell"><section class="export-card"><div class="section-kicker">data export</div><h1>Export to Excel</h1><p class="hint">Select one or more tables. Each table becomes a formatted worksheet and can use its own frequency and date/time range.</p><?php if ($error): ?><div class="error"><?= h($error) ?></div><?php endif; ?><form method="post"><div class="export-grid"><?php foreach ($exportTables as $table => $definition): ?><div class="export-row"><label class="table-choice"><input type="checkbox" name="tables[<?= h($table) ?>][selected]" value="1"> <?= h($definition['label']) ?></label><label>Start<input type="datetime-local" name="tables[<?= h($table) ?>][start]" value="<?= h($defaultStart) ?>"></label><label>End<input type="datetime-local" name="tables[<?= h($table) ?>][end]" value="<?= h($defaultEnd) ?>"></label><label>Frequency<select name="tables[<?= h($table) ?>][interval]"><?php foreach ($intervals as $minutes => $label): ?><option value="<?= $minutes ?>"><?= h($label) ?></option><?php endforeach; ?></select></label></div><?php endforeach; ?></div><p><button class="btn" type="submit">Export to Excel</button></p></form></section></main></body></html>
