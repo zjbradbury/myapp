@@ -860,7 +860,11 @@ $csvParams = [
                 <?php if ($canEdit && !empty($config['add'])): ?>
                     <a class="btn" href="<?= h(url_with_current_state($config['add'])) ?>">Add Record</a>
                 <?php endif; ?>
-                <a class="btn" href="csv_download.php?<?= h(http_build_query($csvParams)) ?>">Download CSV</a>
+                <?php if (currentRole() === 'admin'): ?>
+                    <a class="btn" href="csv_download.php?<?= h(http_build_query($csvParams)) ?>">Download CSV</a>
+                <?php else: ?>
+                    <a class="btn" href="excel_download.php">Download formatted Excel</a>
+                <?php endif; ?>
             </div>
         </div>
 

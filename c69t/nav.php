@@ -126,6 +126,10 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <a href="alarm_history.php" class="<?= $currentPage === 'alarm_history.php' ? 'active' : '' ?>">Alarm History</a>
             <a href="checklist_summary.php" class="<?= $currentPage === 'checklist_summary.php' ? 'active' : '' ?>">Checklist Summary</a>
 
+            <?php if (in_array($currentRole, ['operator', 'viewer'], true)): ?>
+                <a href="excel_download.php" class="<?= $currentPage === 'excel_download.php' ? 'active' : '' ?>">Excel Export</a>
+            <?php endif; ?>
+
             <div class="hamburger-divider"></div>
 
             <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>

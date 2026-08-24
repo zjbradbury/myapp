@@ -1,8 +1,7 @@
 <?php
 require_once "config.php";
 
-requireLogin();
-//requireRole(["admin"]); // change to requireLogin() if you want all logged in users to download
+requireRole(["admin"]);
 
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
