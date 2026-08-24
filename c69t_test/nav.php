@@ -1,0 +1,87 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+$currentPage = basename($_SERVER['PHP_SELF']);
+$currentRole = $_SESSION['role'] ?? '';
+$isLoggedIn = isset($_SESSION['user_id']);
+?>
+<link rel="stylesheet" href="nav.css">
+
+<div class="top-nav-wrap">
+    <button class="menu-toggle" type="button" id="menuToggle" aria-label="Open navigation menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <?php if ($isLoggedIn): ?>
+            <div class="hamburger-header">
+                Logged in as <strong><?= h($_SESSION['username'] ?? 'User') ?></strong><br>
+                Role: <strong><?= h($currentRole ?: '-') ?></strong>
+            </div>
+
+            <a href="index.php" class="<?= $currentPage === 'index.php' ? 'active' : '' ?>">Home</a>
+            <a href="nozzle_overview.php" class="<?= $currentPage === 'nozzle_overview.php' ? 'active' : '' ?>">Nozzle Overview</a>
+            <a href="logs.php?table=tricanter" class="<?= $currentPage === 'logs.php?table=tricanter' ? 'active' : '' ?>">View Logs</a>
+            <a href="graphs.php" class="<?= $currentPage === 'graphs.php' ? 'active' : '' ?>">View Graphs</a>
+            <a href="alarm_history.php" class="<?= $currentPage === 'alarm_history.php' ? 'active' : '' ?>">Alarm History</a>
+            <a href="checklist_summary.php" class="<?= $currentPage === 'checklist_summary.php' ? 'active' : '' ?>">Checklist Summary</a>
+
+            <?php if (in_array($currentRole, ['admin', 'operator', 'viewer'], true)): ?>
+                <a href="excel_download.php" class="<?= $currentPage === 'excel_download.php' ? 'active' : '' ?>">Export to Excel</a>
+            <?php endif; ?>
+
+            <div class="hamburger-divider"></div>
+
+            <?php if (in_array($currentRole, ['admin', 'operator'], true)): ?>
+
+                <a href="record.php?action=add&table=sample" class="<?= $currentPage === 'record.php?action=add&table=sample' ? 'active' : '' ?>">Add Sample Record</a>
+                <a href="record.php?action=add&table=gas_test" class="<?= $currentPage === 'record.php?action=add&table=gas_test' ? 'active' : '' ?>">Add Gas Test Record</a>
+
+            <?php endif; ?>
+
+            <?php if ($currentRole === 'admin'): ?>
+                <div class="hamburger-divider"></div>
+
+                <a href="users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">Manage Users</a>
+                <a href="user_create.php" class="<?= $currentPage === 'user_create.php' ? 'active' : '' ?>">Create User</a>
+                <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown Config</a>
+
+                <a href="fracCalc.php" class="<?= $currentPage === 'fracCalc.php' ? 'active' : '' ?>">Frac Calc</a>
+                <a href="tank_height.php" class="<?= $currentPage === 'tank_height.php' ? 'active' : '' ?>">Tank Height</a>
+                <a href="process_overview.php" class="<?= $currentPage === 'process_overview.php' ? 'active' : '' ?>">Process Overview</a>
+
+            <?php endif; ?>
+
+            <div class="hamburger-divider"></div>
+            <a href="logout.php">Logout</a>
+        <?php else: ?>
+            <a href="login.php" class="<?= $currentPage === 'login.php' ? 'active' : '' ?>">Login</a>
+        <?php endif; ?>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const toggle = document.getElementById('menuToggle');
+        const menu = document.getElementById('hamburgerMenu');
+
+        if (!toggle || !menu) return;
+
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = menu.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+                menu.classList.remove('open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+    })();
+</script>

@@ -1,0 +1,250 @@
+
+        :root {
+            --bg-1: #08131f;
+            --bg-2: #0e2235;
+            --card: #10273c;
+            --card-2: #122c44;
+            --line: #214968;
+            --line-soft: rgba(138, 188, 230, .14);
+            --text: #e6f2ff;
+            --muted: #9cc1de;
+            --glow: 0 10px 35px rgba(0, 0, 0, .28);
+            --radius: 16px;
+        }
+
+        body {
+            padding-top: 70px;
+            background:
+                radial-gradient(circle at top left, rgba(0, 255, 255, .06), transparent 22%),
+                radial-gradient(circle at top right, rgba(0, 135, 255, .08), transparent 24%),
+                linear-gradient(180deg, var(--bg-1), #091726 40%, #0a1828 100%);
+            color: var(--text);
+        }
+
+        .record-shell {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .record-card {
+            background: linear-gradient(180deg, rgba(18, 44, 68, .94), rgba(14, 34, 53, .96));
+            border: 1px solid var(--line-soft);
+            border-radius: var(--radius);
+            box-shadow: var(--glow);
+            padding: 16px;
+        }
+
+        .record-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .section-kicker {
+            font-size: 11px;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+            color: #8abce6;
+            margin-bottom: 4px;
+        }
+
+        .record-head h1 {
+            margin: 0;
+            text-align: left;
+            font-size: 28px;
+            line-height: 1.1;
+        }
+
+        .record-sub {
+            color: var(--muted);
+            font-size: 13px;
+            margin-top: 6px;
+        }
+
+        .record-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            border-radius: 10px;
+            background: linear-gradient(180deg, #1f4f74, #173d5b);
+            border: 1px solid rgba(255, 255, 255, .06);
+            transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .btn:hover {
+            background: linear-gradient(180deg, #255f8c, #1d4a6d);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+        }
+
+        .btn.danger {
+            background: linear-gradient(180deg, #b64242, #832f2f);
+        }
+
+        .record-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .record-tab {
+            color: #dcecff;
+            text-decoration: none;
+            padding: 8px 11px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .08);
+            background: rgba(255, 255, 255, .045);
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .record-tab.active {
+            background: rgba(0, 229, 255, .13);
+            border-color: rgba(0, 229, 255, .35);
+            color: #bff7ff;
+        }
+
+        .record-form {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .form-field {
+            display: block;
+            background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .03));
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 12px;
+            padding: 10px;
+            min-width: 0;
+        }
+
+        .field-label {
+            display: block;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            font-size: 10px;
+            margin-bottom: 7px;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            box-sizing: border-box;
+            margin: 0;
+            background: #0a1a29;
+            border: 1px solid #2a5377;
+            border-radius: 10px;
+            color: #fff;
+            padding: 9px 10px;
+            min-height: 40px;
+        }
+
+        textarea {
+            min-height: 96px;
+        }
+
+        .form-field:has(textarea) {
+            grid-column: span 3;
+        }
+
+        .unit-wrap {
+            position: relative;
+        }
+
+        .unit-wrap input {
+            padding-right: 82px;
+        }
+
+        .unit {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #92acc3;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .delete-card {
+            background: rgba(182, 66, 66, .11);
+            border: 1px solid rgba(255, 120, 120, .22);
+            border-radius: 14px;
+            padding: 14px;
+            margin-top: 12px;
+        }
+
+        .delete-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .delete-detail {
+            background: rgba(255, 255, 255, .045);
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .delete-detail small {
+            display: block;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .7px;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .gas-disabled {
+            opacity: .38;
+        }
+
+        .gas-disabled input,
+        .gas-disabled textarea {
+            pointer-events: none;
+            background: #08131f;
+        }
+
+        @media (max-width:1000px) {
+            .record-form {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .form-field:has(textarea) {
+                grid-column: span 2;
+            }
+        }
+
+        @media (max-width:700px) {
+            .record-form {
+                grid-template-columns: 1fr;
+            }
+
+            .form-field:has(textarea) {
+                grid-column: span 1;
+            }
+
+            .record-head h1 {
+                font-size: 23px;
+            }
+        }
+    
