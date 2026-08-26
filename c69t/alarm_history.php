@@ -97,6 +97,7 @@ $topAlarm = $topAlarmIds ? (string)$topAlarmIds[0] : '-';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="c69t.ico" type="image/x-icon">
     <title>Alarm History</title>
+    <link rel="stylesheet" href="scrollbar.css">
     <style>
         :root {
             --bg: #081522;

@@ -135,6 +135,7 @@ $positions = [
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Nozzle Overview</title>
     <link rel="icon" href="c69t.ico">
+    <link rel="stylesheet" href="scrollbar.css">
     <link rel="stylesheet" href="nozzle_overview.css">
 </head>
 <body>
