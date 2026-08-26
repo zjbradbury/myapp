@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function nozzleOverviewData(PDO $pdo): array
 {
-    $latest = $pdo->query('SELECT nozzle, log_date, log_time FROM nozzle_logs ORDER BY id DESC LIMIT 1')->fetch() ?: null;
+    $latest = $pdo->query('SELECT * FROM nozzle_logs ORDER BY id DESC LIMIT 1')->fetch() ?: null;
     $activeNozzle = null;
     if ($latest && preg_match('/\d+/', (string)($latest['nozzle'] ?? ''), $match)) {
         $candidate = (int)$match[0];
@@ -65,11 +65,44 @@ function nozzleOverviewData(PDO $pdo): array
         $conditions[(int)$row['nozzle_number']] = (int)$row['operational_condition'];
     }
 
+    $parked = array_fill(1, 16, null);
+    for ($number = 1; $number <= 16; $number++) {
+        $key = 'nozzle_' . $number . '_parked';
+        if ($latest !== null && array_key_exists($key, $latest) && $latest[$key] !== null && $latest[$key] !== '') {
+            $parked[$number] = (int)$latest[$key] === 1;
+        }
+    }
+
+    [$shiftStart, $shiftEnd] = get_current_shift_range();
+    $shiftStartTs = strtotime($shiftStart);
+    $shiftEndTs = strtotime($shiftEnd);
+    $shiftChanges = [];
+    $latestChanges = [];
+    $newer = null;
+    $changeRows = $pdo->query('SELECT id, nozzle, log_date, log_time FROM nozzle_logs ORDER BY id DESC');
+    while ($row = $changeRows->fetch()) {
+        $match = [];
+        $rowNozzle = preg_match('/\d+/', (string)($row['nozzle'] ?? ''), $match) ? (int)$match[0] : null;
+        if ($newer !== null && $rowNozzle !== null && $newer['nozzle'] !== null && $rowNozzle !== $newer['nozzle']) {
+            $changeTs = strtotime((string)$newer['log_date'] . ' ' . (string)$newer['log_time']);
+            $change = ['id' => (int)$newer['id'], 'date' => date('d/m/Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle']];
+            if (count($latestChanges) < 3) $latestChanges[] = $change;
+            if ($changeTs >= $shiftStartTs && $changeTs < $shiftEndTs) $shiftChanges[] = $change;
+        }
+        $newer = ['id' => (int)$row['id'], 'nozzle' => $rowNozzle, 'log_date' => $row['log_date'], 'log_time' => $row['log_time']];
+        $rowTs = strtotime((string)$row['log_date'] . ' ' . (string)$row['log_time']);
+        if (count($latestChanges) >= 3 && $rowTs < $shiftStartTs) break;
+    }
+    $changes = count($shiftChanges) > 3 ? $shiftChanges : $latestChanges;
+
     return [
         'online' => $timestamp !== null && max(0, time() - $timestamp) <= 600,
         'active_nozzle' => $activeNozzle,
         'last_updated' => $timestamp ? date('d/m/Y g:i:s A', $timestamp) : 'No nozzle data',
         'conditions' => $conditions,
+        'parked' => $parked,
+        'changes' => $changes,
+        'changes_scope' => count($shiftChanges) > 3 ? 'Current shift' : 'Latest changes',
     ];
 }
 
@@ -115,7 +148,7 @@ $positions = [
 
     <section class="overview-grid">
         <article class="layout-card">
-            <div class="card-heading"><div><span class="eyebrow">Live position</span><h2>Tank nozzle layout</h2></div><div class="legend"><span><i class="legend-active"></i>Active</span><span><i class="legend-operational"></i>Operational</span><span><i class="legend-unavailable"></i>Unavailable</span><span><i class="legend-unknown"></i>Unknown</span></div></div>
+            <div class="card-heading"><div><span class="eyebrow">Live position</span><h2>Tank nozzle layout</h2></div><div class="legend"><span><i class="legend-active"></i>Active</span><span><i class="legend-operational"></i>Operational</span><span><i class="legend-unavailable"></i>Unavailable</span><span><i class="legend-parked"></i>Parked</span><span><i class="legend-not-parked"></i>Not parked</span><span><i class="legend-unknown"></i>Unknown</span></div></div>
             <div class="tank-layout" id="tankLayout" aria-label="Sixteen nozzle tank layout">
                 <svg viewBox="0 0 100 100" aria-hidden="true">
                     <circle class="tank-outline" cx="50" cy="50" r="47" />
@@ -127,9 +160,12 @@ $positions = [
                     $active = $data['active_nozzle'] === $number;
                     $condition = $data['conditions'][$number];
                     $conditionClass = $condition === 1 ? 'operational' : ($condition === 0 ? 'unavailable' : 'unknown');
-                    $conditionLabel = $condition === 1 ? 'operational' : ($condition === 0 ? 'unavailable' : 'unknown'); ?>
-                    <div class="nozzle-node<?= $active ? ' active' : '' ?> <?= $conditionClass ?>" data-nozzle="<?= $number ?>" style="--left:<?= $left ?>%;--top:<?= $top ?>%" aria-label="Nozzle <?= $number ?>, <?= $active ? 'active, ' : '' ?><?= $conditionLabel ?>">
-                        <span class="node-number"><?= $number ?></span><span class="node-lamp"></span><span class="condition-lamp"></span>
+                    $conditionLabel = $condition === 1 ? 'operational' : ($condition === 0 ? 'unavailable' : 'unknown');
+                    $isParked = $data['parked'][$number];
+                    $parkedClass = $isParked === null ? 'parked-unknown' : ($isParked ? 'parked' : 'not-parked');
+                    $parkedLabel = $isParked === null ? 'parking unknown' : ($isParked ? 'parked' : 'not parked'); ?>
+                    <div class="nozzle-node<?= $active ? ' active' : '' ?> <?= $conditionClass ?> <?= $parkedClass ?>" data-nozzle="<?= $number ?>" style="--left:<?= $left ?>%;--top:<?= $top ?>%" aria-label="Nozzle <?= $number ?>, <?= $active ? 'active, ' : '' ?><?= $conditionLabel ?>, <?= $parkedLabel ?>">
+                        <span class="node-number"><?= $number ?></span><span class="node-lamp"></span><span class="condition-lamp" title="<?= ucfirst($conditionLabel) ?>"></span><span class="parked-lamp" title="<?= ucfirst($parkedLabel) ?>"></span>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -158,6 +194,14 @@ $positions = [
             <?php if (!$canEdit): ?><p class="read-only-note">Viewer access is read-only.</p><?php endif; ?>
         </aside>
     </section>
+    <section class="changes-card">
+        <div class="card-heading"><div><span class="eyebrow" id="changesScope"><?= h($data['changes_scope']) ?></span><h2>Nozzle number changes</h2></div></div>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Previous nozzle</th><th>New nozzle</th></tr></thead><tbody id="changesBody">
+        <?php if (!$data['changes']): ?><tr><td colspan="4" class="empty-row">No nozzle number changes recorded.</td></tr><?php else: foreach ($data['changes'] as $change): ?>
+            <tr><td><?= h($change['date']) ?></td><td><?= h($change['time']) ?></td><td>N<?= (int)$change['from'] ?></td><td><strong>N<?= (int)$change['to'] ?></strong></td></tr>
+        <?php endforeach; endif; ?>
+        </tbody></table></div>
+    </section>
 </main>
 <script>
 (() => {
@@ -171,12 +215,36 @@ $positions = [
             const number = Number(node.dataset.nozzle);
             const active = number === data.active_nozzle;
             const condition = Number(data.conditions[number]);
+            const parked = data.parked[number];
             node.classList.toggle('active', active);
             node.classList.toggle('operational', condition === 1);
             node.classList.toggle('unavailable', condition === 0);
             node.classList.toggle('unknown', condition === 2);
+            node.classList.toggle('parked', parked === true);
+            node.classList.toggle('not-parked', parked === false);
+            node.classList.toggle('parked-unknown', parked === null);
             const label = condition === 1 ? 'operational' : (condition === 0 ? 'unavailable' : 'unknown');
-            node.setAttribute('aria-label', `Nozzle ${number}, ${active ? 'active, ' : ''}${label}`);
+            const parkedLabel = parked === null ? 'parking unknown' : (parked ? 'parked' : 'not parked');
+            node.querySelector('.condition-lamp').title = label[0].toUpperCase() + label.slice(1);
+            node.querySelector('.parked-lamp').title = parkedLabel[0].toUpperCase() + parkedLabel.slice(1);
+            node.setAttribute('aria-label', `Nozzle ${number}, ${active ? 'active, ' : ''}${label}, ${parkedLabel}`);
+        });
+        document.getElementById('changesScope').textContent = data.changes_scope;
+        const body = document.getElementById('changesBody');
+        body.replaceChildren();
+        if (!data.changes.length) {
+            const row = body.insertRow();
+            const cell = row.insertCell();
+            cell.colSpan = 4;
+            cell.className = 'empty-row';
+            cell.textContent = 'No nozzle number changes recorded.';
+        } else data.changes.forEach(change => {
+            const row = body.insertRow();
+            [change.date, change.time, `N${change.from}`, `N${change.to}`].forEach((value, index) => {
+                const cell = row.insertCell();
+                cell.textContent = value;
+                if (index === 3) cell.className = 'new-nozzle';
+            });
         });
     };
     const refresh = () => fetch('nozzle_overview.php?format=json', {cache: 'no-store'}).then(r => r.ok ? r.json() : Promise.reject()).then(apply).catch(() => {});

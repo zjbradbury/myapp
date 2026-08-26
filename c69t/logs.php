@@ -40,6 +40,7 @@ $tables = [
             ['key' => 'log_date', 'label' => 'Date'],
             ['key' => 'log_time', 'label' => 'Time'],
             ['key' => 'amount', 'label' => 'Amount', 'suffix' => ' KG', 'decimals' => 0],
+            ['key' => '_diff_minutes', 'label' => 'Diff (min)', 'decimals' => 0, 'filterable' => false],
             ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
         ],
     ],
@@ -288,7 +289,11 @@ function selected_value_columns(array $config): array
     $allowed = [];
     foreach ($config['columns'] as $column) {
         $key = (string)($column['key'] ?? '');
-        if ($key !== '' && !in_array($key, ['log_date', 'log_time'], true)) {
+        if (
+            $key !== ''
+            && !in_array($key, ['log_date', 'log_time'], true)
+            && ($column['filterable'] ?? true)
+        ) {
             $allowed[$key] = true;
         }
     }
@@ -459,6 +464,9 @@ try {
         $rows = filter_rows_by_time_search($rows, $timeSearch);
         $rows = filter_rows_by_value_columns($rows, $selectedValueColumns);
         $rows = filter_rows_to_minute_increments_for_logs($rows, $selectedInterval);
+        if ($selectedKey === 'solid_waste') {
+            $rows = solid_diff_minutes_rows($rows);
+        }
     }
 } catch (Throwable $e) {
     $error = $e->getMessage();
@@ -916,7 +924,11 @@ $csvParams = [
                         <?php foreach ($config['columns'] as $column): ?>
                             <?php
                             $columnKey = (string)($column['key'] ?? '');
-                            if ($columnKey === '' || in_array($columnKey, ['log_date', 'log_time'], true)) continue;
+                            if (
+                                $columnKey === ''
+                                || in_array($columnKey, ['log_date', 'log_time'], true)
+                                || !($column['filterable'] ?? true)
+                            ) continue;
                             ?>
                             <label>
                                 <input type="checkbox"
