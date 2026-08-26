@@ -69,7 +69,7 @@ function nozzleOverviewData(PDO $pdo): array
     for ($number = 1; $number <= 16; $number++) {
         $key = 'nozzle_' . $number . '_parked';
         if ($latest !== null && array_key_exists($key, $latest) && $latest[$key] !== null && $latest[$key] !== '') {
-            $parked[$number] = (int)$latest[$key] === 1;
+            $parked[$number] = (int)$latest[$key] === 0;
         }
     }
 
@@ -79,13 +79,21 @@ function nozzleOverviewData(PDO $pdo): array
     $shiftChanges = [];
     $latestChanges = [];
     $newer = null;
+    $moreRecentChangeTs = null;
     $changeRows = $pdo->query('SELECT id, nozzle, log_date, log_time FROM nozzle_logs ORDER BY id DESC');
     while ($row = $changeRows->fetch()) {
         $match = [];
         $rowNozzle = preg_match('/\d+/', (string)($row['nozzle'] ?? ''), $match) ? (int)$match[0] : null;
         if ($newer !== null && $rowNozzle !== null && $newer['nozzle'] !== null && $rowNozzle !== $newer['nozzle']) {
             $changeTs = strtotime((string)$newer['log_date'] . ' ' . (string)$newer['log_time']);
-            $change = ['id' => (int)$newer['id'], 'date' => date('d/m/Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle']];
+            $runtimeSeconds = max(0, ($moreRecentChangeTs ?? time()) - $changeTs);
+            $runtimeHours = intdiv($runtimeSeconds, 3600);
+            $runtimeMinutes = intdiv($runtimeSeconds % 3600, 60);
+            $runtime = $runtimeHours > 0
+                ? sprintf('%dh %02dm', $runtimeHours, $runtimeMinutes)
+                : sprintf('%dm', $runtimeMinutes);
+            $change = ['id' => (int)$newer['id'], 'date' => date('d/m/Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle'], 'runtime' => $runtime];
+            $moreRecentChangeTs = $changeTs;
             if (count($latestChanges) < 3) $latestChanges[] = $change;
             if ($changeTs >= $shiftStartTs && $changeTs < $shiftEndTs) $shiftChanges[] = $change;
         }
@@ -196,9 +204,9 @@ $positions = [
     </section>
     <section class="changes-card">
         <div class="card-heading"><div><span class="eyebrow" id="changesScope"><?= h($data['changes_scope']) ?></span><h2>Nozzle number changes</h2></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Previous nozzle</th><th>New nozzle</th></tr></thead><tbody id="changesBody">
-        <?php if (!$data['changes']): ?><tr><td colspan="4" class="empty-row">No nozzle number changes recorded.</td></tr><?php else: foreach ($data['changes'] as $change): ?>
-            <tr><td><?= h($change['date']) ?></td><td><?= h($change['time']) ?></td><td>N<?= (int)$change['from'] ?></td><td><strong>N<?= (int)$change['to'] ?></strong></td></tr>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Previous nozzle</th><th>New nozzle</th><th>Runtime</th></tr></thead><tbody id="changesBody">
+        <?php if (!$data['changes']): ?><tr><td colspan="5" class="empty-row">No nozzle number changes recorded.</td></tr><?php else: foreach ($data['changes'] as $change): ?>
+            <tr><td><?= h($change['date']) ?></td><td><?= h($change['time']) ?></td><td>N<?= (int)$change['from'] ?></td><td><strong>N<?= (int)$change['to'] ?></strong></td><td><?= h($change['runtime']) ?></td></tr>
         <?php endforeach; endif; ?>
         </tbody></table></div>
     </section>
@@ -235,12 +243,12 @@ $positions = [
         if (!data.changes.length) {
             const row = body.insertRow();
             const cell = row.insertCell();
-            cell.colSpan = 4;
+            cell.colSpan = 5;
             cell.className = 'empty-row';
             cell.textContent = 'No nozzle number changes recorded.';
         } else data.changes.forEach(change => {
             const row = body.insertRow();
-            [change.date, change.time, `N${change.from}`, `N${change.to}`].forEach((value, index) => {
+            [change.date, change.time, `N${change.from}`, `N${change.to}`, change.runtime].forEach((value, index) => {
                 const cell = row.insertCell();
                 cell.textContent = value;
                 if (index === 3) cell.className = 'new-nozzle';
