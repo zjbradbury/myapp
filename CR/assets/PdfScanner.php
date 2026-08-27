@@ -22,9 +22,15 @@ final class PdfScanner {
         foreach($patterns as $pattern)if(preg_match($pattern,$text,$match))return strtoupper(preg_replace('/[^A-Z0-9]/i','',$match[1]??$match[0])??''); return '';
     }
     private static function testDate(string $text): string {
-        $context='/(?:Test\s+Date|Date\s+of\s+Test|Date\s+Tested|Inspection\s+Date|Tested\s+on)\s*[:#-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}-\d{1,2}-\d{1,2})/i';
-        if(preg_match($context,$text,$match))return self::normaliseDate($match[1]);
-        if(preg_match('/\b(\d{1,2}[\/.]\d{1,2}[\/.]\d{4}|\d{4}-\d{1,2}-\d{1,2})\b/',$text,$match))return self::normaliseDate($match[1]); return '';
+        $dateValue='\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}-\d{1,2}-\d{1,2}';
+        $patterns=[
+            '/(?:Test\s+Date|Date\s+of\s+Test|Date\s+Tested|Inspection\s+Date|Tested\s+on)\s*[:#-]?\s*('.$dateValue.')/i',
+            '/\bDate\s*(?:[:#-]\s*)?('.$dateValue.')/i',
+            '/\b('.$dateValue.')\b/i',
+        ];
+        $today=date('Y-m-d');
+        foreach($patterns as $pattern){$valid=[];if(preg_match_all($pattern,$text,$matches))foreach($matches[1] as $value){$date=self::normaliseDate($value);if($date!==''&&$date<=$today)$valid[]=$date;}if($valid){rsort($valid,SORT_STRING);return $valid[0];}}
+        return '';
     }
     private static function normaliseDate(string $value): string {
         foreach(['!d/m/Y','!d.m.Y','!d-m-Y','!Y-m-d','!d/m/y','!d.m.y','!d-m-y'] as $format){$date=DateTimeImmutable::createFromFormat($format,$value);$errors=DateTimeImmutable::getLastErrors();if($date&&($errors===false||($errors['warning_count']===0&&$errors['error_count']===0)))return $date->format('Y-m-d');} return '';
