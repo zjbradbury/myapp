@@ -41,10 +41,17 @@ const ASSET_ROLE = 'cr_admin';
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
 function requireAssetAdmin(PDO $pdo): array {
     if (!isLoggedIn()) { header('Location: login.php'); exit; }
-    $stmt = $pdo->prepare('SELECT id, username, role2 FROM users WHERE id = ? LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, username, role, role2 FROM users WHERE id = ? LIMIT 1');
     $stmt->execute([(int) $_SESSION['user_id']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$user || !hash_equals(ASSET_ROLE, (string)($user['role2'] ?? ''))) { http_response_code(403); exit('Access denied. This application requires role2 = cr_admin.'); }
+    return $user;
+}
+function requireUserAdmin(PDO $pdo): array {
+    if (!isLoggedIn()) { header('Location: login.php'); exit; }
+    $stmt=$pdo->prepare('SELECT id,username,role,role2 FROM users WHERE id=? LIMIT 1');
+    $stmt->execute([(int)$_SESSION['user_id']]);$user=$stmt->fetch(PDO::FETCH_ASSOC);
+    if(!$user||!hash_equals('admin',(string)($user['role']??''))){http_response_code(403);exit('Access denied. User management requires role = admin.');}
     return $user;
 }
 function csrfToken(): string {
