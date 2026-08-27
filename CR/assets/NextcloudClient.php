@@ -25,6 +25,10 @@ final class NextcloudClient {
     public function stream(string $path): void {
         $this->request('GET', $path, null, null, [200], static function($curl, string $data): int { echo $data; return strlen($data); });
     }
+    public function downloadToFile(string $path, string $localFile): void {
+        $handle=fopen($localFile,'wb'); if($handle===false)throw new RuntimeException('Unable to create a temporary download file.');
+        try{$this->request('GET',$path,null,null,[200],static function($curl,string $data)use($handle):int{return fwrite($handle,$data);});}finally{fclose($handle);}
+    }
     public function delete(string $path): void { $this->request('DELETE', $path, null, null, [200,204,404]); }
     private function request(string $method, string $path, $body, ?int $size, array $ok, ?callable $writer=null): void {
         $url = $this->baseUrl.'/'.implode('/', array_map('rawurlencode', explode('/', trim($path, '/'))));

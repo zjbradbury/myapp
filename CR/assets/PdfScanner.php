@@ -11,23 +11,22 @@ final class PdfScanner {
         $tool=function_exists('shell_exec')?trim((string)shell_exec('command -v pdftotext 2>/dev/null')):'';
         if($tool!=='') { $command=escapeshellarg($tool).' -layout -nopgbrk '.escapeshellarg($path).' - 2>/dev/null'; $text=(string)shell_exec($command); if(trim($text)!=='') return $text; }
         $chunks=[$binary];
-        if(preg_match_all('/stream\R(.*?)\Rendstream/s',$binary,$streams)) foreach($streams[1] as $stream){$decoded=@gzuncompress($stream);if($decoded!==false)$chunks[]=$decoded;}
+        if(preg_match_all('/stream\R(.*?)\Rendstream/s',$binary,$streams)) foreach($streams[1] as $stream){$decoded=@gzuncompress($stream);if($decoded===false)$decoded=@gzinflate($stream);if($decoded===false)$decoded=@gzdecode($stream);if($decoded!==false)$chunks[]=$decoded;}
         $text=''; foreach($chunks as $chunk) if(preg_match_all('/\((?:\\.|[^\\)])*\)/s',$chunk,$matches)) foreach($matches[0] as $item) $text.=' '.stripcslashes(substr($item,1,-1));
         return preg_replace('/\s+/',' ',$text)??$text;
     }
     private static function assetNumber(string $text,string $prefix): string {
         $prefix=strtoupper(preg_replace('/[^A-Za-z]/','',$prefix)??'');
-        $patterns=[]; if($prefix!=='')$patterns[]='/\b'.preg_quote($prefix,'/').'[- ]?\d{3,8}\b/i';
-        $patterns[]='/Customer\s+Asset\s+(?:Number|No\.?|#)?\s*[:#-]?\s*([A-Z]{1,6}[- ]?\d{3,8})\b/i';
-        $patterns[]='/\b([A-Z]{1,6}[- ]?\d{3,8})\b/i';
-        foreach($patterns as $pattern)if(preg_match($pattern,$text,$match))return strtoupper(str_replace([' ','-'],'',$match[1]??$match[0])); return '';
+        $patterns=[]; if($prefix!=='')$patterns[]='/\b('.preg_quote($prefix,'/').'[\s._-]*\d(?:[\s._-]*\d){2,7})\b/i';
+        if($prefix==='')$patterns[]='/Customer\s+Asset\s+(?:Number|No\.?|#)?\s*[:#-]?\s*([A-Z]{1,6}[- ]?\d{3,8})\b/i';
+        foreach($patterns as $pattern)if(preg_match($pattern,$text,$match))return strtoupper(preg_replace('/[^A-Z0-9]/i','',$match[1]??$match[0])??''); return '';
     }
     private static function testDate(string $text): string {
-        $context='/Test\s+Date\s*[:#-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}-\d{1,2}-\d{1,2})/i';
+        $context='/(?:Test\s+Date|Date\s+of\s+Test|Date\s+Tested|Inspection\s+Date|Tested\s+on)\s*[:#-]?\s*(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}|\d{4}-\d{1,2}-\d{1,2})/i';
         if(preg_match($context,$text,$match))return self::normaliseDate($match[1]);
         if(preg_match('/\b(\d{1,2}[\/.]\d{1,2}[\/.]\d{4}|\d{4}-\d{1,2}-\d{1,2})\b/',$text,$match))return self::normaliseDate($match[1]); return '';
     }
     private static function normaliseDate(string $value): string {
-        foreach(['!d/m/Y','!d.m.Y','!d-m-Y','!Y-m-d','!d/m/y'] as $format){$date=DateTimeImmutable::createFromFormat($format,$value);if($date&&$date->format(str_replace('!','',$format))===$value)return $date->format('Y-m-d');} return '';
+        foreach(['!d/m/Y','!d.m.Y','!d-m-Y','!Y-m-d','!d/m/y','!d.m.y','!d-m-y'] as $format){$date=DateTimeImmutable::createFromFormat($format,$value);$errors=DateTimeImmutable::getLastErrors();if($date&&($errors===false||($errors['warning_count']===0&&$errors['error_count']===0)))return $date->format('Y-m-d');} return '';
     }
 }
