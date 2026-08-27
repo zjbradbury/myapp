@@ -108,6 +108,7 @@ $users = $pdo->query('SELECT id,username,role,role2,created_at FROM users ORDER 
             </div>
         </section>
     </main>
+    <script src="scroll-memory.js" defer></script>
 </body>
 
 </html>

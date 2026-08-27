@@ -410,6 +410,7 @@ if ($selectedIds) {
         });
     </script>
     <script src="batch-preview.js" defer></script>
+    <script src="scroll-memory.js" defer></script>
 </body>
 
 </html>
