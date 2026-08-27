@@ -9,10 +9,12 @@ final class NextcloudClient {
         $this->password = 'ButcherTango!';
         $this->folder = 'crAssets';
     }
-    public function upload(string $localFile, string $originalName, string $assetNumber): string {
-        $name = preg_replace('/[^A-Za-z0-9._-]+/', '_', basename($originalName)) ?: 'attachment';
+    public function upload(string $localFile, string $originalName, string $assetNumber, bool $useExactName=false): string {
+        $allowedPattern = $useExactName ? '/[^A-Za-z0-9 ._()-]+/' : '/[^A-Za-z0-9._-]+/';
+        $name = preg_replace($allowedPattern, '_', basename($originalName)) ?: 'attachment';
         $asset = preg_replace('/[^A-Za-z0-9._-]+/', '_', $assetNumber) ?: 'asset';
-        $path = $this->folder.'/'.$asset.'/'.date('Ymd_His').'_'.bin2hex(random_bytes(4)).'_'.$name;
+        $storedName = $useExactName ? $name : date('Ymd_His').'_'.bin2hex(random_bytes(4)).'_'.$name;
+        $path = $this->folder.'/'.$asset.'/'.$storedName;
         $this->request('MKCOL', $this->folder, null, null, [201,405]);
         $this->request('MKCOL', $this->folder.'/'.$asset, null, null, [201,405]);
         $handle = fopen($localFile, 'rb');
