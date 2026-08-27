@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS assets (
  asset_retest_span INT UNSIGNED NOT NULL COMMENT 'Retest interval in days',
  file_location VARCHAR(1024) NOT NULL,
  original_filename VARCHAR(255) NOT NULL,
- uploaded_by BIGINT UNSIGNED NOT NULL,
+ uploaded_by BIGINT NOT NULL,
  PRIMARY KEY (id), UNIQUE KEY uq_assets_asset_number (asset_number),
  KEY idx_assets_category (asset_category), KEY idx_assets_test_date (asset_test_date),
- CONSTRAINT fk_assets_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id)
+ KEY idx_assets_uploaded_by (uploaded_by)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

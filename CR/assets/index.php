@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
  } catch(Throwable $e) { $message=$e instanceof PDOException&&$e->getCode()==='23000'?'That asset number already exists.':$e->getMessage(); }
 }
 if(isset($_GET['created'])){$message='Asset uploaded successfully.';$messageType='success';} if(isset($_GET['deleted'])){$message='Asset and attachment deleted.';$messageType='success';}
-$search=trim((string)($_GET['q']??'')); $sql="SELECT a.*,u.username,DATE_ADD(a.asset_test_date,INTERVAL a.asset_retest_span DAY) next_test_date FROM assets a JOIN users u ON u.id=a.uploaded_by";
+$search=trim((string)($_GET['q']??'')); $sql="SELECT a.*,COALESCE(u.username, 'Deleted user') AS username,DATE_ADD(a.asset_test_date,INTERVAL a.asset_retest_span DAY) next_test_date FROM assets a LEFT JOIN users u ON u.id=a.uploaded_by";
 if($search!==''){ $stmt=$pdo->prepare($sql.' WHERE a.asset_number LIKE ? OR a.asset_category LIKE ? OR a.asset_description LIKE ? ORDER BY a.uploaded_at DESC');$like='%'.$search.'%';$stmt->execute([$like,$like,$like]); } else {$stmt=$pdo->query($sql.' ORDER BY a.uploaded_at DESC');} $assets=$stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Asset Management</title><link rel="stylesheet" href="style.css"></head>
