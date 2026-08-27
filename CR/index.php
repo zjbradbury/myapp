@@ -5,7 +5,7 @@ $navItems = [
     [
         'title' => 'Assets Dashboard',
         'description' => 'Asset management dashboard, certs and details.',
-        'href' => '/assets',
+        'href' => '/CR/assets',
         'icon' => '⚙',
         'label' => 'Asset Management',
     ],

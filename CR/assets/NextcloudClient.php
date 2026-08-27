@@ -4,10 +4,10 @@ final class NextcloudClient {
     private string $baseUrl; private string $username; private string $password; private string $folder;
     public function __construct() {
         if (!function_exists('curl_init')) throw new RuntimeException('The PHP cURL extension is required.');
-        $this->baseUrl = rtrim(envRequired('https://nextcloud.zbradbury.com/remote.php/dav/files/webAdmin/'), '/');
-        $this->username = envRequired('webAdmin');
-        $this->password = envRequired('ButcherTango!');
-        $this->folder = trim((string)(getenv('crAssets') ?: 'CompanyAssets'), '/');
+        $this->baseUrl = rtrim('https://nextcloud.zbradbury.com/remote.php/dav/files/webAdmin/', '/');
+        $this->username = 'webAdmin';
+        $this->password = 'ButcherTango!';
+        $this->folder = 'crAssets';
     }
     public function upload(string $localFile, string $originalName, string $assetNumber): string {
         $name = preg_replace('/[^A-Za-z0-9._-]+/', '_', basename($originalName)) ?: 'attachment';
