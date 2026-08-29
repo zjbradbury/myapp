@@ -154,6 +154,10 @@ if (isset($_GET['created'])) {
     $message = 'Asset history updated and files uploaded successfully.';
     $messageType = 'success';
 }
+if (isset($_GET['selected'])) {
+    $message = 'The existing assets were selected and are ready to download.';
+    $messageType = 'success';
+}
 if (isset($_GET['deleted'])) {
     $message = 'Asset and files deleted.';
     $messageType = 'success';
