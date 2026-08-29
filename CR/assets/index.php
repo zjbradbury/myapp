@@ -67,6 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($unmatched) throw new RuntimeException('Could not detect both Asset Number and a non-future Test Date in: ' . implode(', ', $unmatched) . '. Nothing was uploaded.');
             $pdo->beginTransaction();
             $remoteFiles = [];
+            $uploadedPdfAssetIds = [];
             try {
                 $find = $pdo->prepare('SELECT id,asset_test_date FROM assets WHERE asset_number=? FOR UPDATE');
                 $update = $pdo->prepare('UPDATE assets SET asset_category=?,asset_description=?,asset_test_date=?,asset_retest_span=?,uploaded_by=?,uploaded_at=CURRENT_TIMESTAMP WHERE id=?');
@@ -91,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $fileDate = $item['test_date'];
                         $isPdf = $item['is_pdf'];
                         if ($isPdf) {
+                            $uploadedPdfAssetIds[] = $assetId;
                             $count->execute([$assetId, $fileDate]);
                             $pdfNumber = (int)$count->fetchColumn() + 1;
                             $suffix = $pdfNumber === 1 ? '' : ' (' . $pdfNumber . ')';
@@ -104,6 +106,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 }
                 $pdo->commit();
+                if ($uploadedPdfAssetIds) {
+                    $selected = array_map('intval', $_SESSION['selected_assets'] ?? []);
+                    $_SESSION['selected_assets'] = array_values(array_unique(array_merge($selected, $uploadedPdfAssetIds)));
+                }
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 if (isset($cloud)) foreach ($remoteFiles as $remote) try {

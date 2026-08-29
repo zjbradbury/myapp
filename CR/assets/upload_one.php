@@ -36,9 +36,15 @@ if ($isPdf && ($number === '' || $testDate === '')) {
 $date = DateTimeImmutable::createFromFormat('!Y-m-d', $testDate);
 if (!preg_match('/^[A-Z]{1,10}\d{3,10}$/', $number) || !$date || $date->format('Y-m-d') !== $testDate || $testDate > date('Y-m-d')) uploadError('Could not validate an Asset Number and non-future Test Date for ' . $file['name'] . '.');
 if ($isPdf && ($_POST['skip_if_duplicate'] ?? '') === '1') {
-    $duplicate = $pdo->prepare("SELECT 1 FROM assets a JOIN asset_files f ON f.asset_id=a.id WHERE a.asset_number=? AND f.test_date=? AND LOWER(f.original_filename) LIKE '%.pdf' LIMIT 1");
+    $duplicate = $pdo->prepare("SELECT a.id FROM assets a JOIN asset_files f ON f.asset_id=a.id WHERE a.asset_number=? AND f.test_date=? AND LOWER(f.original_filename) LIKE '%.pdf' LIMIT 1");
     $duplicate->execute([$number, $testDate]);
-    if ($duplicate->fetchColumn()) { echo json_encode(['ok' => true, 'skipped' => true, 'asset_number' => $number]); exit; }
+    $duplicateAssetId = (int)$duplicate->fetchColumn();
+    if ($duplicateAssetId > 0) {
+        $selected = array_map('intval', $_SESSION['selected_assets'] ?? []);
+        $_SESSION['selected_assets'] = array_values(array_unique(array_merge($selected, [$duplicateAssetId])));
+        echo json_encode(['ok' => true, 'skipped' => true, 'asset_id' => $duplicateAssetId, 'asset_number' => $number]);
+        exit;
+    }
 }
 $pdo->beginTransaction();
 $remote = null;
@@ -65,7 +71,11 @@ try {
     $remote = $cloud->upload((string)$file['tmp_name'], $storedName, $number, $isPdf);
     $pdo->prepare('INSERT INTO asset_files(asset_id,file_location,original_filename,test_date) VALUES(?,?,?,?)')->execute([$assetId, $remote, $storedName, $testDate]);
     $pdo->commit();
-    echo json_encode(['ok' => true, 'asset_number' => $number, 'filename' => $storedName]);
+    if ($isPdf) {
+        $selected = array_map('intval', $_SESSION['selected_assets'] ?? []);
+        $_SESSION['selected_assets'] = array_values(array_unique(array_merge($selected, [$assetId])));
+    }
+    echo json_encode(['ok' => true, 'asset_id' => $assetId, 'asset_number' => $number, 'filename' => $storedName]);
 } catch (Throwable $error) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     if ($remote !== null && isset($cloud)) try {
