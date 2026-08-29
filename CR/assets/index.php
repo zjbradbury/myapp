@@ -210,7 +210,7 @@ if ($selectedIds) {
                         <option>VAC</option>
                         <option>OTHER</option>
                     </select></label><label class="wide">Description<textarea name="asset_description" rows="3" required></textarea></label><label>Test date<input id="test-date" type="date" name="asset_test_date" required></label><label>Retest span (months)<input type="number" name="asset_retest_span" value="12" min="1" max="1200" required></label><label class="wide">Files (25 MB maximum per file)<input id="asset-files" type="file" name="asset_files[]" multiple><small>Choose one or multiple files.</small></label><label class="wide">Or choose a folder<input id="asset-folder" type="file" name="folder_files[]" multiple webkitdirectory directory></label>
-                <div class="wide form-actions"><button type="button" id="scan-files">Scan PDFs and prefill</button><button type="submit">Upload Assets</button><span id="scan-status"></span></div>
+                <div class="wide form-actions"><button type="button" id="scan-files">Scan PDFs and prefill</button><button type="submit">Continue</button><span id="scan-status"></span></div>
             </form>
         </section>
         <section class="card">
@@ -419,7 +419,7 @@ if ($selectedIds) {
             if (prefix !== null && prefix.trim() !== '') scan(prefix.trim());
         });
     </script>
-    <script src="batch-preview.js" defer></script>
+    <script src="batch-preview.js?v=<?= h((string)filemtime(__DIR__ . '/batch-preview.js')) ?>" defer></script>
     <script src="scroll-memory.js" defer></script>
 </body>
 
