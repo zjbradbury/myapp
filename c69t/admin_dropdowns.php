@@ -295,6 +295,9 @@ $operators = $pdo->query("
     ORDER BY name ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+$inactiveOperators = array_values(array_filter($operators, static fn(array $operator): bool => (int)$operator['active'] !== 1));
+$activeOperators = array_values(array_filter($operators, static fn(array $operator): bool => (int)$operator['active'] === 1));
+
 $sampleLocations = $pdo->query("
     SELECT id, name
     FROM config_sample_location
@@ -334,7 +337,86 @@ $gasTestLocations = $pdo->query("
             <div class="msg-error"><?= h($error) ?></div>
         <?php endif; ?>
 
-        <div class="manage-grid">
+        <div class="manage-card operators-card">
+            <div class="operators-heading">
+                <div>
+                    <h3>Operators</h3>
+                    <p>Manage operator names and availability.</p>
+                </div>
+
+                <label class="operator-search">
+                    <span>Search operators</span>
+                    <input type="search" id="operator-search" placeholder="Search by name..." autocomplete="off">
+                </label>
+            </div>
+
+            <form method="post" class="operator-add-form">
+                <input type="hidden" name="action" value="add_operator">
+                <input type="text" name="name" placeholder="New operator name" required>
+
+                <label class="check-row">
+                    <input type="checkbox" name="active" checked>
+                    <span>Active</span>
+                </label>
+
+                <button type="submit">Add Operator</button>
+            </form>
+
+            <div class="operator-segments">
+                <?php foreach ([
+                    ['title' => 'Inactive', 'class' => 'inactive', 'rows' => $inactiveOperators],
+                    ['title' => 'Active', 'class' => 'active', 'rows' => $activeOperators],
+                ] as $segment): ?>
+                    <section class="operator-segment <?= $segment['class'] ?>" aria-labelledby="operators-<?= $segment['class'] ?>">
+                        <div class="operator-segment-heading">
+                            <h4 id="operators-<?= $segment['class'] ?>"><?= $segment['title'] ?></h4>
+                            <span class="status-pill <?= $segment['class'] ?>"><?= count($segment['rows']) ?></span>
+                        </div>
+
+                        <div class="manage-list operator-list">
+                            <?php if (!$segment['rows']): ?>
+                                <div class="manage-row operator-empty">No <?= strtolower($segment['title']) ?> operators.</div>
+                            <?php endif; ?>
+
+                            <?php foreach ($segment['rows'] as $row): ?>
+                                <div class="manage-row operator-row" data-operator-name="<?= h(strtolower($row['name'])) ?>">
+                                    <form method="post">
+                                        <input type="hidden" name="action" value="update_operator">
+                                        <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                        <input type="text" name="name" value="<?= h($row['name']) ?>" required>
+                                        <?php if ((int)$row['active'] === 1): ?>
+                                            <input type="hidden" name="active" value="1">
+                                        <?php endif; ?>
+
+                                        <div class="row-actions">
+                                            <button type="submit">Save Operator</button>
+                                        </div>
+                                    </form>
+
+                                    <div class="row-actions">
+                                        <form method="post" class="inline-form">
+                                            <input type="hidden" name="action" value="toggle_operator">
+                                            <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                            <button type="submit"><?= ((int)$row['active'] === 1) ? 'Set Inactive' : 'Set Active' ?></button>
+                                        </form>
+
+                                        <form method="post" class="inline-form" onsubmit="return confirm('Delete this operator?');">
+                                            <input type="hidden" name="action" value="delete_operator">
+                                            <input type="hidden" name="id" value="<?= (int)$row['id'] ?>">
+                                            <button type="submit" class="btn danger">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+
+                            <div class="manage-row operator-no-results" hidden>No matching operators.</div>
+                        </div>
+                    </section>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <div class="manage-grid dropdown-manage-grid">
             <div class="manage-card">
                 <h3>Devices</h3>
 
@@ -396,70 +478,6 @@ $gasTestLocations = $pdo->query("
             </div>
 
             <div class="stack-grid">
-                <div class="manage-card">
-                    <h3>Operators</h3>
-
-                    <form method="post">
-                        <input type="hidden" name="action" value="add_operator">
-                        <input type="text" name="name" placeholder="New operator name" required>
-
-                        <label class="check-row" style="margin-top:10px;">
-                            <input type="checkbox" name="active" checked>
-                            <span>Active</span>
-                        </label>
-
-                        <div class="row-actions">
-                            <button type="submit">Add Operator</button>
-                        </div>
-                    </form>
-
-                    <div class="manage-list">
-                        <?php if (!$operators): ?>
-                            <div class="manage-row">No operators found.</div>
-                        <?php endif; ?>
-
-                        <?php foreach ($operators as $row): ?>
-                            <div class="manage-row">
-                                <form method="post">
-                                    <input type="hidden" name="action" value="update_operator">
-                                    <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-
-                                    <input type="text" name="name" value="<?= h($row["name"]) ?>" required>
-
-                                    <label class="check-row" style="margin-top:10px;">
-                                        <input type="checkbox" name="active" <?= ((int)$row["active"] === 1) ? 'checked' : '' ?>>
-                                        <span>Active</span>
-                                    </label>
-
-                                    <div style="margin-top:8px;">
-                                        <span class="status-pill <?= ((int)$row["active"] === 1) ? 'active' : 'inactive' ?>">
-                                            <?= ((int)$row["active"] === 1) ? 'Active' : 'Inactive' ?>
-                                        </span>
-                                    </div>
-
-                                    <div class="row-actions">
-                                        <button type="submit">Save Operator</button>
-                                    </div>
-                                </form>
-
-                                <div class="row-actions">
-                                    <form method="post" class="inline-form">
-                                        <input type="hidden" name="action" value="toggle_operator">
-                                        <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                                        <button type="submit"><?= ((int)$row["active"] === 1) ? 'Set Inactive' : 'Set Active' ?></button>
-                                    </form>
-
-                                    <form method="post" class="inline-form" onsubmit="return confirm('Delete this operator?');">
-                                        <input type="hidden" name="action" value="delete_operator">
-                                        <input type="hidden" name="id" value="<?= (int)$row["id"] ?>">
-                                        <button type="submit" class="btn danger">Delete</button>
-                                    </form>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
                 <div class="manage-card">
                     <h3>Sample Locations</h3>
 
@@ -542,6 +560,27 @@ $gasTestLocations = $pdo->query("
             </div>
         </div>
     </div>
+
+    <script>
+        const operatorSearch = document.getElementById('operator-search');
+
+        operatorSearch.addEventListener('input', () => {
+            const query = operatorSearch.value.trim().toLocaleLowerCase();
+
+            document.querySelectorAll('.operator-segment').forEach((segment) => {
+                const rows = [...segment.querySelectorAll('.operator-row')];
+                let visibleRows = 0;
+
+                rows.forEach((row) => {
+                    const matches = row.dataset.operatorName.includes(query);
+                    row.hidden = !matches;
+                    visibleRows += matches ? 1 : 0;
+                });
+
+                segment.querySelector('.operator-no-results').hidden = query === '' || visibleRows > 0;
+            });
+        });
+    </script>
 
 </body>
 

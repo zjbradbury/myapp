@@ -202,7 +202,7 @@ $schemas = [
             ['name' => 'log_date', 'label' => 'Date', 'type' => 'date', 'required' => true],
             ['name' => 'log_time', 'label' => 'Time', 'type' => 'time', 'required' => true],
             ['name' => 'device', 'label' => 'Device', 'type' => 'select_or_text', 'datalist' => 'gas_devices'],
-            ['name' => 'operator', 'label' => 'Operator', 'type' => 'text', 'datalist' => 'operators'],
+            ['name' => 'operator', 'label' => 'Operator', 'type' => 'text', 'datalist' => 'operators', 'required' => true],
             ['name' => 'location', 'label' => 'Location', 'type' => 'text', 'datalist' => 'gas_locations'],
             ['name' => 'area_details', 'label' => 'Area Details', 'type' => 'text'],
             ['name' => 'mercury', 'label' => 'Mercury', 'type' => 'number', 'step' => '0.001', 'unit' => 'µg/m³', 'gasFlag' => 'allow_mercury'],
@@ -371,6 +371,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($tableKey === 'sample' && $data['operator'] === null) {
         http_response_code(422);
         die('An operator is required when adding or editing a sample log. Please go back and select an operator.');
+    }
+
+    if ($tableKey === 'gas_test' && $data['operator'] === null) {
+        http_response_code(422);
+        die('An operator is required when adding or editing a gas test log. Please go back and select an operator.');
     }
 
     if ($action === 'add') {

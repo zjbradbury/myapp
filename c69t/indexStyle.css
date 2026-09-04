@@ -860,6 +860,85 @@ th {
     margin: 0 0 14px;
 }
 
+.operators-card {
+    margin-bottom: 20px;
+}
+
+.operators-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.operators-heading h3 {
+    margin-bottom: 4px;
+}
+
+.operators-heading p {
+    margin: 0;
+    color: var(--page-muted);
+}
+
+.operator-search {
+    width: min(100%, 340px);
+}
+
+.operator-search span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.operator-add-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.operator-segments {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.operator-segment {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .025);
+}
+
+.operator-segment-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.operator-segment-heading h4 {
+    margin: 0;
+}
+
+.operator-list {
+    margin-top: 12px;
+}
+
+.operator-empty,
+.operator-no-results {
+    color: var(--page-muted);
+    text-align: center;
+}
+
+.dropdown-manage-grid {
+    margin-top: 0;
+}
+
 .manage-list {
     max-height: 360px;
     margin-top: 16px;
@@ -1030,7 +1109,23 @@ th {
 
 @media (max-width: 900px) {
     .manage-grid,
-    .device-form-grid {
+    .device-form-grid,
+    .operator-segments {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 700px) {
+    .operators-heading {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .operator-search {
+        width: 100%;
+    }
+
+    .operator-add-form {
         grid-template-columns: 1fr;
     }
 }
