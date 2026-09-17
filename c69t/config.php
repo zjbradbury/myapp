@@ -278,7 +278,7 @@ function get_range_filter_state(bool $defaultToCurrentShift = true): array
     ];
 }
 
-function dashboard_change_rows(array $rows, array $columns, ?string $tolerantColumn = null, float $tolerance = 0.0): array
+function dashboard_change_rows(array $rows, array $columns, ?string $tolerantColumn = null, float $tolerance = 0.0, array $tolerances = []): array
 {
     if (!$rows) {
         return [];
@@ -294,8 +294,9 @@ function dashboard_change_rows(array $rows, array $columns, ?string $tolerantCol
         foreach ($columns as $column) {
             $newValue = $newer[$column] ?? null;
             $oldValue = $previous[$column] ?? null;
-            if ($column === $tolerantColumn && is_numeric($newValue) && is_numeric($oldValue)) {
-                $changed = abs((float)$newValue - (float)$oldValue) > $tolerance + 0.000000001;
+            if (($column === $tolerantColumn || isset($tolerances[$column])) && is_numeric($newValue) && is_numeric($oldValue)) {
+                $columnTolerance = $tolerances[$column] ?? $tolerance;
+                $changed = abs((float)$newValue - (float)$oldValue) > $columnTolerance + 0.000000001;
             } elseif (is_numeric($newValue) && is_numeric($oldValue)) {
                 $changed = (float)$newValue !== (float)$oldValue;
             } else {

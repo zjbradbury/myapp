@@ -279,7 +279,7 @@ function render_topbar(array $dashboard): string
             <?php if (($range['error'] ?? '') !== ''): ?>
                 <div class="range-error"><?= h($range['error']) ?></div>
             <?php elseif (!empty($range['user_changes_only'])): ?>
-                <div class="range-active">Showing user changes in Tricanter and Nozzle tables for the selected range</div>
+                <div class="range-active">Showing user changes in Tricanter, Nozzle, and Pump Values tables for the selected range</div>
             <?php elseif (!empty($range['used_default_shift'])): ?>
                 <div class="range-active">Showing current 12 hour shift block</div>
             <?php elseif (!empty($range['active'])): ?>
@@ -921,6 +921,16 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $nozzleTable = $userChangesOnly
         ? dashboard_change_rows($nozzle, ['nozzle', 'min_deg', 'max_deg', 'rpm'])
         : filter_rows_to_minute_increments($nozzle, 15);
+    $pumpFeedbackColumns = ['suction_pump_2_feedback', 'feed_pump_feedback', 'booster_pump_feedback'];
+    $pumpValuesTable = $userChangesOnly
+        ? dashboard_change_rows(
+            $pumpValues,
+            array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $pumpFeedbackColumns),
+            null,
+            0.0,
+            array_fill_keys($pumpFeedbackColumns, 1.0)
+        )
+        : filter_rows_to_minute_increments($pumpValues, 15);
     $tricanter = filter_rows_to_minute_increments($tricanter, 15);
     $nozzle = filter_rows_to_minute_increments($nozzle, 15);
     $projectFlow = filter_rows_to_minute_increments($projectFlow, 15);
@@ -990,7 +1000,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         ? 'NO DATA'
         : ((time() - $latestEntryTimestamp) <= 1800 ? 'ONLINE' : 'OFFLINE');
 
-    $recordsLoaded = count($nozzleTable) + count($tricanterTable) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
+    $recordsLoaded = count($nozzleTable) + count($tricanterTable) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValuesTable) + count($nitrogen);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -1086,7 +1096,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             ],
             'pump_values' => [
                 'kpis_html' => render_pump_values_kpis($latestPumpValues),
-                'rows_html' => render_pump_values_rows($pumpValues),
+                'rows_html' => render_pump_values_rows($pumpValuesTable),
                 'chart' => [
                     'labels' => dashboard_chart_labels($pumpValuesChart),
                     'datasets' => [
