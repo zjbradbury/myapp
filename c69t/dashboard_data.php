@@ -279,7 +279,7 @@ function render_topbar(array $dashboard): string
             <?php if (($range['error'] ?? '') !== ''): ?>
                 <div class="range-error"><?= h($range['error']) ?></div>
             <?php elseif (!empty($range['user_changes_only'])): ?>
-                <div class="range-active">Showing user changes in Tricanter, Nozzle, and Pump Values tables for the selected range</div>
+                <div class="range-active">Showing operator changes in Tricanter, Nozzle, and Pump Values tables for the selected range</div>
             <?php elseif (!empty($range['used_default_shift'])): ?>
                 <div class="range-active">Showing current 12 hour shift block</div>
             <?php elseif (!empty($range['active'])): ?>
@@ -916,7 +916,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
 
     $userChangesOnly = currentRole() === 'admin' && !empty($range['user_changes_only']);
     $tricanterTable = $userChangesOnly
-        ? dashboard_change_rows($tricanter, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 0.1)
+        ? dashboard_change_rows($tricanter, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 0.2)
         : filter_rows_to_minute_increments($tricanter, 15);
     $nozzleTable = $userChangesOnly
         ? dashboard_change_rows($nozzle, ['nozzle', 'min_deg', 'max_deg', 'rpm'])
@@ -939,11 +939,11 @@ function build_dashboard_data(PDO $pdo, array $range): array
 
     // Tables stay newest-first. Charts get their own explicitly time-sorted rows.
     // The chart helpers preserve a value (including null) for every timestamp.
-    $tricanterChart = dashboard_chart_rows($tricanter);
+    $tricanterChart = dashboard_chart_rows($tricanterTable);
     $solidWasteChart = dashboard_chart_rows($solidWaste);
     $recoveredWaterChart = dashboard_chart_rows($recoveredWater);
-    $nozzleChart = dashboard_chart_rows($nozzle);
-    $pumpValuesChart = dashboard_chart_rows($pumpValues);
+    $nozzleChart = dashboard_chart_rows($nozzleTable);
+    $pumpValuesChart = dashboard_chart_rows($pumpValuesTable);
     $nitrogenChart = dashboard_chart_rows($nitrogen);
 
     $latestNozzle = $nozzle[0] ?? [];

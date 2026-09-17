@@ -430,7 +430,7 @@ function render_dashboard_range_filter(array $range): void
                 <?php if (currentRole() === 'admin'): ?>
                     <label class="range-change-option">
                         <input type="checkbox" name="user_changes_only" value="1" <?= !empty($range['user_changes_only']) ? 'checked' : '' ?>>
-                        View User Changes Only
+                        View Operator Changes Only
                     </label>
                 <?php endif; ?>
                 <div class="filter-actions">
