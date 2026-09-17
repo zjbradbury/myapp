@@ -313,6 +313,8 @@ function render_topbar(array $dashboard): string
 
             <?php if (($range['error'] ?? '') !== ''): ?>
                 <div class="range-error"><?= h($range['error']) ?></div>
+            <?php elseif (!empty($range['user_changes_only'])): ?>
+                <div class="range-active">Showing user changes in Tricanter and Nozzle tables for the selected range</div>
             <?php elseif (!empty($range['used_default_shift'])): ?>
                 <div class="range-active">Showing current 12 hour shift block</div>
             <?php elseif (!empty($range['active'])): ?>
@@ -937,6 +939,13 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $solidWaste = solid_diff_minutes_rows($solidWaste);
     $recoveredWater = recovered_water_diff_minutes_rows($recoveredWater);
 
+    $userChangesOnly = currentRole() === 'admin' && !empty($range['user_changes_only']);
+    $tricanterTable = $userChangesOnly
+        ? dashboard_change_rows($tricanter, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 0.1)
+        : filter_rows_to_minute_increments($tricanter, 15);
+    $nozzleTable = $userChangesOnly
+        ? dashboard_change_rows($nozzle, ['nozzle', 'min_deg', 'max_deg', 'rpm'])
+        : filter_rows_to_minute_increments($nozzle, 15);
     $tricanter = filter_rows_to_minute_increments($tricanter, 15);
     $nozzle = filter_rows_to_minute_increments($nozzle, 15);
     $projectFlow = filter_rows_to_minute_increments($projectFlow, 15);
@@ -1016,7 +1025,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         ? 'NO DATA'
         : ((time() - $latestEntryTimestamp) <= 1800 ? 'ONLINE' : 'OFFLINE');
 
-    $recordsLoaded = count($nozzle) + count($tricanter) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
+    $recordsLoaded = count($nozzleTable) + count($tricanterTable) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValues) + count($nitrogen);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -1041,7 +1050,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         'panels' => [
             'tricanter' => [
                 'kpis_html' => render_tricanter_kpis($latestTricanter),
-                'rows_html' => render_tricanter_rows($tricanter),
+                'rows_html' => render_tricanter_rows($tricanterTable),
                 'chart' => [
                     'labels' => dashboard_chart_labels($tricanterChart),
                     'status' => dashboard_chart_numeric($tricanterChart, 'tricanter_status'),
@@ -1085,7 +1094,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             ],
             'nozzle' => [
                 'kpis_html' => render_nozzle_kpis($latestNozzle),
-                'rows_html' => render_nozzle_rows($nozzle),
+                'rows_html' => render_nozzle_rows($nozzleTable),
                 'chart' => [
                     'labels' => dashboard_chart_labels($nozzleChart),
                     'status' => dashboard_chart_numeric($nozzleChart, 'nozzle_status'),
@@ -2323,10 +2332,12 @@ $dashboard = build_dashboard_data($pdo, $range);
             const start = current.searchParams.get('start');
             const end = current.searchParams.get('end');
             const quick = current.searchParams.get('quick');
+            const userChangesOnly = current.searchParams.get('user_changes_only');
 
             if (start !== null && start !== '') url.searchParams.set('start', start);
             if (end !== null && end !== '') url.searchParams.set('end', end);
             if (quick !== null && quick !== '') url.searchParams.set('quick', quick);
+            if (userChangesOnly === '1') url.searchParams.set('user_changes_only', '1');
 
             return url.toString();
         }

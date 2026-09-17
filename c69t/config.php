@@ -274,7 +274,48 @@ function get_range_filter_state(bool $defaultToCurrentShift = true): array
         'error' => $rangeError,
         'active' => ($rangeStart !== '' || $rangeEnd !== ''),
         'used_default_shift' => $usedDefaultShift,
+        'user_changes_only' => currentRole() === 'admin' && ($_GET['user_changes_only'] ?? '') === '1',
     ];
+}
+
+function dashboard_change_rows(array $rows, array $columns, ?string $tolerantColumn = null, float $tolerance = 0.0): array
+{
+    if (!$rows) {
+        return [];
+    }
+
+    // Rows arrive newest first. Track the last meaningful setting so small
+    // feed rate fluctuations do not hide a gradual change above the buffer.
+    $chronological = array_reverse($rows);
+    $previous = $chronological[0];
+    $changes = [];
+    foreach (array_slice($chronological, 1) as $newer) {
+        $changed = false;
+        foreach ($columns as $column) {
+            $newValue = $newer[$column] ?? null;
+            $oldValue = $previous[$column] ?? null;
+            if ($column === $tolerantColumn && is_numeric($newValue) && is_numeric($oldValue)) {
+                $changed = abs((float)$newValue - (float)$oldValue) > $tolerance + 0.000000001;
+            } elseif (is_numeric($newValue) && is_numeric($oldValue)) {
+                $changed = (float)$newValue !== (float)$oldValue;
+            } else {
+                $changed = $newValue !== $oldValue;
+            }
+            if ($changed) {
+                break;
+            }
+        }
+        if ($changed) {
+            $changes[] = $newer;
+            $previous = $newer;
+        }
+    }
+
+    if (!$changes || ($changes[count($changes) - 1]['id'] ?? null) !== ($rows[0]['id'] ?? null)) {
+        $changes[] = $rows[0];
+    }
+
+    return array_reverse($changes);
 }
 
 function build_log_range_where(array $range): array
@@ -385,6 +426,12 @@ function render_dashboard_range_filter(array $range): void
             </div>
 
             <div class="range-buttons">
+                <?php if (currentRole() === 'admin'): ?>
+                    <label class="range-change-option">
+                        <input type="checkbox" name="user_changes_only" value="1" <?= !empty($range['user_changes_only']) ? 'checked' : '' ?>>
+                        View User Changes Only
+                    </label>
+                <?php endif; ?>
                 <div class="filter-actions">
                     <button type="submit" class="btn">Apply Range</button>
                     <a href="index.php" class="btn">Clear</a>
