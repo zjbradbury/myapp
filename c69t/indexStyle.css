@@ -544,8 +544,14 @@ th {
 /* Smoothly highlight rows added during a dashboard refresh. */
 .table-wrap td.operator-changed-cell,
 table td.operator-changed-cell {
-    background: #facc15 !important;
-    color: #17202b !important;
+    background: rgba(234, 179, 8, 0.30) !important;
+    color: #fff5cf !important;
+    border-bottom-color: rgba(250, 204, 21, 0.55) !important;
+}
+
+.table-wrap tr:hover td.operator-changed-cell,
+table tr:hover td.operator-changed-cell {
+    background: rgba(250, 204, 21, 0.42) !important;
 }
 
 .row-new td {
