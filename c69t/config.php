@@ -290,7 +290,7 @@ function dashboard_change_rows(array $rows, array $columns, ?string $tolerantCol
     $previous = $chronological[0];
     $changes = [];
     foreach (array_slice($chronological, 1) as $newer) {
-        $changed = false;
+        $changedColumns = [];
         foreach ($columns as $column) {
             $newValue = $newer[$column] ?? null;
             $oldValue = $previous[$column] ?? null;
@@ -303,10 +303,11 @@ function dashboard_change_rows(array $rows, array $columns, ?string $tolerantCol
                 $changed = $newValue !== $oldValue;
             }
             if ($changed) {
-                break;
+                $changedColumns[$column] = true;
             }
         }
-        if ($changed) {
+        if ($changedColumns) {
+            $newer['_changed_columns'] = $changedColumns;
             $changes[] = $newer;
             $previous = $newer;
         }
@@ -317,6 +318,11 @@ function dashboard_change_rows(array $rows, array $columns, ?string $tolerantCol
     }
 
     return array_reverse($changes);
+}
+
+function operator_change_cell_class(array $row, string $column): string
+{
+    return !empty($row['_changed_columns'][$column]) ? 'operator-changed-cell' : '';
 }
 
 function build_log_range_where(array $range): array
@@ -407,10 +413,13 @@ function current_page_with_params(array $remove = ['start', 'end', 'quick', 'msg
     return $file . ($query !== '' ? '?' . $query : '');
 }
 
-function render_dashboard_range_filter(array $range): void
+function render_dashboard_range_filter(array $range, string $action = 'index.php'): void
 {
 ?>
-    <form method="get" action="index.php" class="filter-form">
+    <form method="get" action="<?= h($action) ?>" class="filter-form">
+        <?php if ($action === 'logs.php'): ?>
+            <input type="hidden" name="table" value="<?= h($_GET['table'] ?? 'tricanter') ?>">
+        <?php endif; ?>
         <div class="range-layout">
             <div class="range-inputs">
                 <div class="range-row">
@@ -435,7 +444,7 @@ function render_dashboard_range_filter(array $range): void
                 <?php endif; ?>
                 <div class="filter-actions">
                     <button type="submit" class="btn">Apply Range</button>
-                    <a href="index.php" class="btn">Clear</a>
+                    <a href="<?= h($action === 'logs.php' ? 'logs.php?table=' . rawurlencode((string)($_GET['table'] ?? 'tricanter')) : 'index.php') ?>" class="btn">Clear</a>
                 </div>
 
                 <div class="quick-actions">

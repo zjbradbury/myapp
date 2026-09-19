@@ -456,14 +456,27 @@ if (isset($_GET['msg']) && $_GET['msg'] !== '') {
 }
 
 $rows = [];
+$operatorChangesOnly = !empty($range['user_changes_only']) && in_array($selectedKey, ['tricanter', 'nozzle', 'pump_values'], true);
 try {
     if (function_exists('tableExists') && !tableExists($pdo, $config['table'])) {
         $error = $config['table'] . ' does not exist yet.';
     } else {
         $rows = fetch_log_rows($pdo, $config['table'], $range, 'log_date DESC, log_time DESC, id DESC');
+        if ($operatorChangesOnly) {
+            if ($selectedKey === 'tricanter') {
+                $rows = dashboard_change_rows($rows, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5);
+            } elseif ($selectedKey === 'nozzle') {
+                $rows = dashboard_change_rows($rows, ['nozzle', 'min_deg', 'max_deg', 'rpm']);
+            } else {
+                $feedbackColumns = ['suction_pump_2_feedback', 'feed_pump_feedback', 'booster_pump_feedback'];
+                $rows = dashboard_change_rows($rows, array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $feedbackColumns), null, 0.0, array_fill_keys($feedbackColumns, 1.0));
+            }
+        }
         $rows = filter_rows_by_time_search($rows, $timeSearch);
         $rows = filter_rows_by_value_columns($rows, $selectedValueColumns);
-        $rows = filter_rows_to_minute_increments_for_logs($rows, $selectedInterval);
+        if (!$operatorChangesOnly) {
+            $rows = filter_rows_to_minute_increments_for_logs($rows, $selectedInterval);
+        }
         if ($selectedKey === 'solid_waste') {
             $rows = solid_diff_minutes_rows($rows);
         }
@@ -886,7 +899,8 @@ $csvParams = [
         </div>
 
         <div class="filter-card panel">
-            <?php render_range_filter($range, 'Filtering ' . $config['label'] . ' table to selected range'); ?>
+            <?php render_dashboard_range_filter($range, 'logs.php'); ?>
+            <?php if ($operatorChangesOnly): ?><div class="range-active">Showing operator changes in <?= h($config['label']) ?> logs</div><?php endif; ?>
 
             <form method="get" class="list-extra-filter-form" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
                 <?php foreach ($_GET as $key => $value): ?>
@@ -1029,7 +1043,7 @@ $csvParams = [
                                         <?php endif; ?>
 
                                         <?php foreach ($config['columns'] as $col): ?>
-                                            <td class="<?= h($col['class'] ?? '') ?>"><?= log_cell_value($row, $col) ?></td>
+                                            <td class="<?= h(trim(($col['class'] ?? '') . ' ' . operator_change_cell_class($row, $col['key']))) ?>"><?= log_cell_value($row, $col) ?></td>
                                         <?php endforeach; ?>
 
                                         <?php if (($canEdit && !empty($config['edit'])) || ($canDelete && !empty($config['delete']))): ?>

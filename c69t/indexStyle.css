@@ -542,6 +542,12 @@ th {
 }
 
 /* Smoothly highlight rows added during a dashboard refresh. */
+.table-wrap td.operator-changed-cell,
+table td.operator-changed-cell {
+    background: #facc15 !important;
+    color: #17202b !important;
+}
+
 .row-new td {
     animation: rowHighlight 2s ease-out;
 }
