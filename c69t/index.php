@@ -703,7 +703,7 @@ function render_nitrogen_rows(array $rows): string
 
     if (!$rows): ?>
         <tr>
-            <td colspan="13">No nitrogen data in selected range.</td>
+            <td colspan="12">No nitrogen data in selected range.</td>
         </tr>
         <?php else:
         foreach ($rows as $r): ?>
@@ -720,7 +720,6 @@ function render_nitrogen_rows(array $rows): string
                 <td><?= fmt($r['post_heat_temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['interior_o2'] ?? null, 1) ?> %</td>
                 <td class="<?= operator_change_cell_class($r, 'tank_internal_o2') ?>"><?= fmt($r['tank_internal_o2'] ?? null, 1) ?> %</td>
-                <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
     <?php endforeach;
     endif;
@@ -1919,7 +1918,6 @@ $dashboard = build_dashboard_data($pdo, $range);
                                 <th>Post Heat Temp</th>
                                 <th>Container (O2)</th>
                                 <th>Tank Internal (O2)</th>
-                                <th>Comments</th>
                             </tr>
                         </thead>
                         <tbody id="nitrogen-tbody"><?= $dashboard['panels']['nitrogen']['rows_html'] ?></tbody>
