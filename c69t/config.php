@@ -423,7 +423,9 @@ function current_page_with_params(array $remove = ['start', 'end', 'quick', 'msg
 function render_dashboard_range_filter(array $range, string $action = 'index.php'): void
 {
 ?>
-    <form method="get" action="<?= h($action) ?>" class="filter-form" data-default-shift="<?= !empty($range['used_default_shift']) ? '1' : '0' ?>">
+    <form method="get" action="<?= h($action) ?>" class="filter-form" data-default-shift="<?= !empty($range['used_default_shift']) ? '1' : '0' ?>"
+        data-initial-start="<?= h(to_datetime_local_value($range['start'] ?? '')) ?>"
+        data-initial-end="<?= h(to_datetime_local_value($range['end'] ?? '')) ?>">
         <?php if ($action === 'logs.php'): ?>
             <input type="hidden" name="table" value="<?= h($_GET['table'] ?? 'tricanter') ?>">
         <?php endif; ?>
@@ -466,18 +468,20 @@ function render_dashboard_range_filter(array $range, string $action = 'index.php
     </form>
     <script>
         (() => {
-            const form = document.currentScript.previousElementSibling;
-            const operatorChanges = form.elements.namedItem('user_changes_only');
-            operatorChanges?.addEventListener('change', () => form.requestSubmit());
-            if (form.dataset.defaultShift !== '1') return;
+            if (window.dashboardRangeFilterBound) return;
+            window.dashboardRangeFilterBound = true;
 
-            const start = form.elements.namedItem('start');
-            const end = form.elements.namedItem('end');
-            const initialStart = start.value;
-            const initialEnd = end.value;
+            document.addEventListener('change', (event) => {
+                if (!event.target.matches('.filter-form input[name="user_changes_only"]')) return;
+                event.target.form.requestSubmit();
+            });
 
-            form.addEventListener('formdata', (event) => {
-                if (start.value === initialStart && end.value === initialEnd) {
+            document.addEventListener('formdata', (event) => {
+                const form = event.target;
+                if (!form.matches('.filter-form') || form.dataset.defaultShift !== '1') return;
+                const start = form.elements.namedItem('start');
+                const end = form.elements.namedItem('end');
+                if (start.value === form.dataset.initialStart && end.value === form.dataset.initialEnd) {
                     // Keep the default shift dynamic when only the operator filter changes.
                     event.formData.delete('start');
                     event.formData.delete('end');

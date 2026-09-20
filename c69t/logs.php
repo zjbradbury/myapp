@@ -465,7 +465,7 @@ try {
         $rows = fetch_log_rows($pdo, $config['table'], $range, 'log_date DESC, log_time DESC, id DESC');
         if ($operatorChangesOnly) {
             if ($selectedKey === 'tricanter') {
-                $rows = dashboard_change_rows($rows, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5);
+                $rows = dashboard_change_rows($rows, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5, ['screw_speed' => 0.1]);
             } elseif ($selectedKey === 'nozzle') {
                 $rows = dashboard_change_rows($rows, ['nozzle', 'min_deg', 'max_deg', 'rpm']);
             } elseif ($selectedKey === 'nitrogen') {

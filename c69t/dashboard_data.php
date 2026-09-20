@@ -898,7 +898,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
 
     $userChangesOnly = !empty($range['user_changes_only']);
     $tricanterTable = $userChangesOnly
-        ? dashboard_change_rows($tricanter, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5)
+        ? dashboard_change_rows($tricanter, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5, ['screw_speed' => 0.1])
         : filter_rows_to_minute_increments($tricanter, 15);
     $nozzleTable = $userChangesOnly
         ? dashboard_change_rows($nozzle, ['nozzle', 'min_deg', 'max_deg', 'rpm'])
