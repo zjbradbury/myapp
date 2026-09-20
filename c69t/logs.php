@@ -456,7 +456,7 @@ if (isset($_GET['msg']) && $_GET['msg'] !== '') {
 }
 
 $rows = [];
-$operatorChangesOnly = !empty($range['user_changes_only']) && in_array($selectedKey, ['tricanter', 'nozzle', 'pump_values'], true);
+$operatorChangesOnly = !empty($range['user_changes_only']) && in_array($selectedKey, ['tricanter', 'nozzle', 'pump_values', 'nitrogen'], true);
 try {
     if (function_exists('tableExists') && !tableExists($pdo, $config['table'])) {
         $error = $config['table'] . ' does not exist yet.';
@@ -467,6 +467,8 @@ try {
                 $rows = dashboard_change_rows($rows, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5);
             } elseif ($selectedKey === 'nozzle') {
                 $rows = dashboard_change_rows($rows, ['nozzle', 'min_deg', 'max_deg', 'rpm']);
+            } elseif ($selectedKey === 'nitrogen') {
+                $rows = dashboard_change_rows($rows, ['nitrogen_active', 'trip_status', 'outlet_flow', 'outlet_purity', 'tank_internal_o2'], null, 0.0, ['outlet_flow' => 10.0, 'outlet_purity' => 0.25, 'tank_internal_o2' => 0.25]);
             } else {
                 $feedbackColumns = ['suction_pump_2_feedback', 'feed_pump_feedback', 'booster_pump_feedback'];
                 $rows = dashboard_change_rows($rows, array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $feedbackColumns), null, 0.0, array_fill_keys($feedbackColumns, 1.0));

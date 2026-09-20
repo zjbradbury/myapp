@@ -274,7 +274,7 @@ function get_range_filter_state(bool $defaultToCurrentShift = true): array
         'error' => $rangeError,
         'active' => ($rangeStart !== '' || $rangeEnd !== ''),
         'used_default_shift' => $usedDefaultShift,
-        'user_changes_only' => currentRole() === 'admin' && ($_GET['user_changes_only'] ?? '') === '1',
+        'user_changes_only' => in_array(currentRole(), ['admin', 'operator', 'viewer'], true) && ($_GET['user_changes_only'] ?? '') === '1',
     ];
 }
 
@@ -436,7 +436,7 @@ function render_dashboard_range_filter(array $range, string $action = 'index.php
             </div>
 
             <div class="range-buttons">
-                <?php if (currentRole() === 'admin'): ?>
+                <?php if (in_array(currentRole(), ['admin', 'operator', 'viewer'], true)): ?>
                     <label class="range-change-option">
                         <input type="checkbox" name="user_changes_only" value="1" <?= !empty($range['user_changes_only']) ? 'checked' : '' ?>>
                         View Operator Changes Only

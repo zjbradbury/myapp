@@ -314,7 +314,7 @@ function render_topbar(array $dashboard): string
             <?php if (($range['error'] ?? '') !== ''): ?>
                 <div class="range-error"><?= h($range['error']) ?></div>
             <?php elseif (!empty($range['user_changes_only'])): ?>
-                <div class="range-active">Showing operator changes in Tricanter, Nozzle, and Pump Values tables for the selected range</div>
+                <div class="range-active">Showing operator changes in Tricanter, Nozzle, Pump Values, and Nitrogen tables for the selected range</div>
             <?php elseif (!empty($range['used_default_shift'])): ?>
                 <div class="range-active">Showing current 12 hour shift block</div>
             <?php elseif (!empty($range['active'])): ?>
@@ -710,16 +710,16 @@ function render_nitrogen_rows(array $rows): string
             <tr class="nitrogen-row<?= isset($r['nitrogen_active']) && $r['nitrogen_active'] !== '' && (int)$r['nitrogen_active'] === 0 ? ' nitrogen-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
                 <td><?= h($r['log_date'] ?? '') ?></td>
                 <td><?= h($r['log_time'] ?? '') ?></td>
-                <td><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
-                <td><?= h(nitrogen_trip_text($r['trip_status'] ?? null)) ?></td>
-                <td><?= fmt($r['outlet_flow'] ?? null, 2) ?> M3/hr</td>
-                <td><?= fmt($r['outlet_purity'] ?? null, 2) ?> % O2</td>
+                <td class="<?= operator_change_cell_class($r, 'nitrogen_active') ?>"><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
+                <td class="<?= operator_change_cell_class($r, 'trip_status') ?>"><?= h(nitrogen_trip_text($r['trip_status'] ?? null)) ?></td>
+                <td class="<?= operator_change_cell_class($r, 'outlet_flow') ?>"><?= fmt($r['outlet_flow'] ?? null, 2) ?> M3/hr</td>
+                <td class="<?= operator_change_cell_class($r, 'outlet_purity') ?>"><?= fmt($r['outlet_purity'] ?? null, 2) ?> % O2</td>
                 <td><?= fmt($r['inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['outlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['pre_heat_temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['post_heat_temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['interior_o2'] ?? null, 2) ?> %</td>
-                <td><?= fmt($r['tank_internal_o2'] ?? null, 2) ?> %</td>
+                <td class="<?= operator_change_cell_class($r, 'tank_internal_o2') ?>"><?= fmt($r['tank_internal_o2'] ?? null, 2) ?> %</td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
     <?php endforeach;
@@ -939,7 +939,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $solidWaste = solid_diff_minutes_rows($solidWaste);
     $recoveredWater = recovered_water_diff_minutes_rows($recoveredWater);
 
-    $userChangesOnly = currentRole() === 'admin' && !empty($range['user_changes_only']);
+    $userChangesOnly = !empty($range['user_changes_only']);
     $tricanterTable = $userChangesOnly
         ? dashboard_change_rows($tricanter, ['bowl_speed', 'screw_speed', 'feed_rate'], 'feed_rate', 2.5)
         : filter_rows_to_minute_increments($tricanter, 15);
@@ -960,6 +960,9 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $nozzle = filter_rows_to_minute_increments($nozzle, 15);
     $projectFlow = filter_rows_to_minute_increments($projectFlow, 15);
     $pumpValues = filter_rows_to_minute_increments($pumpValues, 15);
+    $nitrogenTable = $userChangesOnly
+        ? dashboard_change_rows($nitrogen, ['nitrogen_active', 'trip_status', 'outlet_flow', 'outlet_purity', 'tank_internal_o2'], null, 0.0, ['outlet_flow' => 10.0, 'outlet_purity' => 0.25, 'tank_internal_o2' => 0.25])
+        : filter_rows_to_minute_increments($nitrogen, 15);
     $nitrogen = filter_rows_to_minute_increments($nitrogen, 15);
 
     // Tables stay newest-first. Charts get their own explicitly time-sorted rows.
@@ -969,7 +972,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $recoveredWaterChart = dashboard_chart_rows($recoveredWater);
     $nozzleChart = dashboard_chart_rows($nozzleTable);
     $pumpValuesChart = dashboard_chart_rows($pumpValuesTable);
-    $nitrogenChart = dashboard_chart_rows($nitrogen);
+    $nitrogenChart = dashboard_chart_rows($nitrogenTable);
 
     $latestNozzle = $nozzle[0] ?? [];
     $latestTricanter = $tricanter[0] ?? [];
@@ -1035,7 +1038,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         ? 'NO DATA'
         : ((time() - $latestEntryTimestamp) <= 1800 ? 'ONLINE' : 'OFFLINE');
 
-    $recordsLoaded = count($nozzleTable) + count($tricanterTable) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValuesTable) + count($nitrogen);
+    $recordsLoaded = count($nozzleTable) + count($tricanterTable) + count($solidWaste) + count($recoveredWater) + count($sample) + count($gasTest) + count($projectFlow) + count($pumpValuesTable) + count($nitrogenTable);
     $monitorData = buildMonitoringData($pdo);
     $projectFlowKpis = get_project_flow_kpis($pdo, $range);
 
@@ -1147,7 +1150,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
             ],
             'nitrogen' => [
                 'kpis_html' => render_nitrogen_kpis($latestNitrogen),
-                'rows_html' => render_nitrogen_rows($nitrogen),
+                'rows_html' => render_nitrogen_rows($nitrogenTable),
                 'chart' => [
                     'labels' => dashboard_chart_labels($nitrogenChart),
                     'status' => dashboard_chart_numeric($nitrogenChart, 'nitrogen_active'),
