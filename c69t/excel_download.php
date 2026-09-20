@@ -89,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $rows = excel_rows($pdo, $table, $definition['columns'], $start, $end, $interval);
             $columnCount = count($definition['columns']);
             $mergeAcross = max(0, $columnCount - 1);
-            $rangeStart = $start !== '' ? date('d M Y H:i', strtotime($start)) : 'Beginning of records';
-            $rangeEnd = $end !== '' ? date('d M Y H:i', strtotime($end)) : 'Latest record';
+            $rangeStart = $start !== '' ? date('d-m-Y H:i', strtotime($start)) : 'Beginning of records';
+            $rangeEnd = $end !== '' ? date('d-m-Y H:i', strtotime($end)) : 'Latest record';
             $frequency = $intervals[$interval] ?? $intervals[0];
             echo '<Worksheet ss:Name="' . xml_value(substr($definition['label'], 0, 31)) . '"><Table>';
             foreach ($definition['columns'] as $_) echo '<Column ss:AutoFitWidth="1" ss:Width="100"/>';

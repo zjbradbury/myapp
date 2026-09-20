@@ -249,6 +249,7 @@ function log_cell_value(array $row, array $col): string
     $value = $row[$key] ?? '';
 
     if ($value === null || $value === '') return '-';
+    if ($key === 'log_date') return h(display_date($value));
 
     $type = $col['type'] ?? '';
     if ($type === 'pump_status') return h(pump_status_text_for_logs($value));

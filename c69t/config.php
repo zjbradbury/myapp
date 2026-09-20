@@ -64,6 +64,13 @@ if (!function_exists('fmt')) {
     }
 }
 
+function display_date($value, bool $dashboard = false): string
+{
+    if ($value === null || $value === '') return '';
+    $timestamp = strtotime((string)$value);
+    return $timestamp === false ? (string)$value : date($dashboard ? 'd-m' : 'd-m-Y', $timestamp);
+}
+
 if (!function_exists('numeric_series')) {
     function numeric_series(array $rows, string $key): array
     {
@@ -362,11 +369,11 @@ function fetch_latest_row(PDO $pdo, string $table, string $orderBy = 'id DESC'):
     return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 }
 
-function range_summary_text(array $range, string $defaultText = 'Current shift block'): string
+function range_summary_text(array $range, string $defaultText = 'Current shift block', bool $dashboard = false): string
 {
     if (!empty($range['start']) || !empty($range['end'])) {
-        $fromText = !empty($range['start']) ? date('d/m/Y H:i', strtotime($range['start'])) : 'Beginning';
-        $toText = !empty($range['end']) ? date('d/m/Y H:i', strtotime($range['end'])) : 'Now';
+        $fromText = !empty($range['start']) ? date($dashboard ? 'd-m H:i' : 'd-m-Y H:i', strtotime($range['start'])) : 'Beginning';
+        $toText = !empty($range['end']) ? date($dashboard ? 'd-m H:i' : 'd-m-Y H:i', strtotime($range['end'])) : 'Now';
         return $fromText . ' → ' . $toText;
     }
 
@@ -802,7 +809,7 @@ function buildMonitoringData(PDO $pdo): array
 
         $last = getLastLogDateTime($pdo, $item['table'], $item['data_column'] ?? null);
         $item['last_entry'] = $last;
-        $item['last_entry_display'] = $last ? date('d/m/Y H:i', strtotime($last)) : 'No data';
+        $item['last_entry_display'] = $last ? date('d-m-Y H:i', strtotime($last)) : 'No data';
 
         if (!$last) {
             $item['status'] = 'NO DATA';

@@ -65,7 +65,7 @@ $latest = $timestamps ? max($timestamps) : null;
 $now = new DateTimeImmutable('now', new DateTimeZone('Australia/Adelaide'));
 $age = $latest ? max(0, $now->getTimestamp() - $latest->getTimestamp()) : null;
 $online = $age !== null && $age <= 600;
-$updated = $latest ? $latest->format('d/m/Y g:i:s A') : 'No database data';
+$updated = $latest ? $latest->format('d-m-Y g:i:s A') : 'No database data';
 
 $sp1 = processStatus($data['pump'], 'suction_pump_1_status');
 $sp2 = processStatus($data['pump'], 'suction_pump_2_status');

@@ -464,7 +464,7 @@ $topAlarm = $topAlarmIds ? (string)$topAlarmIds[0] : '-';
                         ?>
                             <tr class="<?= $alarm['_active'] ? 'active-alarm' : '' ?>">
                                 <td><?= $id ?></td>
-                                <td><?= h(date('d/m/Y', strtotime($alarm['log_date']))) ?></td>
+                                <td><?= h(date('d-m-Y', strtotime($alarm['log_date']))) ?></td>
                                 <td><?= h(date('H:i:s', strtotime($alarm['log_time']))) ?></td>
                                 <td><?= h($description) ?></td>
                                 <td><?= h(alarm_duration($alarm['_duration'])) ?></td>

@@ -769,7 +769,7 @@ $pageTitle = $actionTitle . ' ' . $schema['label'] . ' Record';
 
                     <div class="delete-details">
                         <div class="delete-detail"><small>ID</small><?= (int)$id ?></div>
-                        <div class="delete-detail"><small>Date</small><?= h($row['log_date'] ?? '-') ?></div>
+                        <div class="delete-detail"><small>Date</small><?= h(display_date($row['log_date'] ?? '-')) ?></div>
                         <div class="delete-detail"><small>Time</small><?= h($row['log_time'] ?? '-') ?></div>
                         <div class="delete-detail"><small>Source</small><?= h($row['source_file'] ?? '-') ?></div>
                     </div>

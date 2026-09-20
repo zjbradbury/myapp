@@ -160,7 +160,7 @@ function calculate_eta_to_full($tank, $estimatedLevel, $capacity, $latestFeedRat
     return [
         "feed_rate" => $feedRate,
         "remaining" => $remainingCapacity,
-        "eta" => $etaTime->format("d/m/Y H:i") . " (" . number_format($hoursToFull, 1) . " hr)"
+        "eta" => $etaTime->format("d-m-Y H:i") . " (" . number_format($hoursToFull, 1) . " hr)"
     ];
 }
 

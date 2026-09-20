@@ -92,7 +92,7 @@ function nozzleOverviewData(PDO $pdo): array
             $runtime = $runtimeHours > 0
                 ? sprintf('%dh %02dm', $runtimeHours, $runtimeMinutes)
                 : sprintf('%dm', $runtimeMinutes);
-            $change = ['id' => (int)$newer['id'], 'date' => date('d/m/Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle'], 'runtime' => $runtime];
+            $change = ['id' => (int)$newer['id'], 'date' => date('d-m-Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle'], 'runtime' => $runtime];
             $moreRecentChangeTs = $changeTs;
             if (count($latestChanges) < 3) $latestChanges[] = $change;
             if ($changeTs >= $shiftStartTs && $changeTs < $shiftEndTs) $shiftChanges[] = $change;
@@ -106,7 +106,7 @@ function nozzleOverviewData(PDO $pdo): array
     return [
         'online' => $timestamp !== null && max(0, time() - $timestamp) <= 600,
         'active_nozzle' => $activeNozzle,
-        'last_updated' => $timestamp ? date('d/m/Y g:i:s A', $timestamp) : 'No nozzle data',
+        'last_updated' => $timestamp ? date('d-m-Y g:i:s A', $timestamp) : 'No nozzle data',
         'conditions' => $conditions,
         'parked' => $parked,
         'changes' => $changes,

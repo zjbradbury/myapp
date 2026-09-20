@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['monitor_form'])) {
 
 function row_stamp(array $row): string
 {
-    $date = trim((string)($row['log_date'] ?? ''));
+    $date = display_date($row['log_date'] ?? '', true);
     $time = trim((string)($row['log_time'] ?? ''));
     return trim($date . ' ' . $time) ?: '-';
 }
@@ -96,7 +96,7 @@ function render_single_monitor_item(string $key, array $item): string
 
             <div class="monitor-line">
                 <span class="monitor-label">Last Entry</span>
-                <span class="monitor-last-entry"><?= h($item['last_entry_display'] ?? '-') ?></span>
+                <span class="monitor-last-entry"><?= h(!empty($item['last_entry']) ? date('d-m H:i', strtotime($item['last_entry'])) : ($item['last_entry_display'] ?? '-')) ?></span>
             </div>
 
             <div class="monitor-line">
@@ -361,7 +361,7 @@ function render_tricanter_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="tri-row<?= isset($r['tricanter_status']) && $r['tricanter_status'] !== '' && (int)$r['tricanter_status'] !== 5 ? ' tricanter-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date']) ?></td>
+                <td><?= h(display_date($r['log_date'], true)) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'bowl_speed') ?>"><?= fmt($r['bowl_speed'] ?? null, 0) ?> %</td>
                 <td class="<?= operator_change_cell_class($r, 'screw_speed') ?>"><?= fmt($r['screw_speed'] ?? null, 2) ?> %</td>
@@ -401,7 +401,7 @@ function render_solid_waste_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="solid-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date']) ?></td>
+                <td><?= h(display_date($r['log_date'], true)) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= fmt($r['amount'] ?? null, 0) ?> KG</td>
                 <td><?= isset($r['_diff_minutes']) && $r['_diff_minutes'] !== null ? fmt($r['_diff_minutes'], 0) : '-' ?></td>
@@ -441,7 +441,7 @@ function render_recovered_water_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="recovered-water-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h(display_date($r['log_date'] ?? '', true)) ?></td>
                 <td><?= h($r['log_time'] ?? '') ?></td>
                 <td><?= fmt($r['start_level'] ?? null, 2) ?></td>
                 <td><?= fmt($r['stop_level'] ?? null, 2) ?></td>
@@ -484,7 +484,7 @@ function render_nozzle_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="nozzle-row<?= isset($r['nozzle_status']) && $r['nozzle_status'] !== '' && (int)$r['nozzle_status'] === 0 ? ' nozzle-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date']) ?></td>
+                <td><?= h(display_date($r['log_date'], true)) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'nozzle') ?>">N<?= h($r['nozzle']) ?></td>
                 <td><?= fmt($r['flow'] ?? null, 1) ?> M3/hr</td>
@@ -526,7 +526,7 @@ function render_sample_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="sample-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date']) ?></td>
+                <td><?= h(display_date($r['log_date'], true)) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= h($r['sample_location'] ?? '') ?></td>
                 <td><?= h($r['nozzle'] ?? '') ?></td>
@@ -571,7 +571,7 @@ function render_gas_test_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="gas-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date']) ?></td>
+                <td><?= h(display_date($r['log_date'], true)) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= h($r['device'] ?? '') ?></td>
                 <td><?= h($r['operator'] ?? '') ?></td>
@@ -616,7 +616,7 @@ function render_project_flow_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="project-flow-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date']) ?></td>
+                <td><?= h(display_date($r['log_date'], true)) ?></td>
                 <td><?= h($r['log_time']) ?></td>
                 <td><?= fmt($r['total_recovered_oil'] ?? null, 4) ?> m³</td>
                 <td><?= fmt($r['total_recovered_water'] ?? null, 4) ?> m³</td>
@@ -685,14 +685,14 @@ function render_nitrogen_kpis(array $row): string
     ?>
     <div class="kpi<?= $alertClass ?>"><small>Nitrogen Active</small><b><?= h(nitrogen_bool_text($row['nitrogen_active'] ?? null)) ?></b></div>
     <div class="kpi<?= $alertClass ?>"><small>Trip Status</small><b><?= h(nitrogen_trip_text($row['trip_status'] ?? null)) ?></b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 2) ?> M3/hr</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Outlet Purity (O2)</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> %</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Outlet Pressure</small><b><?= fmt($row['outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 0) ?> M3/hr</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Purity (O2)</small><b><?= fmt($row['outlet_purity'] ?? null, 1) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 1) ?> BAR</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Pressure</small><b><?= fmt($row['outlet_pressure'] ?? null, 1) ?> BAR</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Pre Heat Temp</small><b><?= fmt($row['pre_heat_temp'] ?? null, 1) ?> °C</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Post Heat Temp</small><b><?= fmt($row['post_heat_temp'] ?? null, 1) ?> °C</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Container (O2)</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Tank Internal (O2)</small><b><?= fmt($row['tank_internal_o2'] ?? null, 2) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Container (O2)</small><b><?= fmt($row['interior_o2'] ?? null, 1) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Tank Internal (O2)</small><b><?= fmt($row['tank_internal_o2'] ?? null, 1) ?> %</b></div>
     <?php
     return ob_get_clean();
 }
@@ -708,18 +708,18 @@ function render_nitrogen_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="nitrogen-row<?= isset($r['nitrogen_active']) && $r['nitrogen_active'] !== '' && (int)$r['nitrogen_active'] === 0 ? ' nitrogen-status-alert' : '' ?>" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h(display_date($r['log_date'] ?? '', true)) ?></td>
                 <td><?= h($r['log_time'] ?? '') ?></td>
                 <td class="<?= operator_change_cell_class($r, 'nitrogen_active') ?>"><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'trip_status') ?>"><?= h(nitrogen_trip_text($r['trip_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'outlet_flow') ?>"><?= fmt($r['outlet_flow'] ?? null, 2) ?> M3/hr</td>
-                <td class="<?= operator_change_cell_class($r, 'outlet_purity') ?>"><?= fmt($r['outlet_purity'] ?? null, 2) ?> %</td>
-                <td><?= fmt($r['inlet_pressure'] ?? null, 3) ?> BAR</td>
-                <td><?= fmt($r['outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td class="<?= operator_change_cell_class($r, 'outlet_flow') ?>"><?= fmt($r['outlet_flow'] ?? null, 0) ?> M3/hr</td>
+                <td class="<?= operator_change_cell_class($r, 'outlet_purity') ?>"><?= fmt($r['outlet_purity'] ?? null, 1) ?> %</td>
+                <td><?= fmt($r['inlet_pressure'] ?? null, 1) ?> BAR</td>
+                <td><?= fmt($r['outlet_pressure'] ?? null, 1) ?> BAR</td>
                 <td><?= fmt($r['pre_heat_temp'] ?? null, 1) ?> °C</td>
                 <td><?= fmt($r['post_heat_temp'] ?? null, 1) ?> °C</td>
-                <td><?= fmt($r['interior_o2'] ?? null, 2) ?> %</td>
-                <td class="<?= operator_change_cell_class($r, 'tank_internal_o2') ?>"><?= fmt($r['tank_internal_o2'] ?? null, 2) ?> %</td>
+                <td><?= fmt($r['interior_o2'] ?? null, 1) ?> %</td>
+                <td class="<?= operator_change_cell_class($r, 'tank_internal_o2') ?>"><?= fmt($r['tank_internal_o2'] ?? null, 1) ?> %</td>
                 <td class="comment-cell"><?= h($r['comments'] ?? '') ?></td>
             </tr>
     <?php endforeach;
@@ -761,12 +761,12 @@ function render_pump_values_kpis(array $row): string
     <div class="kpi"><small>SP3 Status</small><b><?= h(pump_status_text($row['suction_pump_3_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>FP Status</small><b><?= h(pump_status_text($row['feed_pump_status'] ?? null)) ?></b></div>
     <div class="kpi"><small>BP Status</small><b><?= h(pump_status_text($row['booster_pump_status'] ?? null)) ?></b></div>
-    <div class="kpi"><small>SP2 Inlet Pressure</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>SP2 Outlet Pressure</small><b><?= fmt($row['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>FP Inlet Pressure</small><b><?= fmt($row['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>FP Outlet Pressure</small><b><?= fmt($row['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>BP Inlet Pressure</small><b><?= fmt($row['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</b></div>
-    <div class="kpi"><small>BP Outlet Pressure</small><b><?= fmt($row['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</b></div>
+    <div class="kpi"><small>SP2 Inlet Pressure</small><b><?= fmt($row['suction_pump_2_inlet_pressure'] ?? null, 2) ?> BAR</b></div>
+    <div class="kpi"><small>SP2 Outlet Pressure</small><b><?= fmt($row['suction_pump_2_outlet_pressure'] ?? null, 2) ?> BAR</b></div>
+    <div class="kpi"><small>FP Inlet Pressure</small><b><?= fmt($row['feed_pump_inlet_pressure'] ?? null, 2) ?> BAR</b></div>
+    <div class="kpi"><small>FP Outlet Pressure</small><b><?= fmt($row['feed_pump_outlet_pressure'] ?? null, 2) ?> BAR</b></div>
+    <div class="kpi"><small>BP Inlet Pressure</small><b><?= fmt($row['booster_pump_inlet_pressure'] ?? null, 2) ?> BAR</b></div>
+    <div class="kpi"><small>BP Outlet Pressure</small><b><?= fmt($row['booster_pump_outlet_pressure'] ?? null, 2) ?> BAR</b></div>
     <?php
     return ob_get_clean();
 }
@@ -782,22 +782,22 @@ function render_pump_values_rows(array $rows): string
         <?php else:
         foreach ($rows as $r): ?>
             <tr class="pump-values-row" data-id="<?= (int)$r['id'] ?>">
-                <td><?= h($r['log_date'] ?? '') ?></td>
+                <td><?= h(display_date($r['log_date'] ?? '', true)) ?></td>
                 <td><?= h($r['log_time'] ?? '') ?></td>
                 <td class="<?= operator_change_cell_class($r, 'suction_pump_1_status') ?>"><?= h(pump_status_text($r['suction_pump_1_status'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'suction_pump_2_status') ?>"><?= h(pump_status_text($r['suction_pump_2_status'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'suction_pump_3_status') ?>"><?= h(pump_status_text($r['suction_pump_3_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'suction_pump_2_speed_out') ?>"><?= fmt($r['suction_pump_2_speed_out'] ?? null, 2) ?> %</td>
-                <td><?= fmt($r['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</td>
-                <td><?= fmt($r['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td class="<?= operator_change_cell_class($r, 'suction_pump_2_speed_out') ?>"><?= fmt($r['suction_pump_2_speed_out'] ?? null, 0) ?> %</td>
+                <td><?= fmt($r['suction_pump_2_inlet_pressure'] ?? null, 2) ?> BAR</td>
+                <td><?= fmt($r['suction_pump_2_outlet_pressure'] ?? null, 2) ?> BAR</td>
                 <td class="<?= operator_change_cell_class($r, 'feed_pump_status') ?>"><?= h(pump_status_text($r['feed_pump_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'feed_pump_speed_out') ?>"><?= fmt($r['feed_pump_speed_out'] ?? null, 2) ?> %</td>
-                <td><?= fmt($r['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
-                <td><?= fmt($r['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td class="<?= operator_change_cell_class($r, 'feed_pump_speed_out') ?>"><?= fmt($r['feed_pump_speed_out'] ?? null, 0) ?> %</td>
+                <td><?= fmt($r['feed_pump_inlet_pressure'] ?? null, 2) ?> BAR</td>
+                <td><?= fmt($r['feed_pump_outlet_pressure'] ?? null, 2) ?> BAR</td>
                 <td class="<?= operator_change_cell_class($r, 'booster_pump_status') ?>"><?= h(pump_status_text($r['booster_pump_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'booster_pump_speed_out') ?>"><?= fmt($r['booster_pump_speed_out'] ?? null, 2) ?> %</td>
-                <td><?= fmt($r['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
-                <td><?= fmt($r['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
+                <td class="<?= operator_change_cell_class($r, 'booster_pump_speed_out') ?>"><?= fmt($r['booster_pump_speed_out'] ?? null, 0) ?> %</td>
+                <td><?= fmt($r['booster_pump_inlet_pressure'] ?? null, 2) ?> BAR</td>
+                <td><?= fmt($r['booster_pump_outlet_pressure'] ?? null, 2) ?> BAR</td>
             </tr>
 <?php endforeach;
     endif;
@@ -833,7 +833,7 @@ function dashboard_chart_rows(array $rows): array
 function dashboard_chart_labels(array $rows): array
 {
     return array_map(static function (array $row): string {
-        $date = trim((string)($row['log_date'] ?? ''));
+        $date = display_date($row['log_date'] ?? '', true);
         $time = trim((string)($row['log_time'] ?? ''));
         return trim($date . ' ' . $time);
     }, $rows);
@@ -1027,7 +1027,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
         'range' => $range,
         'system_status' => $systemStatus,
         'records_loaded' => $recordsLoaded,
-        'range_summary' => range_summary_text($range, 'Current shift block'),
+        'range_summary' => range_summary_text($range, 'Current shift block', true),
         'monitor' => $monitorData,
         'last_stamps' => [
             'nozzle' => row_stamp($latestNozzleOverall),

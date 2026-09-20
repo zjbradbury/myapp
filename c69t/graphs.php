@@ -135,7 +135,7 @@ if (!$allRecords && $startTimestamp !== false && $endTimestamp !== false) {
     for ($timestamp = $timelineStart; $timestamp <= $timelineEnd; $timestamp += $bucketSeconds) {
         $bucketKey = date("Y-m-d H:i:s", $timestamp);
         $timelineKeys[] = $bucketKey;
-        $finalLabels[] = date("d/m H:i", $timestamp);
+        $finalLabels[] = date("d-m-Y H:i", $timestamp);
     }
 }
 
@@ -319,7 +319,7 @@ if ($allRecords) {
     $timelineKeys = array_keys($allTimelineKeys);
     sort($timelineKeys);
     $finalLabels = array_map(
-        static fn(string $timestampKey): string => date('d/m H:i:s', strtotime($timestampKey)),
+        static fn(string $timestampKey): string => date('d-m-Y H:i:s', strtotime($timestampKey)),
         $timelineKeys
     );
 }
@@ -341,7 +341,7 @@ foreach ($seriesData as $series) {
     ];
 }
 
-$rangeSummary = date("d/m/Y H:i", strtotime($startSql)) . " to " . date("d/m/Y H:i", strtotime($endSql));
+$rangeSummary = date("d-m-Y H:i", strtotime($startSql)) . " to " . date("d-m-Y H:i", strtotime($endSql));
 ?>
 <!DOCTYPE html>
 <html lang="en">
