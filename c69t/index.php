@@ -686,13 +686,13 @@ function render_nitrogen_kpis(array $row): string
     <div class="kpi<?= $alertClass ?>"><small>Nitrogen Active</small><b><?= h(nitrogen_bool_text($row['nitrogen_active'] ?? null)) ?></b></div>
     <div class="kpi<?= $alertClass ?>"><small>Trip Status</small><b><?= h(nitrogen_trip_text($row['trip_status'] ?? null)) ?></b></div>
     <div class="kpi<?= $alertClass ?>"><small>Outlet Flow</small><b><?= fmt($row['outlet_flow'] ?? null, 2) ?> M3/hr</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Outlet Purity</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> % O2</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Outlet Purity (O2)</small><b><?= fmt($row['outlet_purity'] ?? null, 2) ?> %</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Inlet Pressure</small><b><?= fmt($row['inlet_pressure'] ?? null, 3) ?> BAR</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Outlet Pressure</small><b><?= fmt($row['outlet_pressure'] ?? null, 3) ?> BAR</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Pre Heat Temp</small><b><?= fmt($row['pre_heat_temp'] ?? null, 1) ?> °C</b></div>
     <div class="kpi<?= $alertClass ?>"><small>Post Heat Temp</small><b><?= fmt($row['post_heat_temp'] ?? null, 1) ?> °C</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Interior O2</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
-    <div class="kpi<?= $alertClass ?>"><small>Tank Internal O2</small><b><?= fmt($row['tank_internal_o2'] ?? null, 2) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Container (O2)</small><b><?= fmt($row['interior_o2'] ?? null, 2) ?> %</b></div>
+    <div class="kpi<?= $alertClass ?>"><small>Tank Internal (O2)</small><b><?= fmt($row['tank_internal_o2'] ?? null, 2) ?> %</b></div>
     <?php
     return ob_get_clean();
 }
@@ -713,7 +713,7 @@ function render_nitrogen_rows(array $rows): string
                 <td class="<?= operator_change_cell_class($r, 'nitrogen_active') ?>"><?= h(nitrogen_bool_text($r['nitrogen_active'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'trip_status') ?>"><?= h(nitrogen_trip_text($r['trip_status'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'outlet_flow') ?>"><?= fmt($r['outlet_flow'] ?? null, 2) ?> M3/hr</td>
-                <td class="<?= operator_change_cell_class($r, 'outlet_purity') ?>"><?= fmt($r['outlet_purity'] ?? null, 2) ?> % O2</td>
+                <td class="<?= operator_change_cell_class($r, 'outlet_purity') ?>"><?= fmt($r['outlet_purity'] ?? null, 2) ?> %</td>
                 <td><?= fmt($r['inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['outlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['pre_heat_temp'] ?? null, 1) ?> °C</td>
@@ -752,23 +752,6 @@ function pump_status_text($value): string
     return (string)$value;
 }
 
-function pump_feedback_display($value, int $decimals = 2): string
-{
-    if ($value === null || $value === '') {
-        return '-';
-    }
-
-    if (!is_numeric($value)) {
-        return h($value);
-    }
-
-    if ((float)$value < 0) {
-        return '###';
-    }
-
-    return fmt($value, $decimals);
-}
-
 function render_pump_values_kpis(array $row): string
 {
     ob_start();
@@ -804,15 +787,15 @@ function render_pump_values_rows(array $rows): string
                 <td class="<?= operator_change_cell_class($r, 'suction_pump_1_status') ?>"><?= h(pump_status_text($r['suction_pump_1_status'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'suction_pump_2_status') ?>"><?= h(pump_status_text($r['suction_pump_2_status'] ?? null)) ?></td>
                 <td class="<?= operator_change_cell_class($r, 'suction_pump_3_status') ?>"><?= h(pump_status_text($r['suction_pump_3_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'suction_pump_2_feedback') ?>"><?= pump_feedback_display($r['suction_pump_2_feedback'] ?? null, 2) ?></td>
+                <td class="<?= operator_change_cell_class($r, 'suction_pump_2_speed_out') ?>"><?= fmt($r['suction_pump_2_speed_out'] ?? null, 2) ?> %</td>
                 <td><?= fmt($r['suction_pump_2_inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['suction_pump_2_outlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td class="<?= operator_change_cell_class($r, 'feed_pump_status') ?>"><?= h(pump_status_text($r['feed_pump_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'feed_pump_feedback') ?>"><?= pump_feedback_display($r['feed_pump_feedback'] ?? null, 2) ?></td>
+                <td class="<?= operator_change_cell_class($r, 'feed_pump_speed_out') ?>"><?= fmt($r['feed_pump_speed_out'] ?? null, 2) ?> %</td>
                 <td><?= fmt($r['feed_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['feed_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td class="<?= operator_change_cell_class($r, 'booster_pump_status') ?>"><?= h(pump_status_text($r['booster_pump_status'] ?? null)) ?></td>
-                <td class="<?= operator_change_cell_class($r, 'booster_pump_feedback') ?>"><?= pump_feedback_display($r['booster_pump_feedback'] ?? null, 2) ?></td>
+                <td class="<?= operator_change_cell_class($r, 'booster_pump_speed_out') ?>"><?= fmt($r['booster_pump_speed_out'] ?? null, 2) ?> %</td>
                 <td><?= fmt($r['booster_pump_inlet_pressure'] ?? null, 3) ?> BAR</td>
                 <td><?= fmt($r['booster_pump_outlet_pressure'] ?? null, 3) ?> BAR</td>
             </tr>
@@ -946,14 +929,11 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $nozzleTable = $userChangesOnly
         ? dashboard_change_rows($nozzle, ['nozzle', 'min_deg', 'max_deg', 'rpm'])
         : filter_rows_to_minute_increments($nozzle, 15);
-    $pumpFeedbackColumns = ['suction_pump_2_feedback', 'feed_pump_feedback', 'booster_pump_feedback'];
+    $pumpSpeedOutColumns = ['suction_pump_2_speed_out', 'feed_pump_speed_out', 'booster_pump_speed_out'];
     $pumpValuesTable = $userChangesOnly
         ? dashboard_change_rows(
             $pumpValues,
-            array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $pumpFeedbackColumns),
-            null,
-            0.0,
-            array_fill_keys($pumpFeedbackColumns, 1.0)
+            array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $pumpSpeedOutColumns)
         )
         : filter_rows_to_minute_increments($pumpValues, 15);
     $tricanter = filter_rows_to_minute_increments($tricanter, 15);
@@ -961,7 +941,7 @@ function build_dashboard_data(PDO $pdo, array $range): array
     $projectFlow = filter_rows_to_minute_increments($projectFlow, 15);
     $pumpValues = filter_rows_to_minute_increments($pumpValues, 15);
     $nitrogenTable = $userChangesOnly
-        ? dashboard_change_rows($nitrogen, ['nitrogen_active', 'trip_status', 'outlet_flow', 'outlet_purity', 'tank_internal_o2'], null, 0.0, ['outlet_flow' => 10.0, 'outlet_purity' => 0.25, 'tank_internal_o2' => 0.25])
+        ? dashboard_change_rows($nitrogen, ['nitrogen_active', 'trip_status', 'outlet_flow', 'outlet_purity', 'tank_internal_o2'], null, 0.0, ['outlet_flow' => 20.0, 'outlet_purity' => 0.25, 'tank_internal_o2' => 0.25])
         : filter_rows_to_minute_increments($nitrogen, 15);
     $nitrogen = filter_rows_to_minute_increments($nitrogen, 15);
 
@@ -1157,13 +1137,13 @@ function build_dashboard_data(PDO $pdo, array $range): array
                     'alertStatus' => 0,
                     'datasets' => [
                         ['label' => 'Outlet Flow', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_flow')],
-                        ['label' => 'Outlet Purity', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_purity')],
+                        ['label' => 'Outlet Purity (O2)', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_purity')],
                         ['label' => 'Inlet Pressure', 'data' => dashboard_chart_numeric($nitrogenChart, 'inlet_pressure')],
                         ['label' => 'Outlet Pressure', 'data' => dashboard_chart_numeric($nitrogenChart, 'outlet_pressure')],
                         ['label' => 'Pre Heat Temp', 'data' => dashboard_chart_numeric($nitrogenChart, 'pre_heat_temp')],
                         ['label' => 'Post Heat Temp', 'data' => dashboard_chart_numeric($nitrogenChart, 'post_heat_temp')],
-                        ['label' => 'Interior O2', 'data' => dashboard_chart_numeric($nitrogenChart, 'interior_o2')],
-                        ['label' => 'Tank Internal O2', 'data' => dashboard_chart_numeric($nitrogenChart, 'tank_internal_o2')],
+                        ['label' => 'Container (O2)', 'data' => dashboard_chart_numeric($nitrogenChart, 'interior_o2')],
+                        ['label' => 'Tank Internal (O2)', 'data' => dashboard_chart_numeric($nitrogenChart, 'tank_internal_o2')],
                     ],
                 ],
             ],
@@ -1520,9 +1500,17 @@ $dashboard = build_dashboard_data($pdo, $range);
             background: rgba(7, 18, 28, .42);
         }
 
-        table {
-            width: max-content;
-            min-width: 100%;
+        .grid .table table {
+            width: 100%;
+            min-width: 0;
+            table-layout: fixed;
+        }
+
+        .grid .table th,
+        .grid .table td {
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
         }
 
         th {
@@ -1533,6 +1521,11 @@ $dashboard = build_dashboard_data($pdo, $range);
         td {
             padding: 8px 10px;
             border-bottom: 1px solid #1f4665;
+        }
+
+        .grid .table th,
+        .grid .table td {
+            padding: 7px 4px;
         }
 
         tbody tr {
@@ -1806,7 +1799,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                 </div>
             </div>
 
-            <div class="panel wide-panel">
+            <div class="panel">
                 <div class="panel-head">
                     <div>
                         <h2>Gas Test</h2>
@@ -1845,44 +1838,11 @@ $dashboard = build_dashboard_data($pdo, $range);
                 </div>
             </div>
 
-            <div class="panel wide-panel">
-                <div class="panel-head">
-                    <div>
-                        <h2>Project Flow</h2>
-                        <div class="panel-sub">Totals for selected date/time range</div>
-                    </div>
-                    <div class="panel-actions">
-                        <a class="btn" href="logs.php?table=project_flow">View Logs</a>
-                        <?php if ($canEdit): ?><a class="btn" href="record.php?action=add&table=project_flow">Add Record</a><?php endif; ?>
-                    </div>
-                </div>
-
-                <div id="project-flow-kpis" class="kpis"><?= $dashboard['panels']['project_flow']['kpis_html'] ?></div>
-
-                <div class="table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Recovered Oil</th>
-                                <th>Recovered Water</th>
-                                <th>Solid Waste</th>
-                                <th>Tricanter</th>
-                                <th>Nozzle</th>
-                                <th>Comments</th>
-                            </tr>
-                        </thead>
-                        <tbody id="project-flow-tbody"><?= $dashboard['panels']['project_flow']['rows_html'] ?></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="panel wide-panel">
+            <div class="panel">
                 <div class="panel-head">
                     <div>
                         <h2>Pump Values</h2>
-                        <div class="panel-sub">Pump statuses, feedback, and live pressure trends</div>
+                        <div class="panel-sub">Pump statuses, speed outs, and live pressure trends</div>
                     </div>
                     <div class="panel-actions">
                         <a class="btn" href="logs.php?table=pump_values">View Logs</a>
@@ -1906,15 +1866,15 @@ $dashboard = build_dashboard_data($pdo, $range);
                                 <th>SP1 Status</th>
                                 <th>SP2 Status</th>
                                 <th>SP3 Status</th>
-                                <th>SP2 Feedback</th>
+                                <th>SP2 Speed Out</th>
                                 <th>SP2 Inlet</th>
                                 <th>SP2 Outlet</th>
                                 <th>FP Status</th>
-                                <th>FP Feedback</th>
+                                <th>FP Speed Out</th>
                                 <th>FP Inlet</th>
                                 <th>FP Outlet</th>
                                 <th>BP Status</th>
-                                <th>BP Feedback</th>
+                                <th>BP Speed Out</th>
                                 <th>BP Inlet</th>
                                 <th>BP Outlet</th>
                             </tr>
@@ -1924,7 +1884,7 @@ $dashboard = build_dashboard_data($pdo, $range);
                 </div>
             </div>
 
-            <div class="panel wide-panel">
+            <div class="panel">
                 <div class="panel-head">
                     <div>
                         <h2>Nitrogen</h2>
@@ -1952,13 +1912,13 @@ $dashboard = build_dashboard_data($pdo, $range);
                                 <th>Active</th>
                                 <th>Trip</th>
                                 <th>Outlet Flow</th>
-                                <th>Outlet Purity</th>
+                                <th>Outlet Purity (O2)</th>
                                 <th>Inlet Pressure</th>
                                 <th>Outlet Pressure</th>
                                 <th>Pre Heat Temp</th>
                                 <th>Post Heat Temp</th>
-                                <th>Interior O2</th>
-                                <th>Tank Internal O2</th>
+                                <th>Container (O2)</th>
+                                <th>Tank Internal (O2)</th>
                                 <th>Comments</th>
                             </tr>
                         </thead>
@@ -2000,13 +1960,13 @@ $dashboard = build_dashboard_data($pdo, $range);
             'Booster Inlet Pressure': '#6ee7a1',
             'Booster Outlet Pressure': '#22c55e',
             'Outlet Flow': '#00e5ff',
-            'Outlet Purity': '#ffd24d',
+            'Outlet Purity (O2)': '#ffd24d',
             'Inlet Pressure': '#7dd3fc',
             'Outlet Pressure': '#f59e0b',
             'Pre Heat Temp': '#ffb36b',
             'Post Heat Temp': '#ff7e67',
-            'Interior O2': '#c8a7ff',
-            'Tank Internal O2': '#ec4899'
+            'Container (O2)': '#c8a7ff',
+            'Tank Internal (O2)': '#ec4899'
         };
 
         const initialPanels = <?= json_encode($dashboard['panels'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;

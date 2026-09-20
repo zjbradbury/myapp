@@ -184,13 +184,13 @@ $tables = [
             ['key' => 'nitrogen_active', 'label' => 'Active', 'type' => 'bool'],
             ['key' => 'trip_status', 'label' => 'Trip', 'type' => 'trip_status'],
             ['key' => 'outlet_flow', 'label' => 'Outlet Flow', 'suffix' => ' M3/hr', 'decimals' => 2],
-            ['key' => 'outlet_purity', 'label' => 'Outlet Purity', 'suffix' => ' % O2', 'decimals' => 2],
+            ['key' => 'outlet_purity', 'label' => 'Outlet Purity (O2)', 'suffix' => ' %', 'decimals' => 2],
             ['key' => 'inlet_pressure', 'label' => 'Inlet Pressure', 'suffix' => ' BAR', 'decimals' => 3],
             ['key' => 'outlet_pressure', 'label' => 'Outlet Pressure', 'suffix' => ' BAR', 'decimals' => 3],
             ['key' => 'pre_heat_temp', 'label' => 'Pre Heat Temp', 'suffix' => ' °C', 'decimals' => 1],
             ['key' => 'post_heat_temp', 'label' => 'Post Heat Temp', 'suffix' => ' °C', 'decimals' => 1],
-            ['key' => 'interior_o2', 'label' => 'Interior O2', 'suffix' => ' %', 'decimals' => 2],
-            ['key' => 'tank_internal_o2', 'label' => 'Tank Internal O2', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'interior_o2', 'label' => 'Container (O2)', 'suffix' => ' %', 'decimals' => 2],
+            ['key' => 'tank_internal_o2', 'label' => 'Tank Internal (O2)', 'suffix' => ' %', 'decimals' => 2],
             ['key' => 'comments', 'label' => 'Comments', 'class' => 'comment-cell'],
         ],
     ],
@@ -468,10 +468,10 @@ try {
             } elseif ($selectedKey === 'nozzle') {
                 $rows = dashboard_change_rows($rows, ['nozzle', 'min_deg', 'max_deg', 'rpm']);
             } elseif ($selectedKey === 'nitrogen') {
-                $rows = dashboard_change_rows($rows, ['nitrogen_active', 'trip_status', 'outlet_flow', 'outlet_purity', 'tank_internal_o2'], null, 0.0, ['outlet_flow' => 10.0, 'outlet_purity' => 0.25, 'tank_internal_o2' => 0.25]);
+                $rows = dashboard_change_rows($rows, ['nitrogen_active', 'trip_status', 'outlet_flow', 'outlet_purity', 'tank_internal_o2'], null, 0.0, ['outlet_flow' => 20.0, 'outlet_purity' => 0.25, 'tank_internal_o2' => 0.25]);
             } else {
-                $feedbackColumns = ['suction_pump_2_feedback', 'feed_pump_feedback', 'booster_pump_feedback'];
-                $rows = dashboard_change_rows($rows, array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $feedbackColumns), null, 0.0, array_fill_keys($feedbackColumns, 1.0));
+                $speedOutColumns = ['suction_pump_2_speed_out', 'feed_pump_speed_out', 'booster_pump_speed_out'];
+                $rows = dashboard_change_rows($rows, array_merge(['suction_pump_1_status', 'suction_pump_2_status', 'suction_pump_3_status', 'feed_pump_status', 'booster_pump_status'], $speedOutColumns));
             }
         }
         $rows = filter_rows_by_time_search($rows, $timeSearch);

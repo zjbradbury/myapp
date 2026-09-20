@@ -460,6 +460,8 @@ function render_dashboard_range_filter(array $range, string $action = 'index.php
     <script>
         (() => {
             const form = document.currentScript.previousElementSibling;
+            const operatorChanges = form.elements.namedItem('user_changes_only');
+            operatorChanges?.addEventListener('change', () => form.requestSubmit());
             if (form.dataset.defaultShift !== '1') return;
 
             const start = form.elements.namedItem('start');

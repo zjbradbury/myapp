@@ -51,11 +51,16 @@ $isLoggedIn = isset($_SESSION['user_id']);
         top: 58px;
         right: 0;
         min-width: 240px;
+        max-height: calc(100vh - 88px);
+        max-height: calc(100dvh - 88px);
         background: #122c44;
         border: 1px solid #2c5d87;
         border-radius: 12px;
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
-        overflow: hidden;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         display: none;
     }
 
