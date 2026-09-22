@@ -73,10 +73,6 @@ function nozzleOverviewData(PDO $pdo): array
         }
     }
 
-    [$shiftStart, $shiftEnd] = get_current_shift_range();
-    $shiftStartTs = strtotime($shiftStart);
-    $shiftEndTs = strtotime($shiftEnd);
-    $shiftChanges = [];
     $latestChanges = [];
     $newer = null;
     $moreRecentChangeTs = null;
@@ -94,14 +90,11 @@ function nozzleOverviewData(PDO $pdo): array
                 : sprintf('%dm', $runtimeMinutes);
             $change = ['id' => (int)$newer['id'], 'date' => date('d-m-Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle'], 'runtime' => $runtime];
             $moreRecentChangeTs = $changeTs;
-            if (count($latestChanges) < 3) $latestChanges[] = $change;
-            if ($changeTs >= $shiftStartTs && $changeTs < $shiftEndTs) $shiftChanges[] = $change;
+            $latestChanges[] = $change;
+            if (count($latestChanges) >= 10) break;
         }
         $newer = ['id' => (int)$row['id'], 'nozzle' => $rowNozzle, 'log_date' => $row['log_date'], 'log_time' => $row['log_time']];
-        $rowTs = strtotime((string)$row['log_date'] . ' ' . (string)$row['log_time']);
-        if (count($latestChanges) >= 3 && $rowTs < $shiftStartTs) break;
     }
-    $changes = count($shiftChanges) > 3 ? $shiftChanges : $latestChanges;
 
     return [
         'online' => $timestamp !== null && max(0, time() - $timestamp) <= 600,
@@ -109,8 +102,8 @@ function nozzleOverviewData(PDO $pdo): array
         'last_updated' => $timestamp ? date('d-m-Y g:i:s A', $timestamp) : 'No nozzle data',
         'conditions' => $conditions,
         'parked' => $parked,
-        'changes' => $changes,
-        'changes_scope' => count($shiftChanges) > 3 ? 'Current shift' : 'Latest changes',
+        'changes' => $latestChanges,
+        'changes_scope' => 'Last 10 changes',
     ];
 }
 
