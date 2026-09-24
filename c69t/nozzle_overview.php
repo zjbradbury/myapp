@@ -13,6 +13,12 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS nozzle_attributes (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+$pdo->exec("CREATE TABLE IF NOT EXISTS nozzle_comments (
+    nozzle_number TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    comment TEXT NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
 $seed = $pdo->prepare('INSERT IGNORE INTO nozzle_attributes (nozzle_number, operational_condition) VALUES (?, 1)');
 for ($number = 1; $number <= 16; $number++) {
     $seed->execute([$number]);
@@ -33,6 +39,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $number = filter_input(INPUT_POST, 'nozzle_number', FILTER_VALIDATE_INT);
+    if ($number === false || $number === null || $number < 1 || $number > 16) {
+        http_response_code(422);
+        die('Invalid nozzle number.');
+    }
+    if (($_POST['action'] ?? '') === 'save_comment') {
+        $comment = $_POST['comment'] ?? '';
+        if (!is_string($comment) || strlen($comment) > 16000) {
+            http_response_code(422);
+            die('Comment must be no more than 16,000 bytes.');
+        }
+        $update = $pdo->prepare('INSERT INTO nozzle_comments (nozzle_number, comment) VALUES (?, ?) ON DUPLICATE KEY UPDATE comment = VALUES(comment)');
+        $update->execute([$number, trim($comment)]);
+        header('Location: nozzle_overview.php?saved_comment=' . $number . '#comment-' . $number, true, 303);
+        exit;
+    }
     $condition = filter_input(INPUT_POST, 'operational_condition', FILTER_VALIDATE_INT);
     if ($number === false || $number < 1 || $number > 16 || !in_array($condition, [0, 1, 2], true)) {
         http_response_code(422);
@@ -63,6 +84,11 @@ function nozzleOverviewData(PDO $pdo): array
     $conditions = array_fill(1, 16, 1);
     foreach ($pdo->query('SELECT nozzle_number, operational_condition FROM nozzle_attributes ORDER BY nozzle_number') as $row) {
         $conditions[(int)$row['nozzle_number']] = (int)$row['operational_condition'];
+    }
+
+    $comments = array_fill(1, 16, '');
+    foreach ($pdo->query('SELECT nozzle_number, comment FROM nozzle_comments') as $row) {
+        $comments[(int)$row['nozzle_number']] = $row['comment'];
     }
 
     $parked = array_fill(1, 16, null);
@@ -101,6 +127,7 @@ function nozzleOverviewData(PDO $pdo): array
         'active_nozzle' => $activeNozzle,
         'last_updated' => $timestamp ? date('d-m-Y g:i:s A', $timestamp) : 'No nozzle data',
         'conditions' => $conditions,
+        'comments' => $comments,
         'parked' => $parked,
         'changes' => $latestChanges,
         'changes_scope' => 'Last 10 changes',
@@ -167,9 +194,14 @@ $positions = [
                     $parkedClass = $isParked === null ? 'parked-unknown' : ($isParked ? 'parked' : 'not-parked');
                     $parkedLabel = $isParked === null ? 'parking unknown' : ($isParked ? 'parked' : 'not parked'); ?>
                     <div class="nozzle-node<?= $active ? ' active' : '' ?> <?= $conditionClass ?> <?= $parkedClass ?>" data-nozzle="<?= $number ?>" style="--left:<?= $left ?>%;--top:<?= $top ?>%" aria-label="Nozzle <?= $number ?>, <?= $active ? 'active, ' : '' ?><?= $conditionLabel ?>, <?= $parkedLabel ?>">
-                        <span class="node-number"><?= $number ?></span><span class="node-lamp"></span><span class="condition-lamp" title="<?= ucfirst($conditionLabel) ?>"></span><span class="parked-lamp" title="<?= ucfirst($parkedLabel) ?>"></span>
+                        <button type="button" class="node-number comment-trigger" aria-label="Show comments for nozzle <?= $number ?>" aria-expanded="false" aria-controls="nozzleCommentPopup"><?= $number ?></button><button type="button" class="node-lamp comment-trigger" aria-label="Show comments for nozzle <?= $number ?>" aria-expanded="false" aria-controls="nozzleCommentPopup"></button><span class="condition-lamp" title="<?= ucfirst($conditionLabel) ?>"></span><span class="parked-lamp" title="<?= ucfirst($parkedLabel) ?>"></span>
                     </div>
                 <?php endforeach; ?>
+                <div class="comment-popup" id="nozzleCommentPopup" role="region" aria-labelledby="popupTitle" hidden>
+                    <div class="popup-heading"><strong id="popupTitle"></strong><button type="button" id="closeCommentPopup" aria-label="Close comments">×</button></div>
+                    <p id="popupComment"></p>
+                    <button type="button" id="editPopupComment"><?= $canEdit ? 'Edit comments' : 'View comments' ?></button>
+                </div>
             </div>
         </article>
 
@@ -204,10 +236,94 @@ $positions = [
         <?php endforeach; endif; ?>
         </tbody></table></div>
     </section>
+    <section class="comments-card" id="nozzleComments" aria-labelledby="commentsHeading">
+        <div class="card-heading"><div><span class="eyebrow">Nozzle notes</span><h2 id="commentsHeading">Nozzle comments</h2></div></div>
+        <p class="card-copy">Comments for each nozzle. <?= $canEdit ? 'Save each nozzle’s comments after editing.' : 'Viewer access is read-only.' ?></p>
+        <div class="comments-list">
+        <?php foreach ($data['conditions'] as $number => $condition):
+            $conditionLabel = $condition === 1 ? 'Operational' : ($condition === 0 ? 'Unavailable' : 'Unknown');
+            $conditionClass = $condition === 1 ? 'good' : ($condition === 0 ? 'bad' : 'unknown'); ?>
+            <form method="post" class="comment-row" id="comment-<?= $number ?>" data-nozzle="<?= $number ?>">
+                <input type="hidden" name="token" value="<?= h($_SESSION['nozzle_overview_token']) ?>">
+                <input type="hidden" name="action" value="save_comment">
+                <input type="hidden" name="nozzle_number" value="<?= $number ?>">
+                <div class="comment-heading"><label for="nozzle-comment-<?= $number ?>">Nozzle <?= $number ?></label><span class="condition-state <?= $conditionClass ?>"><i></i><span><?= $conditionLabel ?></span></span></div>
+                <textarea id="nozzle-comment-<?= $number ?>" name="comment" rows="3" maxlength="4000" aria-label="Nozzle <?= $number ?> comments" <?= !$canEdit ? 'readonly' : '' ?>><?= h($data['comments'][$number]) ?></textarea>
+                <?php if ($canEdit): ?><button type="submit">Save comments</button><?php endif; ?>
+                <?php if ((string)($_GET['saved_comment'] ?? '') === (string)$number): ?><span class="comment-saved" role="status">Comments saved.</span><?php endif; ?>
+            </form>
+        <?php endforeach; ?>
+        </div>
+    </section>
 </main>
 <script>
 (() => {
+    const layout = document.getElementById('tankLayout');
+    const popup = document.getElementById('nozzleCommentPopup');
+    let comments = <?= json_encode($data['comments'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    let selectedNozzle = null;
+    let lastTrigger = null;
+    const closePopup = () => {
+        popup.hidden = true;
+        selectedNozzle = null;
+        layout.querySelectorAll('.comment-trigger').forEach(button => button.setAttribute('aria-expanded', 'false'));
+    };
+    const showComment = () => {
+        document.getElementById('popupTitle').textContent = `Nozzle ${selectedNozzle} comments`;
+        document.getElementById('popupComment').textContent = comments[selectedNozzle] || 'No comments yet.';
+    };
+    layout.addEventListener('click', event => {
+        const trigger = event.target.closest('.comment-trigger');
+        if (!trigger) return;
+        const node = trigger.closest('.nozzle-node');
+        const number = Number(node.dataset.nozzle);
+        const wasOpen = selectedNozzle === number;
+        closePopup();
+        if (wasOpen) return;
+        selectedNozzle = number;
+        lastTrigger = trigger;
+        node.querySelectorAll('.comment-trigger').forEach(button => button.setAttribute('aria-expanded', 'true'));
+        showComment();
+        popup.hidden = false;
+        popup.style.left = `${Math.max(0, Math.min(node.offsetLeft - popup.offsetWidth / 2, layout.clientWidth - popup.offsetWidth))}px`;
+        popup.style.top = `${Math.max(0, Math.min(node.offsetTop + 30, layout.clientHeight - popup.offsetHeight))}px`;
+    });
+    document.getElementById('closeCommentPopup').addEventListener('click', () => {
+        closePopup();
+        lastTrigger?.focus();
+    });
+    document.addEventListener('click', event => {
+        if (!popup.contains(event.target) && !event.target.closest('.comment-trigger')) closePopup();
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && selectedNozzle !== null) {
+            closePopup();
+            lastTrigger?.focus();
+        }
+    });
+    document.getElementById('editPopupComment').addEventListener('click', () => {
+        const row = document.getElementById(`comment-${selectedNozzle}`);
+        closePopup();
+        document.querySelectorAll('.comment-row.selected').forEach(item => item.classList.remove('selected'));
+        row.classList.add('selected');
+        row.scrollIntoView({behavior: 'smooth', block: 'center'});
+        row.querySelector('textarea').focus({preventScroll: true});
+    });
+    document.querySelectorAll('.comment-row textarea').forEach(field => {
+        field.addEventListener('input', () => { field.dataset.dirty = 'true'; });
+    });
     const apply = data => {
+        comments = data.comments;
+        if (selectedNozzle !== null) showComment();
+        document.querySelectorAll('.comment-row').forEach(row => {
+            const number = Number(row.dataset.nozzle);
+            const condition = Number(data.conditions[number]);
+            const state = row.querySelector('.condition-state');
+            state.className = `condition-state ${condition === 1 ? 'good' : condition === 0 ? 'bad' : 'unknown'}`;
+            state.querySelector('span').textContent = condition === 1 ? 'Operational' : condition === 0 ? 'Unavailable' : 'Unknown';
+            const field = row.querySelector('textarea');
+            if (!field.dataset.dirty && document.activeElement !== field) field.value = comments[number] || '';
+        });
         const card = document.getElementById('systemCard');
         card.classList.toggle('online', data.online);
         card.classList.toggle('offline', !data.online);
