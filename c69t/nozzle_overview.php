@@ -2,8 +2,10 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/nozzle_jet.php';
 requireRole(['admin', 'operator', 'viewer']);
 
+$isAdmin = currentRole() === 'admin';
 $canEdit = in_array(currentRole(), ['admin', 'operator'], true);
 $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
@@ -17,6 +19,12 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS nozzle_comments (
     nozzle_number TINYINT UNSIGNED NOT NULL PRIMARY KEY,
     comment TEXT NOT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+
+$pdo->exec("CREATE TABLE IF NOT EXISTS nozzle_jet_settings (
+    id TINYINT UNSIGNED NOT NULL PRIMARY KEY,
+    nozzle_size_mm TINYINT UNSIGNED NOT NULL,
+    tank_diameter_m DECIMAL(10,3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
 $seed = $pdo->prepare('INSERT IGNORE INTO nozzle_attributes (nozzle_number, operational_condition) VALUES (?, 1)');
@@ -36,6 +44,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals($_SESSION['nozzle_overview_token'], (string)($_POST['token'] ?? ''))) {
         http_response_code(400);
         die('Invalid request token.');
+    }
+
+    if (($_POST['action'] ?? '') === 'save_jet_settings') {
+        if (!$isAdmin) {
+            http_response_code(403);
+            die('Administrator access required to change jet settings.');
+        }
+        $size = filter_input(INPUT_POST, 'nozzle_size_mm', FILTER_VALIDATE_INT);
+        $diameter = filter_input(INPUT_POST, 'tank_diameter_m', FILTER_VALIDATE_FLOAT);
+        if (!isset(nozzleJetReference()[$size ?: 0]) || $diameter === false || $diameter === null
+            || !is_finite($diameter) || $diameter < 0.001 || $diameter > 9999999.999) {
+            http_response_code(422);
+            die('Select a supported nozzle size and enter a positive tank diameter in metres (up to 3 decimal places).');
+        }
+        $update = $pdo->prepare('INSERT INTO nozzle_jet_settings (id, nozzle_size_mm, tank_diameter_m) VALUES (1, ?, ?) ON DUPLICATE KEY UPDATE nozzle_size_mm = VALUES(nozzle_size_mm), tank_diameter_m = VALUES(tank_diameter_m)');
+        $update->execute([$size, round($diameter, 3)]);
+        header('Location: nozzle_overview.php?saved_jet=1', true, 303);
+        exit;
     }
 
     $number = filter_input(INPUT_POST, 'nozzle_number', FILTER_VALIDATE_INT);
@@ -123,7 +149,15 @@ function nozzleOverviewData(PDO $pdo): array
         $newer = ['id' => (int)$row['id'], 'nozzle' => $rowNozzle, 'log_date' => $row['log_date'], 'log_time' => $row['log_time']];
     }
 
+    $settings = $pdo->query('SELECT nozzle_size_mm, tank_diameter_m FROM nozzle_jet_settings WHERE id = 1')->fetch() ?: [];
+    $jet = nozzleJetEstimate((int)($settings['nozzle_size_mm'] ?? 0), $latest['flow'] ?? null, $latest['pressure'] ?? null);
+    $jet['nozzle_size_mm'] = isset($settings['nozzle_size_mm']) ? (int)$settings['nozzle_size_mm'] : null;
+    $jet['tank_diameter_m'] = isset($settings['tank_diameter_m']) ? (float)$settings['tank_diameter_m'] : null;
+    $jet['flow'] = is_numeric($latest['flow'] ?? null) ? (float)$latest['flow'] : null;
+    $jet['pressure'] = is_numeric($latest['pressure'] ?? null) ? (float)$latest['pressure'] : null;
+
     return [
+        'jet' => $jet,
         'online' => $timestamp !== null && max(0, time() - $timestamp) <= 600,
         'active_nozzle' => $activeNozzle,
         'last_updated' => $timestamp ? date('d-m-Y g:i:s A', $timestamp) : 'No nozzle data',
@@ -176,12 +210,38 @@ $positions = [
         </div>
     </header>
 
+    <details class="jet-settings">
+        <summary>Jet reach settings (nozzle size and tank diameter)</summary>
+        <p class="card-copy">One nozzle size applies to all nozzles in this layout. Only administrators can change these settings.</p>
+        <form method="post" class="jet-form">
+            <input type="hidden" name="token" value="<?= h($_SESSION['nozzle_overview_token']) ?>">
+            <input type="hidden" name="action" value="save_jet_settings">
+            <label>Nozzle size (mm)
+                <select name="nozzle_size_mm" required <?= !$isAdmin ? 'disabled' : '' ?>>
+                    <option value="">Select size</option>
+                    <?php foreach (array_keys(nozzleJetReference()) as $size): ?>
+                    <option value="<?= $size ?>" <?= $data['jet']['nozzle_size_mm'] === $size ? 'selected' : '' ?>>Ø <?= $size ?> mm</option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>Tank diameter (m)
+                <input type="number" name="tank_diameter_m" min="0.001" max="9999999.999" step="0.001" required value="<?= h($data['jet']['tank_diameter_m'] ?? '') ?>" <?= !$isAdmin ? 'disabled' : '' ?>>
+            </label>
+            <?php if ($isAdmin): ?><button type="submit">Save jet settings</button><?php endif; ?>
+        </form>
+    </details>
+    <?php if (isset($_GET['saved_jet'])): ?><p role="status" class="comment-saved">Jet settings saved.</p><?php endif; ?>
     <section class="overview-grid">
         <article class="layout-card">
             <div class="card-heading"><div><span class="eyebrow">Live position</span><h2>Tank nozzle layout</h2></div><div class="legend"><span><i class="legend-active"></i>Active</span><span><i class="legend-operational"></i>Operational</span><span><i class="legend-unavailable"></i>Unavailable</span><span><i class="legend-parked"></i>Parked</span><span><i class="legend-not-parked"></i>Not parked</span><span><i class="legend-unknown"></i>Unknown</span></div></div>
             <div class="tank-layout" id="tankLayout" aria-label="Sixteen nozzle tank layout">
                 <svg viewBox="0 0 100 100" aria-hidden="true">
                     <circle class="tank-outline" cx="50" cy="50" r="47" />
+                    <defs><clipPath id="tankJetClip"><circle cx="50" cy="50" r="47" /></clipPath></defs>
+                    <g clip-path="url(#tankJetClip)" pointer-events="none">
+                        <circle id="maximumJetCircle" class="jet-circle jet-maximum" cx="50" cy="50" r="0" visibility="hidden" />
+                        <circle id="actualJetCircle" class="jet-circle jet-actual" cx="50" cy="50" r="0" visibility="hidden" />
+                    </g>
                     <g class="pipe-lines">
                         <path d="M50 7 V92 M23 18 H77 M23 18 L13 29 M77 18 L87 29 M26 43 H74 M26 43 L13 55 M74 43 L87 55 M31 70 H69 M31 70 L21 81 M69 70 L79 81" />
                     </g>
@@ -204,6 +264,12 @@ $positions = [
                     <button type="button" id="editPopupComment"><?= $canEdit ? 'Edit comments' : 'View comments' ?></button>
                 </div>
             </div>
+            <div class="jet-readout" aria-live="polite">
+                <p><span class="jet-key maximum"></span>Maximum reference radius: <strong id="maximumJetValue">—</strong>
+                <span class="jet-key actual"></span>Live estimated radius: <strong id="actualJetValue">—</strong></p>
+                <p id="jetReadings"></p><p id="jetStatus"></p>
+            </div>
+            <p class="card-copy">Maximum is the table’s effective jet radius at 12 bar. Live reach is an estimate using the lower of the flow and pressure interpolations, not a measured jet length. No extrapolation beyond the supplied table. Circles are scaled to the saved tank diameter and clipped at the tank wall; nozzle positions follow the existing schematic.</p>
         </article>
 
         <aside class="condition-card">
@@ -313,7 +379,29 @@ $positions = [
     document.querySelectorAll('.comment-row textarea').forEach(field => {
         field.addEventListener('input', () => { field.dataset.dirty = 'true'; });
     });
+    const positions = <?= json_encode($positions) ?>;
+    const applyJet = data => {
+        const jet = data.jet;
+        const position = positions[data.active_nozzle];
+        const configured = position && jet.tank_diameter_m > 0;
+        const live = data.online && configured;
+        const draw = (id, radius, show) => {
+            const circle = document.getElementById(id);
+            circle.setAttribute('visibility', show && radius !== null ? 'visible' : 'hidden');
+            circle.setAttribute('cx', position?.[0] ?? 50);
+            circle.setAttribute('cy', position?.[1] ?? 50);
+            circle.setAttribute('r', configured && radius !== null ? radius * 94 / jet.tank_diameter_m : 0);
+        };
+        draw('maximumJetCircle', jet.maximum_m, configured);
+        draw('actualJetCircle', jet.actual_m, live);
+        document.getElementById('maximumJetValue').textContent = jet.maximum_m === null ? '—' : `${jet.maximum_m.toFixed(1)} m`;
+        document.getElementById('actualJetValue').textContent = !live || jet.actual_m === null ? 'Unavailable' : `${jet.actual_m.toFixed(1)} m`;
+        document.getElementById('jetReadings').textContent = `Nozzle: ${data.active_nozzle ?? '—'} · Size: ${jet.nozzle_size_mm ?? '—'} mm · Tank Ø: ${jet.tank_diameter_m ?? '—'} m · Flow: ${jet.flow ?? '—'} m³/h · Pressure: ${jet.pressure ?? '—'} bar`;
+        document.getElementById('jetStatus').textContent = !configured ? 'Save jet settings and select an active nozzle to show scaled reach.' : !data.online ? 'Latest log is older than 10 minutes or has no valid timestamp; live circle hidden.' : jet.status;
+    };
+    applyJet(<?= json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
     const apply = data => {
+        applyJet(data);
         comments = data.comments;
         if (selectedNozzle !== null) showComment();
         document.querySelectorAll('.comment-row').forEach(row => {
@@ -366,8 +454,20 @@ $positions = [
             });
         });
     };
-    const refresh = () => fetch('nozzle_overview.php?format=json', {cache: 'no-store'}).then(r => r.ok ? r.json() : Promise.reject()).then(apply).catch(() => {});
-    window.setInterval(refresh, 15000);
+    const refresh = async () => {
+        try {
+            const response = await fetch('nozzle_overview.php?format=json', {cache: 'no-store', signal: AbortSignal.timeout(10000)});
+            if (!response.ok) throw new Error('Refresh failed');
+            apply(await response.json());
+        } catch {
+            document.getElementById('actualJetCircle').setAttribute('visibility', 'hidden');
+            document.getElementById('actualJetValue').textContent = 'Unavailable';
+            document.getElementById('jetStatus').textContent = 'Live update unavailable. Retrying automatically.';
+        } finally {
+            window.setTimeout(refresh, 15000);
+        }
+    };
+    window.setTimeout(refresh, 15000);
 })();
 </script>
 </body>
