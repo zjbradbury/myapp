@@ -116,7 +116,8 @@ function nozzleOverviewData(PDO $pdo): array
                 : sprintf('%dm', $runtimeMinutes);
             $change = ['id' => (int)$newer['id'], 'date' => date('d-m-Y', $changeTs), 'time' => date('g:i:s A', $changeTs), 'from' => $rowNozzle, 'to' => $newer['nozzle'], 'runtime' => $runtime];
             $moreRecentChangeTs = $changeTs;
-            $latestChanges[] = $change;
+            // Keep every transition as a runtime boundary, even when it is hidden.
+            if ($runtimeSeconds > 600) $latestChanges[] = $change;
             if (count($latestChanges) >= 10) break;
         }
         $newer = ['id' => (int)$row['id'], 'nozzle' => $rowNozzle, 'log_date' => $row['log_date'], 'log_time' => $row['log_time']];
@@ -130,7 +131,7 @@ function nozzleOverviewData(PDO $pdo): array
         'comments' => $comments,
         'parked' => $parked,
         'changes' => $latestChanges,
-        'changes_scope' => 'Last 10 changes',
+        'changes_scope' => 'Last 10 changes selected for more than 10 minutes',
     ];
 }
 
@@ -230,9 +231,9 @@ $positions = [
     </section>
     <section class="changes-card">
         <div class="card-heading"><div><span class="eyebrow" id="changesScope"><?= h($data['changes_scope']) ?></span><h2>Nozzle number changes</h2></div></div>
-        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>Previous nozzle</th><th>New nozzle</th><th>Runtime</th></tr></thead><tbody id="changesBody">
-        <?php if (!$data['changes']): ?><tr><td colspan="5" class="empty-row">No nozzle number changes recorded.</td></tr><?php else: foreach ($data['changes'] as $change): ?>
-            <tr><td><?= h($change['date']) ?></td><td><?= h($change['time']) ?></td><td>N<?= (int)$change['from'] ?></td><td><strong>N<?= (int)$change['to'] ?></strong></td><td><?= h($change['runtime']) ?></td></tr>
+        <div class="table-wrap"><table><thead><tr><th>Date</th><th>Time</th><th>New nozzle</th><th>Runtime</th></tr></thead><tbody id="changesBody">
+        <?php if (!$data['changes']): ?><tr><td colspan="4" class="empty-row">No nozzle number changes recorded.</td></tr><?php else: foreach ($data['changes'] as $change): ?>
+            <tr><td><?= h($change['date']) ?></td><td><?= h($change['time']) ?></td><td><strong>N<?= (int)$change['to'] ?></strong></td><td><?= h($change['runtime']) ?></td></tr>
         <?php endforeach; endif; ?>
         </tbody></table></div>
     </section>
@@ -353,15 +354,15 @@ $positions = [
         if (!data.changes.length) {
             const row = body.insertRow();
             const cell = row.insertCell();
-            cell.colSpan = 5;
+            cell.colSpan = 4;
             cell.className = 'empty-row';
             cell.textContent = 'No nozzle number changes recorded.';
         } else data.changes.forEach(change => {
             const row = body.insertRow();
-            [change.date, change.time, `N${change.from}`, `N${change.to}`, change.runtime].forEach((value, index) => {
+            [change.date, change.time, `N${change.to}`, change.runtime].forEach((value, index) => {
                 const cell = row.insertCell();
                 cell.textContent = value;
-                if (index === 3) cell.className = 'new-nozzle';
+                if (index === 2) cell.className = 'new-nozzle';
             });
         });
     };
