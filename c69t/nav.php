@@ -148,6 +148,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
                 <div class="hamburger-divider"></div>
 
                 <a href="users.php" class="<?= $currentPage === 'users.php' ? 'active' : '' ?>">Manage Users</a>
+                <a href="site_lock_access.php" class="<?= $currentPage === 'site_lock_access.php' ? 'active' : '' ?>">Site Lockdown<?= function_exists('siteIsLocked') && siteIsLocked($pdo) ? ' (Locked)' : '' ?></a>
                 <a href="user_create.php" class="<?= $currentPage === 'user_create.php' ? 'active' : '' ?>">Create User</a>
                 <a href="admin_dropdowns.php" class="<?= $currentPage === 'admin_dropdowns.php' ? 'active' : '' ?>">Dropdown Config</a>
 

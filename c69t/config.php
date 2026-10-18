@@ -19,6 +19,9 @@ try {
     die("Database connection failed: " . $e->getMessage());
 }
 
+require_once __DIR__ . '/site_lock.php';
+enforceSiteLock($pdo);
+
 function isLoggedIn()
 {
     return isset($_SESSION["user_id"]);
