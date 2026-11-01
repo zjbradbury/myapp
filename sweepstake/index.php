@@ -117,7 +117,7 @@ function hidden(string $action, int $id = 0): void
             <div>
                 <p class="eyebrow">WIN SOME, LOSE MORE.</p>
                 <h1>Melbourne Cup<br>Sweepstake</h1>
-                <p class="hero-description">The Melbourne Cup Sweepstake.<br>Brought to you by Contract Resources</p><a class="button gold" href="#pots">Explore the pots <span>↘</span></a>
+                <p class="hero-description">The Sweep<br>Brought to you by Contract Resources</p><a class="button gold" href="#pots">Explore the pots <span>↘</span></a>
             </div>
             <div class="cup-art" aria-hidden="true"><span class="orbit one"></span><span class="orbit two"></span><span class="horse">♞</span><span class="art-caption"> Melbourne Cup</span></div>
         </section>

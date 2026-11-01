@@ -35,7 +35,7 @@ $navItems = [
         'title' => 'Melbourne Cup Sweepstake',
         'description' => 'CR Melbourne Cup Sweepstake',
         'href' => '/sweepstake',
-        'icon' => '★',
+        'icon' => '♞',
         'label' => 'Racing',
     ],
 
