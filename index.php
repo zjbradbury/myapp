@@ -23,12 +23,20 @@ $navItems = [
         'icon' => '◆',
         'label' => 'Racing',
     ],
+    //  [
+    //     'title' => 'Overseerr',
+    //     'description' => 'Request Movies and TV Shows for Plex.',
+    //     'href' => 'https://overseerr.zbradbury.com/login',
+    //     'icon' => '★',
+    //     'label' => 'Media',
+    // ],
+    
      [
-        'title' => 'Overseerr',
-        'description' => 'Request Movies and TV Shows for Plex.',
-        'href' => 'https://overseerr.zbradbury.com/login',
+        'title' => 'Melbourne Cup Sweepstake',
+        'description' => 'CR Melbourne Cup Sweepstake',
+        'href' => '/sweepstake',
         'icon' => '★',
-        'label' => 'Media',
+        'label' => 'Racing',
     ],
 
 ];
