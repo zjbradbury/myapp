@@ -72,6 +72,16 @@ function mutate(PDO $pdo): int
     $s->execute([$id]);
     $pot = $s->fetch();
     if (!$pot) throw new InvalidArgumentException('Pot not found.');
+    if ($action === 'delete_pot') {
+        if (($_POST['confirm_delete'] ?? '') !== '1') throw new InvalidArgumentException('Confirm that you want to permanently delete this pot.');
+        // Delete entries before runners because drawn entries reference runner IDs.
+        $pdo->prepare('DELETE FROM sweepstake_entries WHERE pot_id=?')->execute([$id]);
+        $pdo->prepare('DELETE FROM sweepstake_runner_details WHERE runner_id IN (SELECT id FROM sweepstake_runners WHERE pot_id=?)')->execute([$id]);
+        $pdo->prepare('DELETE FROM sweepstake_runners WHERE pot_id=?')->execute([$id]);
+        $pdo->prepare('DELETE FROM sweepstake_field_sync WHERE pot_id=?')->execute([$id]);
+        $pdo->prepare('DELETE FROM sweepstake_pots WHERE id=?')->execute([$id]);
+        return 0;
+    }
     if ($action === 'runners' && $pot['status'] === 'open') {
         $s = $pdo->prepare('SELECT COUNT(*) FROM sweepstake_entries WHERE pot_id=?');
         $s->execute([$id]);

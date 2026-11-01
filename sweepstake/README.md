@@ -39,3 +39,7 @@ find sweepstake -name '*.php' -exec php -l {} \;
 ```
 
 The import test also runs the workflow suite. Tests use isolated SQLite and synthetic source fixtures to cover date/race selection, runner details, duplicate rejection, scratchings, refresh capacity protection, rollback, manual override, frozen assignments, pot isolation, payment isolation, result corrections, and payout rounding. They do not replace a MariaDB integration check. Verify initialization and the end-to-end workflow on the existing PHP/MariaDB host before use.
+
+## Removing pots
+
+Admins can expand **Delete this pot** below the selected pot, tick the confirmation, and select **Delete pot**. This permanently removes the pot and all its entries, payment records, runners, results, and import details. Open, drawn, and finished pots can be deleted. Other pots are preserved.

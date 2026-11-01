@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->beginTransaction();
                 $id = mutate($pdo);
                 $pdo->commit();
-                $message = 'Changes saved.';
+                $message = $action === 'delete_pot' ? 'Pot deleted.' : 'Changes saved.';
                 if ($action === 'create') {
                     // The pot remains usable even when this year's field is not published yet.
                     try {
@@ -243,6 +243,17 @@ function hidden(string $action, int $id = 0): void
                             </div><?php endif; ?>
                     </div><?php endif; ?>
             </section><?php endif; ?>
+        <?php if ($isAdmin && $pot): ?>
+            <details class="panel delete-pot">
+                <summary>Delete this pot</summary>
+                <p>Permanently delete <strong><?= h($pot['name']) ?></strong>, including all entries, payments, runners, results, and import details. This cannot be undone.</p>
+                <form method="post">
+                    <?php hidden('delete_pot', $selected); ?>
+                    <label class="check"><input type="checkbox" name="confirm_delete" value="1" required> I confirm that I want to permanently delete this pot.</label>
+                    <button class="danger" type="submit">Delete pot</button>
+                </form>
+            </details>
+        <?php endif; ?>
         <?php if ($isAdmin && $ready): ?><details class="panel create-pot" <?= !$pots ? 'open' : '' ?>>
                 <summary>Create a new pot <span>＋</span></summary>
                 <form method="post"><?php hidden('create'); ?><div class="form-grid"><label>Pot name<input name="name" placeholder="The $5 sweep" maxlength="100" required></label><label>Race year<input name="year" type="number" min="2000" max="2200" value="<?= date('Y') ?>" required></label><label>Entry price ($)<input name="price" type="number" min="0.01" max="99999.99" step="0.01" value="5" required></label></div>

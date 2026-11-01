@@ -736,3 +736,4 @@ footer .brand {
 .scratched-runner td:nth-child(2) strong {
     text-decoration: line-through
 }
+.delete-pot{margin-top:30px;border-color:#dfbaaa}.delete-pot summary{color:#923e30}button.danger{background:#923e30}
