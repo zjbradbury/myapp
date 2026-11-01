@@ -119,7 +119,7 @@ function hidden(string $action, int $id = 0): void
                 <h1>Melbourne Cup<br>Sweepstake</h1>
                 <p class="hero-description">The Melbourne Cup Sweepstake.<br>Brought to you by Contract Resources</p><a class="button gold" href="#pots">Explore the pots <span>↘</span></a>
             </div>
-            <div class="cup-art" aria-hidden="true"><span class="orbit one"></span><span class="orbit two"></span><span class="horse">♞</span><span class="art-caption"> BRINGS US THE RACE THATTOGETHER</span></div>
+            <div class="cup-art" aria-hidden="true"><span class="orbit one"></span><span class="orbit two"></span><span class="horse">♞</span><span class="art-caption"> Melbourne Cup</span></div>
         </section>
         <?php if ($error): ?><p class="notice error" role="alert"><?= h($error) ?></p><?php endif; ?><?php if ($message): ?><p class="notice" role="status"><?= h($message) ?></p><?php endif; ?>
         <section class="section-heading" id="pots">
@@ -275,7 +275,7 @@ function hidden(string $action, int $id = 0): void
                 })();
             </script>
         <?php endif; ?>
-        <footer><a class="brand" href="index.php">♞ THE SWEEP</a><span>Melbourne Cup · A little friendly competition.</span></footer>
+        <footer><a class="brand" href="index.php">♞ THE SWEEP</a><span>Melbourne Cup Sweepstake · Zack Bradbury</span></footer>
     </main>
 </body>
 
