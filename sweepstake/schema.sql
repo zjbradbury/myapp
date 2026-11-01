@@ -29,3 +29,22 @@ CREATE TABLE IF NOT EXISTS sweepstake_entries (
  FOREIGN KEY (pot_id) REFERENCES sweepstake_pots(id) ON DELETE CASCADE,
  FOREIGN KEY (runner_id) REFERENCES sweepstake_runners(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS sweepstake_runner_details (
+ runner_id INT UNSIGNED PRIMARY KEY,
+ jockey VARCHAR(255) NOT NULL DEFAULT '',
+ trainer VARCHAR(255) NOT NULL DEFAULT '',
+ barrier VARCHAR(255) NOT NULL DEFAULT '',
+ weight VARCHAR(255) NOT NULL DEFAULT '',
+ recent_form VARCHAR(255) NOT NULL DEFAULT '',
+ scratched TINYINT UNSIGNED NOT NULL DEFAULT 0,
+ FOREIGN KEY (runner_id) REFERENCES sweepstake_runners(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS sweepstake_field_sync (
+ pot_id INT UNSIGNED PRIMARY KEY,
+ source_url VARCHAR(255) NOT NULL,
+ auto_refresh TINYINT UNSIGNED NOT NULL DEFAULT 1,
+ checked_at DATETIME NULL,
+ synced_at DATETIME NULL,
+ last_error VARCHAR(500) NULL,
+ FOREIGN KEY (pot_id) REFERENCES sweepstake_pots(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

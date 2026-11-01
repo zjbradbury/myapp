@@ -14,6 +14,7 @@ function action(PDO $db, array $post): int {
 }
 $db=new TestDatabase('sqlite::memory:',null,null,[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
 $db->exec('CREATE TABLE sweepstake_pots(id INTEGER PRIMARY KEY, name TEXT, race_year INTEGER, entry_cents INTEGER, first_pct INTEGER, second_pct INTEGER, third_pct INTEGER, status TEXT DEFAULT "open"); CREATE TABLE sweepstake_runners(id INTEGER PRIMARY KEY,pot_id INTEGER,number INTEGER,name TEXT,placing INTEGER,UNIQUE(pot_id,number),UNIQUE(pot_id,placing)); CREATE TABLE sweepstake_entries(id INTEGER PRIMARY KEY,pot_id INTEGER,participant TEXT,paid INTEGER,runner_id INTEGER UNIQUE)');
+$db->exec("CREATE TABLE sweepstake_runner_details(runner_id INTEGER PRIMARY KEY,jockey TEXT,trainer TEXT,barrier TEXT,weight TEXT,recent_form TEXT,scratched INTEGER DEFAULT 0); CREATE TABLE sweepstake_field_sync(pot_id INTEGER PRIMARY KEY,source_url TEXT,auto_refresh INTEGER DEFAULT 1,checked_at TEXT,synced_at TEXT,last_error TEXT)");
 $create=['action'=>'create','name'=>'Test pot','price'=>'5.25','year'=>'2026','first'=>'60','second'=>'25','third'=>'15'];
 $id=action($db,$create); $other=action($db,$create);
 action($db,['action'=>'runners','pot_id'=>$id,'runners'=>"1 Alpha\n2 Bravo\n3 Charlie"]);

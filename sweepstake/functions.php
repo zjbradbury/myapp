@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . "/field_import.php";
 function h($value): string { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
 function money(int $cents): string { return '$' . number_format($cents / 100, 2); }
 function admin(PDO $pdo): bool {
@@ -45,7 +46,9 @@ function mutate(PDO $pdo): int {
         if (array_sum($pcts) !== 100 || $year < 2000 || $year > 2200) throw new InvalidArgumentException('Prize percentages must total 100 and the year must be valid.');
         $s = $pdo->prepare('INSERT INTO sweepstake_pots (name,race_year,entry_cents,first_pct,second_pct,third_pct) VALUES (?,?,?,?,?,?)');
         $s->execute([$name,$year,(int)round((float)$price*100),...$pcts]);
-        return (int)$pdo->lastInsertId();
+        $id = (int)$pdo->lastInsertId();
+        createSyncRecord($pdo, $id, (int)$year);
+        return $id;
     }
     $id = (int)($_POST['pot_id'] ?? 0);
     $s = $pdo->prepare('SELECT * FROM sweepstake_pots WHERE id = ? FOR UPDATE'); $s->execute([$id]); $pot = $s->fetch();
@@ -59,11 +62,15 @@ function mutate(PDO $pdo): int {
             $runners[(int)$m[1]] = trim($m[2]);
         }
         if (count($runners) < 3 || count($runners) > 100 || count($runners) < (int)$s->fetchColumn()) throw new InvalidArgumentException('Enter 3–100 runners, with at least one runner per existing entry.');
+        $details = $pdo->prepare('DELETE FROM sweepstake_runner_details WHERE runner_id IN (SELECT id FROM sweepstake_runners WHERE pot_id=?)');
+        $details->execute([$id]);
         $pdo->prepare('DELETE FROM sweepstake_runners WHERE pot_id=?')->execute([$id]);
+        if (!fieldSync($pdo,$id)) createSyncRecord($pdo,$id,(int)$pot['race_year']);
+        $pdo->prepare('UPDATE sweepstake_field_sync SET auto_refresh=0,synced_at=NULL,last_error=NULL WHERE pot_id=?')->execute([$id]);
         $s = $pdo->prepare('INSERT INTO sweepstake_runners(pot_id,number,name) VALUES(?,?,?)');
         foreach ($runners as $number => $name) $s->execute([$id,$number,$name]);
     } elseif ($action === 'entry' && $pot['status'] === 'open') {
-        $s = $pdo->prepare('SELECT (SELECT COUNT(*) FROM sweepstake_runners WHERE pot_id=?) - (SELECT COUNT(*) FROM sweepstake_entries WHERE pot_id=?)'); $s->execute([$id,$id]);
+        $s = $pdo->prepare('SELECT (SELECT COUNT(*) FROM sweepstake_runners r LEFT JOIN sweepstake_runner_details d ON d.runner_id=r.id WHERE r.pot_id=? AND COALESCE(d.scratched,0)=0) - (SELECT COUNT(*) FROM sweepstake_entries WHERE pot_id=?)'); $s->execute([$id,$id]);
         if ((int)$s->fetchColumn() <= 0) throw new InvalidArgumentException('Add runners first, or create another pot when this one is full.');
         $pdo->prepare('INSERT INTO sweepstake_entries(pot_id,participant,paid) VALUES(?,?,?)')->execute([$id,field('participant'),isset($_POST['paid']) ? 1 : 0]);
     } elseif ($action === 'paid') {
@@ -71,7 +78,9 @@ function mutate(PDO $pdo): int {
     } elseif ($action === 'remove' && $pot['status'] === 'open') {
         $pdo->prepare('DELETE FROM sweepstake_entries WHERE id=? AND pot_id=?')->execute([(int)($_POST['entry_id'] ?? 0),$id]);
     } elseif ($action === 'draw' && $pot['status'] === 'open') {
-        $s = $pdo->prepare('SELECT id FROM sweepstake_runners WHERE pot_id=? ORDER BY number'); $s->execute([$id]); $runners = secureShuffle($s->fetchAll(PDO::FETCH_COLUMN));
+        $sync = fieldSync($pdo,$id);
+        if ($sync && $sync['auto_refresh'] && $sync['last_error']) throw new InvalidArgumentException('Resolve the field import warning or save a manual field before drawing.');
+        $s = $pdo->prepare('SELECT r.id FROM sweepstake_runners r LEFT JOIN sweepstake_runner_details d ON d.runner_id=r.id WHERE r.pot_id=? AND COALESCE(d.scratched,0)=0 ORDER BY r.number'); $s->execute([$id]); $runners = secureShuffle($s->fetchAll(PDO::FETCH_COLUMN));
         $s = $pdo->prepare('SELECT id FROM sweepstake_entries WHERE pot_id=? ORDER BY id'); $s->execute([$id]); $entries = $s->fetchAll(PDO::FETCH_COLUMN);
         if (count($runners) < 3 || count($runners) !== count($entries)) throw new InvalidArgumentException('Fill every runner slot before drawing.');
         $s = $pdo->prepare('UPDATE sweepstake_entries SET runner_id=? WHERE id=? AND pot_id=?');

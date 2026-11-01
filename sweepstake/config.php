@@ -1,5 +1,5 @@
 <?php
-// Independent sweepstake configuration; uses the same database and users as c69t.
+// Independent sweepstake configuration; uses the shared database and admin accounts.
 session_start();
 date_default_timezone_set('Australia/Adelaide');
 header('Cache-Control: no-store, private');
